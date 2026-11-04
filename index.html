@@ -337,7 +337,7 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
           </tbody>
         </table>
       </div>
-      <p class="ev"><span class="t-zh">未沉没、且已经抽舱的期望日产 = 0.70×100 + 0.25×200 + 0.05×600 = <strong>150 ARK/天</strong>。洪水会把未防护的票打成 0，所以 150 不是保底。普通经济舱大约 100 ARK/天。按开池价格粗算，票一直在航的话大约 7 天产回票价，这不是承诺。</span><span class="t-en">Expected daily ARK if the ticket stays afloat and the cabin has settled = 0.70×100 + 0.25×200 + 0.05×600 = <strong>150 ARK/day</strong>. A flood can still turn an unprotected ticket into 0, so 150 is not a floor. An ordinary economy cabin is about 100 ARK/day. At the open price, that is roughly a 7-day payback if the ticket stays afloat. Rough, not a guarantee.</span></p>
+      <p class="ev"><span class="t-zh">0.70、0.25、0.05 是舱位揭晓前的抽中概率：经济舱 70%、商务舱 25%、船长舱 5%。概率不是日产折扣。抽到经济舱之后，这一张票的日产固定是 <strong>100 ARK/天</strong>，不是 0.70×100 = 70。还在航、而且舱位已经揭晓的票，按随机抽舱取期望：0.70×（经济舱的 100）+ 0.25×（商务舱的 200）+ 0.05×（船长舱的 600）= <strong>150 ARK/天</strong>。150 是随机抽舱的期望值，不是一张经济舱的收入。已经抽到经济舱的单张票就是 100 ARK/天；按开盘价来标，大约 7 天盖住 $2 票价，这是设计锚，不是承诺。洪水仍可能把没沙袋的票打成 0。</span><span class="t-en">0.70, 0.25, and 0.05 are the draw probabilities before the cabin settles: Economy 70%, Business 25%, Captain 5%. They are not a cut to the daily rate. After you draw Economy, that ticket earns a fixed <strong>100 ARK/day</strong>. It is not 0.70×100 = 70. For an afloat ticket whose cabin has settled, the expected value across a random draw is 0.70×(Economy’s 100) + 0.25×(Business’s 200) + 0.05×(Captain’s 600) = <strong>150 ARK/day</strong>. 150 is that expected value. It is not what a single Economy ticket earns. One ticket that drew Economy earns 100 ARK/day. About 7 days to cover a $2 ticket at the open price is a design anchor, not a promise. A flood can still turn a ticket with no sandbag into 0.</span></p>
       <ol class="flow">
         <li><b>1 · <span class="t-zh">铸造</span><span class="t-en">Mint</span></b><span class="t-zh">得到船票，舱位仍是空的</span><span class="t-en">You receive a ticket. The cabin is still empty.</span></li>
         <li><b>2 · requestCabin</b><span class="t-zh">向未来区块要种子</span><span class="t-en">Ask a future block for the seed.</span></li>
@@ -542,14 +542,14 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
       <details class="rule">
         <summary><span class="r-badge">R2</span> <span class="t-zh">舱位</span><span class="t-en">Cabins</span></summary>
         <div class="body">
-          <p class="t-zh">TicketNFT：经济舱 70% 每天 100 ARK，商务舱 25% 每天 200 ARK，船长舱 5% 每天 600 ARK。铸造不抽舱。之后 <code>requestCabin</code>，再 <code>settleCabin</code>，种子来自未来区块。沉船日产 0。未沉没且已抽舱的期望是 150 ARK/天，洪水另计。</p>
-          <p class="t-en">TicketNFT: Economy 70% at 100 ARK/day, Business 25% at 200, Captain 5% at 600. Mint does not draw the cabin. Then <code>requestCabin</code>, then <code>settleCabin</code>, seeded by a future block. Sunk tickets earn 0. The afloat, settled expectation is 150 ARK/day, before flood risk.</p>
+          <p class="t-zh">TicketNFT：经济舱 70% 每天 100 ARK，商务舱 25% 每天 200 ARK，船长舱 5% 每天 600 ARK。0.70 / 0.25 / 0.05 只是揭晓前的抽中概率。铸造不抽舱。之后 <code>requestCabin</code>，再 <code>settleCabin</code>，种子来自未来区块。沉船日产 0。抽到经济舱之后日产固定是 100 ARK/天，不是 0.70×100 = 70。150 ARK/天是还在航、舱位已揭晓的票按随机抽舱取的期望值，不是一张经济舱的收入。洪水另计。</p>
+          <p class="t-en">TicketNFT: Economy 70% at 100 ARK/day, Business 25% at 200, Captain 5% at 600. 0.70 / 0.25 / 0.05 are the draw probabilities before the cabin settles. Mint does not draw the cabin. Then <code>requestCabin</code>, then <code>settleCabin</code>, seeded by a future block. Sunk tickets earn 0. After you draw Economy, the daily yield is a fixed 100 ARK/day, not 0.70×100 = 70. 150 ARK/day is the expected value of a random cabin draw for an afloat, settled ticket. It is not what one Economy ticket earns. Flood risk is separate.</p>
         </div>
       </details>
       <details class="rule">
         <summary><span class="r-badge">R3</span> <span class="t-zh">百夜洪水</span><span class="t-en">The hundred nights</span></summary>
         <div class="body">
-          <p class="t-zh">一天的分界是北京时间 21:00（UTC 13:00）。过了第 N 天的这个点，任何人可以先 commit 再 settle。当天 settle 完成，这一晚才算过完。开池并 start() 之后，currentDayIndex() 是第 1 到第 100 晚；开池前没有晚数。dayState(n).settled 为真，表示第 n 晚已经结算。没有沙袋的船票：第 1–7 晚大约 2%–3% 会沉，第 8–100 晚大约 3%–8%。第一周放软，是为了让更多人撑到那个窗口。沉了的票离船，还在航的票仍在船上。第 100 晚结算后，还在船上的人平分奖池。</p>
+          <p class="t-zh">每晚 21:00（北京时间）之后可以结算洪水。没有沙袋的船票：第 1–7 晚约 2%–3%、第 8–100 晚约 3%–8% 会在当夜沉没。比例在合约里，不由这个页面调节。第 100 晚结算后，还在船上的人平分奖池。</p>
           <p class="t-en">The day boundary is 21:00 Asia/Shanghai (13:00 UTC). After that time on day N, anyone can commit and then settle. The night counts as done when that settle finishes. After the pool opens and start() is called, currentDayIndex() is the night number from 1 to 100. Before the pool opens there is no counter. dayState(n).settled is true once night n is finished. Unprotected tickets: about 2–3% sink on nights 1–7, and about 3–8% on nights 8–100. The first week is softer so more players can reach that window. A sunk ticket is out; an afloat ticket is still aboard. After night 100, whoever is still aboard splits the pot.</p>
         </div>
       </details>
@@ -581,10 +581,22 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
         <div class="body"><p class="t-zh">卖到第 3000 张的那笔铸造里会自动开池。开池时 65% 的 BNB 加上 1,500,000 ARK 组成流动性，LP 销毁。如果那一笔没有打开，而且已售不少于 3000、还没开池、也没进入退款，任何人可以再调 <code>ArkSale.openPool()</code>。开池时间 <code>openedAt</code> 由合约写成当时的区块时间。洪水用 <code>FloodEngine.start()</code> 启动，不接收时间参数，只读 <code>sale.openedAt</code>，不能填一个假时间。</p><p class="t-en">The mint that sells ticket #3000 opens the pool automatically. At open, 65% of the BNB plus 1,500,000 ARK become the liquidity, and the LP is burned. If that open does not happen, anyone may call <code>ArkSale.openPool()</code> once at least 3,000 are sold, the pool is still closed, and refunds are not on. <code>openedAt</code> is the block timestamp written inside the contract. <code>FloodEngine.start()</code> takes no timestamp. It reads <code>sale.openedAt</code>, so nobody can pass a fake clock.</p></div>
       </details>
       <details class="faq-item" id="faq-payback">
-        <summary><span class="t-zh">经济舱大概多久回本？</span><span class="t-en">How long to pay back an Economy ticket?</span></summary>
+        <summary><span class="t-zh">买一张、抽到经济舱，大概多久回本？</span><span class="t-en">One Economy ticket: how long to pay it back?</span></summary>
         <div class="body">
-          <p class="t-zh">按开池种子 <b>150 万 ARK</b> 粗算：经济舱日产 100 ARK，若票还活着、按开盘价计，大约 <b>7 天</b>盖住 $2 票价（不是承诺）。开池时 65% 的 BNB 加上这 150 万 ARK 加池，LP 进 0xdead。首周洪水约 2%–3%，方便更多人撑过这一周；其后约 3%–8%。商务舱仍是 200 ARK/天，船长舱仍是 600，更快，也不是保证。</p>
-          <p class="t-en">With the <b>1.5 million ARK</b> pool seed: Economy earns 100 ARK/day. If the ticket stays afloat and you mark ARK at the open price, that is roughly <b>7 days</b> to cover a $2 ticket (not a promise). At open, 65% of the BNB plus that 1.5 million ARK go into the LP, and the LP goes to 0xdead. Flood is about 2–3% on nights 1–7, then about 3–8%. Business stays 200 ARK/day and Captain stays 600, which is faster, and still not a guarantee.</p>
+          <p class="t-zh">抽到经济舱之后，这一张票一天固定是 <b>100 ARK</b>，不是 0.70×100 = 70。0.70 / 0.25 / 0.05 只是揭晓前的抽中概率。150 ARK/天是还在航、舱位已揭晓的票按随机抽舱算出来的期望值，不是这一张经济舱的日产。</p>
+          <ul class="t-zh">
+            <li>开盘锚定价大约 $0.0028/ARK：150 万 ARK 种子，对着大约 $4225 流动性（卖到 #3000、按标价走完时，65% 的 BNB）。</li>
+            <li>100 ARK × $0.0028 ≈ 一天 $0.28。$2 的票按这个开盘价来标，大约 7 天盖住票价。</li>
+            <li>只有票一直在航、而且你按开盘价给 ARK 计价，这道算术才成立。这是设计锚，不是承诺，也不能当成大概率会回本。</li>
+            <li>价格下跌、洪水把票打沉、沙袋烧掉 ARK，都可以把回本抹掉，或把天数拉长。</li>
+          </ul>
+          <p class="t-en">After you draw Economy, that one ticket earns a fixed <b>100 ARK a day</b>. It is not 0.70×100 = 70. 0.70 / 0.25 / 0.05 are the probabilities before the cabin settles. 150 ARK/day is the expected value of a random cabin draw for an afloat, settled ticket. It is not what this Economy ticket earns.</p>
+          <ul class="t-en">
+            <li>The design open price is about $0.0028 per ARK: 1.5 million ARK seeded against about $4225 of liquidity (65% of the BNB if sales reach #3000 at list price).</li>
+            <li>100 ARK × $0.0028 is about $0.28 a day. Marked that way, a $2 ticket is about 7 days of yield.</li>
+            <li>That arithmetic holds only if the ticket stays afloat and you mark ARK at the open price. This is a design anchor. It is not a promise, and it is not an outcome you can count on.</li>
+            <li>A price drop, a flood that sinks the ticket, or ARK burned on sandbags can wipe the payback or stretch it out.</li>
+          </ul>
         </div>
       </details>
       <details class="faq-item">
