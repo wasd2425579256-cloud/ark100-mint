@@ -468,7 +468,14 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
         <h2><span class="t-zh">公开动作</span><span class="t-en">Public actions</span></h2>
         <span class="demo-pill"><span class="t-zh">复制给 Agent · 先不要发送</span><span class="t-en">Copy for your agent · do not send yet</span></span>
       </div>
-      <p class="muted"><span class="t-zh">开池不是单独一笔交易。抽舱结算的函数名来自 TicketNFT。夜洪和第 100 天的精确 ABI 随主网公布，下面是给 Agent 的任务说明，不是已部署的选择器。</span><span class="t-en">Opening the pool is not its own transaction. Cabin settlement names come from TicketNFT. The exact flood and day-100 ABI publishes with mainnet. These are agent briefs, not deployed selectors.</span></p>
+      <p class="muted"><span class="t-zh">铸造跨过 #3000 时会自动开池。如果那一笔没有打开，任何人可以再调 <code>ArkSale.openPool()</code>。池子打开之后、洪水还没开始时，任何人可以调 <code>FloodEngine.start()</code>，不传时间。下面的按钮按演示旗标显示，地址仍是 PENDING_MAINNET，只复制说明，不发交易。</span><span class="t-en">The mint that crosses #3000 opens the pool automatically. If that open does not happen, anyone may call <code>ArkSale.openPool()</code>. Once the pool is open and the flood has not started, anyone may call <code>FloodEngine.start()</code> with no timestamp. The buttons below follow demo flags. Addresses are still PENDING_MAINNET. They only copy a brief. They do not send a transaction.</span></p>
+      <div class="filters" id="insuranceDemo" role="group" aria-label="Demo flags" data-aria-zh="演示开池旗标" data-aria-en="Demo pool flags">
+        <button class="filter" type="button" data-insure="below" aria-pressed="true"><span class="t-zh">未满 3000</span><span class="t-en">Below 3000</span></button>
+        <button class="filter" type="button" data-insure="open" aria-pressed="false"><span class="t-zh">可补开池</span><span class="t-en">Can open</span></button>
+        <button class="filter" type="button" data-insure="start" aria-pressed="false"><span class="t-zh">可启动洪水</span><span class="t-en">Can start</span></button>
+        <button class="filter" type="button" data-insure="refund" aria-pressed="false"><span class="t-zh">退款中</span><span class="t-en">Refunding</span></button>
+      </div>
+      <p class="muted" id="insuranceStatus" role="status"></p>
       <div class="triggers">
         <article class="trigger">
           <h3><span class="t-zh">抽舱结算 · settleCabin</span><span class="t-en">Settle cabin · settleCabin</span></h3>
@@ -480,10 +487,15 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
           <p><span class="t-zh">21:00（北京时间）后结算当晚洪水。无沙袋的票大约 3%–8% 沉没，沙袋消耗一晚。</span><span class="t-en">Settle the flood after 21:00 Asia/Shanghai. About 3–8% of tickets without a sandbag sink. A sandbag is used up for that night.</span></p>
           <button class="cta" type="button" data-copy="land-night"><span class="t-zh">复制夜洪指令</span><span class="t-en">Copy flood brief</span></button>
         </article>
-        <article class="trigger">
-          <h3><span class="t-zh">开池 · #3000</span><span class="t-en">Open pool · #3000</span></h3>
-          <p><span class="t-zh">池子在卖出第 3000 张的那笔铸造里打开。没有单独的“开池”按钮。LP 去 0xdead。</span><span class="t-en">The pool opens inside the mint that sells ticket #3000. There is no separate open button. LP goes to 0xdead.</span></p>
-          <button class="cta" type="button" data-copy="open-pool"><span class="t-zh">复制开池说明</span><span class="t-en">Copy pool-open brief</span></button>
+        <article class="trigger" id="openPoolCard" hidden>
+          <h3><span class="t-zh">开池</span><span class="t-en">Open pool</span></h3>
+          <p><span class="t-zh">演示条件已满足：已售至少 3000，还没开池，也没在退款。任何人可以调用 <code>ArkSale.openPool()</code>。合约把 <code>openedAt</code> 写成当前区块时间。主网地址公布前不要发送。</span><span class="t-en">Demo flags match: at least 3,000 sold, not opened, and not refunding. Anyone may call <code>ArkSale.openPool()</code>. The contract sets <code>openedAt</code> to the current block time. Do not send before the mainnet address replaces PENDING_MAINNET.</span></p>
+          <button class="cta" id="openPoolBtn" type="button" data-copy="open-pool"><span class="t-zh">开池</span><span class="t-en">Open pool</span></button>
+        </article>
+        <article class="trigger" id="startFloodCard" hidden>
+          <h3><span class="t-zh">启动洪水</span><span class="t-en">Start flood</span></h3>
+          <p><span class="t-zh">演示条件已满足：池子已开，洪水还没 <code>start()</code>。调用 <code>FloodEngine.start()</code>，不要传时间。合约只读 <code>sale.openedAt</code>。</span><span class="t-en">Demo flags match: the pool is open and the flood has not started. Call <code>FloodEngine.start()</code> with no arguments. The contract reads <code>sale.openedAt</code> and will not take a fake timestamp.</span></p>
+          <button class="cta" id="startFloodBtn" type="button" data-copy="start-flood"><span class="t-zh">启动洪水</span><span class="t-en">Start flood</span></button>
         </article>
         <article class="trigger">
           <h3><span class="t-zh">第 100 晚领取</span><span class="t-en">Day-100 claim</span></h3>
@@ -561,7 +573,7 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
       </details>
       <details class="faq-item">
         <summary><span class="t-zh">什么时候开池？</span><span class="t-en">When does the pool open?</span></summary>
-        <div class="body"><p class="t-zh">卖到第 3000 张的那笔铸造里开池。LP 销毁。开池前 BNB 在 Sale 里。</p><p class="t-en">Inside the mint that sells ticket #3000. LP is burned. Until then the BNB stays in the sale contract.</p></div>
+        <div class="body"><p class="t-zh">卖到第 3000 张的那笔铸造里会自动开池。LP 销毁。如果那一笔没有打开，而且已售不少于 3000、还没开池、也没进入退款，任何人可以再调 <code>ArkSale.openPool()</code>。开池时间 <code>openedAt</code> 由合约写成当时的区块时间。洪水用 <code>FloodEngine.start()</code> 启动，不接收时间参数，只读 <code>sale.openedAt</code>，不能填一个假时间。</p><p class="t-en">The mint that sells ticket #3000 opens the pool automatically, and the LP is burned. If that open does not happen, anyone may call <code>ArkSale.openPool()</code> once at least 3,000 are sold, the pool is still closed, and refunds are not on. <code>openedAt</code> is the block timestamp written inside the contract. <code>FloodEngine.start()</code> takes no timestamp. It reads <code>sale.openedAt</code>, so nobody can pass a fake clock.</p></div>
       </details>
       <details class="faq-item">
         <summary><span class="t-zh">没到 #3000 怎么办？</span><span class="t-en">What if #3000 is never reached?</span></summary>
@@ -670,6 +682,7 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
         <li><span><span class="t-zh">铸造</span><span class="t-en">Sale</span></span><span class="ca pending-tag" id="ca-sale">PENDING_MAINNET</span></li>
         <li><span>TicketNFT</span><span class="ca pending-tag" id="ca-nft">PENDING_MAINNET</span></li>
         <li><span>ARK</span><span class="ca pending-tag" id="ca-ark">PENDING_MAINNET</span></li>
+        <li><span><span class="t-zh">洪水</span><span class="t-en">Flood</span></span><span class="ca pending-tag" id="ca-flood">PENDING_MAINNET</span></li>
         <li><span><span class="t-zh">奖池</span><span class="t-en">Pot</span></span><span class="ca pending-tag" id="ca-pot">PENDING_MAINNET</span></li>
         <li><span><span class="t-zh">注册表</span><span class="t-en">Registry</span></span><span class="ca" id="ca-reg">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span></li>
         <li><span><span class="t-zh">团队</span><span class="t-en">Team</span></span><span class="ca" id="ca-team">0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74</span></li>
@@ -688,6 +701,7 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
         nft: "PENDING_MAINNET",
         ark: "PENDING_MAINNET",
         pot: "PENDING_MAINNET",
+        flood: "PENDING_MAINNET",
         registry: "0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F",
         team: "0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74"
       };
@@ -696,6 +710,7 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
       var lang = document.documentElement.dataset.lang === "en" ? "en" : "zh";
       var lookupMode = "demo";
       var lookupAddr = "";
+      var insuranceMode = "below";
 
       function zh() { return lang !== "en"; }
 
@@ -807,8 +822,13 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
         }
         if (kind === "open-pool") {
           return head + (zh()
-            ? "开池不是单独一笔交易。\n它发生在卖出第 3000 张的那笔铸造里。\n然后：20% 团队，15% 奖池，65% + 350,000,000 ARK 加池，LP 进 0xdead。\n在那之前，BNB 留在 ArkSale（" + CONFIG.sale + "）。\n如果 7 天还没到 #3000，按票退还已付 BNB。"
-            : "The pool is not a separate transaction.\nIt opens inside the mint that sells ticket #3000.\nThen: 20% team, 15% pot, 65% + 350,000,000 ARK as liquidity, LP to 0xdead.\nBefore that, BNB stays in ArkSale (" + CONFIG.sale + ").\nIf 7 days pass without #3000, refund the BNB paid per ticket.");
+            ? "任务：ArkSale.openPool()，不要传参数。\n条件：refunding == false，opened == false，sold >= 3000。\n这是自动开池没发生时的公开补开。同一条 _openPool()，openedAt = block.timestamp，不能自填时间。\nArkSale: " + CONFIG.sale + "\nFloodEngine: " + CONFIG.flood + "\n地址仍是 PENDING_MAINNET 时不要发送。"
+            : "Task: ArkSale.openPool() with no arguments.\nRequires refunding == false, opened == false, and sold >= 3000.\nPublic insurance if the mint that crossed #3000 did not auto-open. Same _openPool() path. openedAt = block.timestamp. Do not pass a timestamp.\nArkSale: " + CONFIG.sale + "\nFloodEngine: " + CONFIG.flood + "\nDo not send while the addresses still read PENDING_MAINNET.");
+        }
+        if (kind === "start-flood") {
+          return head + (zh()
+            ? "任务：FloodEngine.start()，不要传参数。\n条件：sale.opened() 为真，sale.openedAt() 不为 0，而且洪水还没 start。\n合约只读 sale.openedAt，拒绝调用者自带时间戳。池子没开会 revert pool not open。\nFloodEngine: " + CONFIG.flood + "\nArkSale: " + CONFIG.sale + "\n地址仍是 PENDING_MAINNET 时不要发送。"
+            : "Task: FloodEngine.start() with no arguments.\nRequires sale.opened() and a non-zero sale.openedAt(), and the flood must not already be started.\nThe contract reads sale.openedAt. It does not accept a caller timestamp. If the pool is closed it reverts with pool not open.\nFloodEngine: " + CONFIG.flood + "\nArkSale: " + CONFIG.sale + "\nDo not send while the addresses still read PENDING_MAINNET.");
         }
         if (kind === "claim-pot") {
           return head + (zh()
@@ -909,6 +929,12 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
           document.getElementById("panel-bids").hidden = name !== "bids";
           return;
         }
+        var insure = event.target.closest("[data-insure]");
+        if (insure) {
+          insuranceMode = insure.getAttribute("data-insure");
+          renderInsurance();
+          return;
+        }
         var filter = event.target.closest("[data-filter]");
         if (filter) {
           var mode = filter.getAttribute("data-filter");
@@ -999,7 +1025,46 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
         renderTideCopy();
         renderQuote();
         renderLookup();
+        renderInsurance();
         syncChrome();
+      }
+
+      function insuranceFlags() {
+        if (insuranceMode === "open") return { sold: 3000, opened: false, refunding: false, started: false };
+        if (insuranceMode === "start") return { sold: 3000, opened: true, refunding: false, started: false };
+        if (insuranceMode === "refund") return { sold: 3000, opened: false, refunding: true, started: false };
+        return { sold: CONFIG.sold, opened: false, refunding: false, started: false };
+      }
+
+      function renderInsurance() {
+        var flags = insuranceFlags();
+        var canOpen = flags.sold >= OPEN_AT && !flags.opened && !flags.refunding;
+        var canStart = flags.opened && !flags.started;
+        document.getElementById("openPoolCard").hidden = !canOpen;
+        document.getElementById("startFloodCard").hidden = !canStart;
+        document.querySelectorAll("#insuranceDemo [data-insure]").forEach(function (btn) {
+          btn.setAttribute("aria-pressed", btn.getAttribute("data-insure") === insuranceMode ? "true" : "false");
+        });
+        var status = document.getElementById("insuranceStatus");
+        var floodEl = document.getElementById("ca-flood");
+        if (floodEl) floodEl.textContent = CONFIG.flood;
+        if (canOpen) {
+          status.textContent = zh()
+            ? "演示旗标：已售 " + format(flags.sold) + "，未开池，未退款。开池按钮可见。这不是链上已售。"
+            : "Demo flags: " + format(flags.sold) + " sold, not opened, not refunding. The open-pool button is visible. This is not on-chain sold count.";
+        } else if (canStart) {
+          status.textContent = zh()
+            ? "演示旗标：池子已开，洪水未启动。启动洪水按钮可见。start() 不接收时间。"
+            : "Demo flags: pool opened, flood not started. The start-flood button is visible. start() takes no timestamp.";
+        } else if (flags.refunding) {
+          status.textContent = zh()
+            ? "演示旗标：正在退款。openPool() 会失败，所以按钮藏起。"
+            : "Demo flags: refunding. openPool() would revert, so the button stays hidden.";
+        } else {
+          status.textContent = zh()
+            ? "演示旗标：已售 " + format(flags.sold) + "，未到 3000。开池和启动洪水都先藏起。"
+            : "Demo flags: " + format(flags.sold) + " sold, still under 3,000. Open pool and start flood stay hidden.";
+        }
       }
 
       document.getElementById("lookup").addEventListener("submit", function (event) {
