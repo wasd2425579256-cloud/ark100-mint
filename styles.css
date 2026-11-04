@@ -626,6 +626,15 @@ h1 { margin: 0; font-size: clamp(1.4rem, 4vw, 1.9rem); line-height: 1.15; }
 }
 .cta:hover:not(:disabled) { filter: brightness(1.03); }
 .ghost { width: auto; min-height: 36px; padding: 6px 10px; font-size: 0.75rem; color: var(--wood-deep); border-color: var(--line); }
+.ghost.refund {
+  background: linear-gradient(180deg, #ffe7a8, #f0c14d);
+  border-color: #e0b04a;
+  color: #6a4314;
+  white-space: nowrap;
+}
+.row-acts { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+.row-acts .muted { font-size: 0.72rem; white-space: nowrap; }
+.refund-hint { margin-top: 8px; background: #fff6e4; border: 1px solid #f0d7a2; border-radius: 12px; padding: 8px 10px; }
 .copy-status { min-height: 1.1em; margin: 6px 0 0; font-size: 0.8rem; font-weight: 800; color: var(--ok); }
 .cmd {
   margin: 8px 0 0;

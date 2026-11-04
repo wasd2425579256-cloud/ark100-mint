@@ -140,7 +140,7 @@
         </div>
         <div class="refund-strip">
           <strong><span class="t-zh">7 天</span><span class="t-en">7 days</span></strong>
-          <p><span class="t-zh">开售后 7 天仍未到 #3000，按票全额退还已付 BNB。开池前款项 100% 留在发售合约。</span><span class="t-en">If #3000 is still unreached 7 days after the sale starts, each ticket refunds the BNB that was paid. Until the pool opens, 100% stays in the sale contract.</span></p>
+          <p><span class="t-zh">开售后满 7 天仍未开池，任何人可先开启一次退款。然后每位买家用当时付款的钱包，按船票自己领回已付的 BNB。开池前这些 BNB 都留在发售合约里。</span><span class="t-en">If the pool is still closed 7 days after the sale starts, anyone may turn refunds on once. Each buyer then claims their own ticket from the wallet that paid, and gets that BNB back. Until the pool opens, that BNB stays in the sale contract.</span></p>
         </div>
       </section>
 
@@ -217,7 +217,7 @@
         <article class="trust-item">
           <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="16" fill="none" stroke="#c48a4a" stroke-width="2.4"/><path d="M24 14 v10 l7 4" fill="none" stroke="#e8b23a" stroke-width="2.4" stroke-linecap="round"/><path d="M16 34 h16" stroke="#2ec4c6" stroke-width="2.4" stroke-linecap="round"/></svg>
           <h3><span class="t-zh">未开池全额退</span><span class="t-en">Full refund if no pool</span></h3>
-          <p><span class="t-zh">7 天没到 #3000，按票退还 BNB。</span><span class="t-en">If #3000 is missed within 7 days, each ticket returns its BNB.</span></p>
+          <p><span class="t-zh">7 天没到 #3000，先开启一次退款，再由当时付款的钱包按票领回 BNB。</span><span class="t-en">If #3000 is missed within 7 days, refunds turn on once, then the wallet that paid claims each ticket’s BNB.</span></p>
         </article>
         <article class="trust-item">
           <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 30 Q24 16 40 30" fill="none" stroke="#2ec4c6" stroke-width="2.4"/><path d="M14 34 Q24 26 34 34" fill="none" stroke="#178fb8" stroke-width="2.4"/><path d="M18 18 l12 12 M30 18 L18 30" stroke="#c48a4a" stroke-width="2.4" stroke-linecap="round"/></svg>
@@ -369,6 +369,7 @@
         <button class="ghost" id="useWalletBtn" type="button"><span class="t-zh">用已连接钱包</span><span class="t-en">Use connected wallet</span></button>
       </form>
       <p class="copy-status" id="lookupNote" role="status"><span class="t-zh">还没有查询。表是空的，直到读到链上船票。</span><span class="t-en">No lookup yet. The table stays empty until tickets are read on-chain.</span></p>
+      <p class="muted refund-hint" id="refundHint" hidden><span class="t-zh">退款已开启。用当时付款的钱包查看船票，再按票点「领退款」。票转给别人之后，仍由原付款钱包领取。已经领过的票不再显示按钮。</span><span class="t-en">Refunds are on. Look up tickets with the wallet that paid, then press Claim refund on each one. A transferred ticket is still claimed by the original paying wallet. A ticket already claimed does not show the button.</span></p>
       <div class="dash">
         <div>
           <div class="stats" style="grid-template-columns:1fr 1fr">
@@ -491,7 +492,7 @@
         </article>
         <article class="trigger" id="refundCard" hidden>
           <h3><span class="t-zh">开启退款</span><span class="t-en">Enable refunds</span></h3>
-          <p><span class="t-zh">开售后 7 天仍未开池时，任何人可以开启退款。然后由付款人按船票领回已付的 BNB。</span><span class="t-en">If the pool is still closed 7 days after the sale starts, anyone may call <code>enableRefunds()</code>. The payer then calls <code>refund(tokenId)</code>.</span></p>
+          <p><span class="t-zh">开售后满 7 天，池子仍没打开时，任何人可以先开启退款，只需一次。开启之后，请到「我的方舟」，用当时付款的钱包按船票自己领取。领回的是买这张票付的 BNB。</span><span class="t-en">Seven days after the sale starts, if the pool is still closed, anyone can turn refunds on once. Then open My Ark and claim each ticket yourself, from the wallet that paid. You get back the BNB paid for that ticket.</span></p>
           <button class="cta" id="enableRefundBtn" type="button"><span class="t-zh">开启退款</span><span class="t-en">enableRefunds</span></button>
         </article>
         <article class="trigger">
@@ -551,8 +552,8 @@
       <details class="rule">
         <summary><span class="r-badge">R5</span> <span class="t-zh">开池、税与退款</span><span class="t-en">Pool, tax, refund</span></summary>
         <div class="body">
-          <p class="t-zh">售到 #3000 才开池。开池前铸造款 100% 留在发售合约。代币名 ARK100，符号 ARK。硬顶 20 亿（2,000,000,000），只由船票产出和开池种子铸造，没有预挖。开池时 20% 给写死的团队钱包，15% 进奖池，65% 的 BNB 与 1,500,000 ARK 在 PancakeSwap 的 ARK/WBNB 池加池，流动性代币转入 0xdead。交易税写死 2%：销毁 0.5%，奖池 0.5%，团队 1%，不可调。合约没有管理员，不可升级。开售后 7 天仍未到 #3000，按票全额退还 BNB。</p>
-          <p class="t-en">The pool opens at ticket #3000. Until then mint proceeds stay in the sale contract. Token name ARK100, symbol ARK. Hard cap 2,000,000,000, minted only by ticket yield and the pool seed, no premine. At open: 20% to the fixed team wallet, 15% to the pot, 65% of the BNB plus 1,500,000 ARK into the PancakeSwap ARK/WBNB pool, LP to 0xdead. Trade tax is a fixed 2%: 0.5% burn, 0.5% pot, 1% team. No owner and not upgradeable. If #3000 is still unreached 7 days after the sale starts, each ticket refunds its BNB.</p>
+          <p class="t-zh">售到 #3000 才开池。开池前铸造款 100% 留在发售合约。代币名 ARK100，符号 ARK。硬顶 20 亿（2,000,000,000），只由船票产出和开池种子铸造，没有预挖。开池时 20% 给写死的团队钱包，15% 进奖池，65% 的 BNB 与 1,500,000 ARK 在 PancakeSwap 的 ARK/WBNB 池加池，流动性代币转入 0xdead。交易税写死 2%：销毁 0.5%，奖池 0.5%，团队 1%，不可调。合约没有管理员，不可升级。开售后满 7 天仍未到 #3000，任何人可先开启一次退款，再由每位买家用付款钱包按票领回 BNB。</p>
+          <p class="t-en">The pool opens at ticket #3000. Until then mint proceeds stay in the sale contract. Token name ARK100, symbol ARK. Hard cap 2,000,000,000, minted only by ticket yield and the pool seed, no premine. At open: 20% to the fixed team wallet, 15% to the pot, 65% of the BNB plus 1,500,000 ARK into the PancakeSwap ARK/WBNB pool, LP to 0xdead. Trade tax is a fixed 2%: 0.5% burn, 0.5% pot, 1% team. No owner and not upgradeable. If #3000 is still unreached 7 days after the sale starts, anyone may turn refunds on once. Each buyer then claims their own ticket from the wallet that paid.</p>
         </div>
       </details>
     </section>
@@ -589,7 +590,22 @@
       </details>
       <details class="faq-item">
         <summary><span class="t-zh">没到 #3000 怎么办？</span><span class="t-en">What if #3000 is never reached?</span></summary>
-        <div class="body"><p class="t-zh">开售后 7 天仍没到线，按票全额退还已付 BNB。</p><p class="t-en">If the line is still unreached 7 days after the sale starts, each ticket refunds the BNB that was paid.</p></div>
+        <div class="body">
+          <p class="t-zh">开售后满 7 天还没卖到 #3000，而且池子没打开时，可以退款。</p>
+          <ul class="t-zh">
+            <li>任何人先开启一次退款。开启之后就不能再铸造，也不能开池。</li>
+            <li>然后每位买家自己领。在「我的方舟」里用当时付款的钱包查看，每张票点「领退款」。</li>
+            <li>领回的是买这张票时付的 BNB。票如果转给了别人，仍然只有原付款钱包能领。</li>
+            <li>已经领过的票不能再领。</li>
+          </ul>
+          <p class="t-en">If 7 days have passed since the sale started, sales are still short of #3000, and the pool never opened, refunds can be turned on.</p>
+          <ul class="t-en">
+            <li>Anyone turns refunds on once. After that, minting stops and the pool cannot be opened.</li>
+            <li>Each buyer then claims their own tickets. In My Ark, look them up with the wallet that paid and press Claim refund on each ticket.</li>
+            <li>You get back the BNB paid for that ticket. If the ticket was transferred, only the original paying wallet can claim.</li>
+            <li>A ticket that was already claimed cannot be claimed again.</li>
+          </ul>
+        </div>
       </details>
       <details class="faq-item">
         <summary><span class="t-zh">舱位什么时候决定？概率是多少？</span><span class="t-en">When is the cabin drawn, and what are the odds?</span></summary>
