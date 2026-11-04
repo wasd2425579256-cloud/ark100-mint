@@ -163,6 +163,7 @@
               <li><i class="swatch pot"></i><span class="t-zh">15% 奖池</span><span class="t-en">15% pot</span></li>
               <li><i class="swatch lp"></i><span class="t-zh">65% BNB + 1,500,000 ARK 加池 · LP → dead</span><span class="t-en">65% BNB + 1,500,000 ARK into LP · LP → dead</span></li>
             </ul>
+            <p class="muted" id="tokenLine"><span class="t-zh">代币名 <b>ARK100</b>，符号 <b>ARK</b>。硬顶 <b>20 亿</b>（2,000,000,000），只由船票产出和开池种子铸造，没有预挖。官方池是 PancakeSwap 的 <b>ARK/WBNB</b>：65% 开池 BNB + 150 万 ARK，LP 进 0xdead。</span><span class="t-en">Token name <b>ARK100</b>, symbol <b>ARK</b>. Hard cap <b>2,000,000,000</b>, minted only by ticket yield and the pool seed—no premine. Official pool is PancakeSwap <b>ARK/WBNB</b>: 65% of open BNB plus 1.5 million ARK, LP to 0xdead.</span></p>
           </div>
           <div class="slip">
             <div class="slip-head">
@@ -562,8 +563,8 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
       <details class="rule">
         <summary><span class="r-badge">R5</span> <span class="t-zh">开池、税与退款</span><span class="t-en">Pool, tax, refund</span></summary>
         <div class="body">
-          <p class="t-zh">售到 #3000 才开池。开池前铸造款 100% 留在 Sale。开池时 20% 给写死的团队钱包，15% 进奖池，65% 的 BNB 与 1,500,000 ARK 一起加池，LP 转入 0xdead。交易税写死 2%：销毁 0.5%，奖池 0.5%，团队 1%，不可调。合约无 owner，不可升级。开售后 7 天仍未到 #3000，按票全额退还 BNB。团队地址 <span class="ca">0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74</span>。</p>
-          <p class="t-en">The pool opens at ticket #3000. Until then mint proceeds stay in the sale contract. At open: 20% to the fixed team wallet, 15% to the pot, 65% of the BNB plus 1,500,000 ARK as liquidity, LP to 0xdead. Trade tax is a fixed 2%: 0.5% burn, 0.5% pot, 1% team. No owner and not upgradeable. If #3000 is still unreached 7 days after the sale starts, each ticket refunds its BNB. Team address <span class="ca">0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74</span>.</p>
+          <p class="t-zh">售到 #3000 才开池。开池前铸造款 100% 留在 Sale。代币名 ARK100，符号 ARK。硬顶 20 亿（2,000,000,000），只由船票产出和开池种子铸造，没有预挖。开池时 20% 给写死的团队钱包，15% 进奖池，65% 的 BNB 与 1,500,000 ARK 在 PancakeSwap 的 ARK/WBNB 池加池，LP 转入 0xdead。交易税写死 2%：销毁 0.5%，奖池 0.5%，团队 1%，不可调。合约无 owner，不可升级。开售后 7 天仍未到 #3000，按票全额退还 BNB。团队地址 <span class="ca">0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74</span>。</p>
+          <p class="t-en">The pool opens at ticket #3000. Until then mint proceeds stay in the sale contract. Token name ARK100, symbol ARK. Hard cap 2,000,000,000, minted only by ticket yield and the pool seed, no premine. At open: 20% to the fixed team wallet, 15% to the pot, 65% of the BNB plus 1,500,000 ARK into the PancakeSwap ARK/WBNB pool, LP to 0xdead. Trade tax is a fixed 2%: 0.5% burn, 0.5% pot, 1% team. No owner and not upgradeable. If #3000 is still unreached 7 days after the sale starts, each ticket refunds its BNB. Team address <span class="ca">0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74</span>.</p>
         </div>
       </details>
     </section>
@@ -641,6 +642,13 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
       <details class="faq-item">
         <summary><span class="t-zh">税和权限能改吗？团队有预留吗？</span><span class="t-en">Can tax or control change? Does the team have a reserve?</span></summary>
         <div class="body"><p class="t-zh">税 2% 写死，合约无 owner、不可升级。没有预挖和免费票。团队地址在部署时固定，购买规则与玩家相同，每址最多 10 张。团队的 20% 要等开池才支付。</p><p class="t-en">The 2% tax is fixed. There is no owner and the contract is not upgradeable. No premine and no free tickets. The team address is fixed at deploy and buys like everyone else, max 10 per address. Its 20% is paid only when the pool opens.</p></div>
+      </details>
+      <details class="faq-item" id="faq-ark-token">
+        <summary><span class="t-zh">ARK 总量多少？跟什么交易？</span><span class="t-en">What is ARK supply, and which pair?</span></summary>
+        <div class="body">
+          <p class="t-zh">代币名 <b>ARK100</b>，符号 <b>ARK</b>。流通硬顶 <b>20 亿</b>（2,000,000,000），只能靠船票产出与开池种子铸造，没有预挖。开池交易对是 PancakeSwap 上的 <b>ARK/WBNB</b>：65% 的开池 BNB + 150 万 ARK 加池，LP 进 0xdead。</p>
+          <p class="t-en">Token name <b>ARK100</b>, symbol <b>ARK</b>. Hard cap <b>2,000,000,000</b>. Minted only by ticket yield and the pool-seed path—no premine. The official pair is PancakeSwap <b>ARK/WBNB</b>: 65% of open BNB plus 1.5M ARK into LP, LP to 0xdead.</p>
+        </div>
       </details>
       <details class="faq-item">
         <summary><span class="t-zh">现在能连钱包、扫货或者领奖吗？</span><span class="t-en">Can I connect a wallet, buy a listing, or claim now?</span></summary>
