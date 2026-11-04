@@ -702,6 +702,7 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
         <li><span>TicketNFT</span><span class="ca pending-tag" id="ca-nft">PENDING_MAINNET</span></li>
         <li><span>ARK</span><span class="ca pending-tag" id="ca-ark">PENDING_MAINNET</span></li>
         <li><span><span class="t-zh">洪水</span><span class="t-en">Flood</span></span><span class="ca pending-tag" id="ca-flood">PENDING_MAINNET</span></li>
+        <li><span><span class="t-zh">沙袋店</span><span class="t-en">SandbagShop</span></span><span class="ca pending-tag" id="ca-sandbag">PENDING_MAINNET</span></li>
         <li><span><span class="t-zh">奖池</span><span class="t-en">Pot</span></span><span class="ca pending-tag" id="ca-pot">PENDING_MAINNET</span></li>
         <li><span><span class="t-zh">注册表</span><span class="t-en">Registry</span></span><span class="ca" id="ca-reg">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span></li>
         <li><span><span class="t-zh">团队</span><span class="t-en">Team</span></span><span class="ca" id="ca-team">0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74</span></li>
@@ -721,6 +722,7 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
         ark: "PENDING_MAINNET",
         pot: "PENDING_MAINNET",
         flood: "PENDING_MAINNET",
+        sandbag: "PENDING_MAINNET",
         registry: "0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F",
         team: "0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74"
       };
@@ -821,8 +823,8 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
         }
         if (kind === "sandbag") {
           return head + (zh()
-            ? "任务：给船票 #" + extra + " 买一张沙袋。\n开池后用船票每天产出的 ARK，在沙袋店烧掉 ARK 购买。\n存活还多时大约 50 ARK/袋，幸存者越少越贵。\n买到后 apply 护自己的票，或 gift 送给别人的票。\n一袋只保一晚。没沙袋的票：第 1–7 晚约 2%–3% 可能沉，第 8–100 晚约 3%–8%，沉了日产变 0。\n没有免费无限沙袋。T-1 若送首晚沙袋，是运营 buy+gift，不是合约特权。\nARK: " + CONFIG.ark + "\n精确函数名随主网 ABI 公布。现在不要按假选择器发交易。"
-            : "Task: buy one sandbag for ticket #" + extra + ".\nAfter the pool opens, burn ARK the ticket earns each day at the sandbag shop.\nAbout 50 ARK per bag while many tickets survive; the price rises as fewer remain.\nThen apply it to your own ticket, or gift it to someone else's.\nOne bag covers one night only. With no sandbag, about 2-3% sink on nights 1-7 and about 3-8% on nights 8-100, and then a sunk ticket earns 0.\nThere is no free unlimited supply. A T-1 first-night bag, if any, is an operational buy+gift, not a contract privilege.\nARK: " + CONFIG.ark + "\nExact function name publishes with the mainnet ABI. Do not send a made-up selector.");
+            ? "任务：给船票 #" + extra + " 买一张沙袋。\n开池后用船票每天产出的 ARK，在沙袋店烧掉 ARK 购买。\n存活还多时大约 50 ARK/袋，幸存者越少越贵。\n买到后 apply 护自己的票，或 gift 送给别人的票。\n一袋只保一晚。没沙袋的票：第 1–7 晚约 2%–3% 可能沉，第 8–100 晚约 3%–8%，沉了日产变 0。\n没有免费无限沙袋。T-1 若送首晚沙袋，是运营 buy+gift，不是合约特权。\nSandbagShop: " + CONFIG.sandbag + "\nARK: " + CONFIG.ark + "\n地址仍是 PENDING_MAINNET 时不要发送。\n精确函数名随主网 ABI 公布。现在不要按假选择器发交易。"
+            : "Task: buy one sandbag for ticket #" + extra + ".\nAfter the pool opens, burn ARK the ticket earns each day at the sandbag shop.\nAbout 50 ARK per bag while many tickets survive; the price rises as fewer remain.\nThen apply it to your own ticket, or gift it to someone else's.\nOne bag covers one night only. With no sandbag, about 2-3% sink on nights 1-7 and about 3-8% on nights 8-100, and then a sunk ticket earns 0.\nThere is no free unlimited supply. A T-1 first-night bag, if any, is an operational buy+gift, not a contract privilege.\nSandbagShop: " + CONFIG.sandbag + "\nARK: " + CONFIG.ark + "\nDo not send while the address still reads PENDING_MAINNET.\nExact function name publishes with the mainnet ABI. Do not send a made-up selector.");
         }
         if (kind === "listing") {
           return head + (zh()
@@ -1067,6 +1069,8 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
         var status = document.getElementById("insuranceStatus");
         var floodEl = document.getElementById("ca-flood");
         if (floodEl) floodEl.textContent = CONFIG.flood;
+        var sandbagEl = document.getElementById("ca-sandbag");
+        if (sandbagEl) sandbagEl.textContent = CONFIG.sandbag;
         if (canOpen) {
           status.textContent = zh()
             ? "演示旗标：已售 " + format(flags.sold) + "，未开池，未退款。开池按钮可见。这不是链上已售。"
