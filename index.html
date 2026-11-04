@@ -256,11 +256,12 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
       </div>
       <p class="muted"><span class="t-zh">每天产 ARK，夜里涨水，沙袋保一晚，第 100 晚还在船上的人分奖池。沉掉的票日产变成 0。</span><span class="t-en">ARK each day, a flood each night, a sandbag for one night, and the day-100 pot for whoever is still aboard. Sunk tickets earn 0.</span></p>
       <div class="nightbar">
-        <div><b><span class="t-zh">第 0 / 100 晚</span><span class="t-en">Night 0 / 100</span></b><span><span class="t-zh">主网开船后才计夜</span><span class="t-en">Nights start after mainnet launch</span></span></div>
-        <div><b>21:00</b><span><span class="t-zh">北京时间之后可结算</span><span class="t-en">Settle after 21:00 Asia/Shanghai</span></span></div>
+        <div><b><span class="t-zh">第 0 / 100 晚</span><span class="t-en">Night 0 / 100</span></b><span><span class="t-zh">开池前没有晚数 · 演示</span><span class="t-en">No counter before the pool opens · demo</span></span></div>
+        <div><b>21:00</b><span><span class="t-zh">北京时间 · 13:00 UTC</span><span class="t-en">Asia/Shanghai · 13:00 UTC</span></span></div>
         <div><b>3–8%</b><span><span class="t-zh">没有沙袋的票可能沉没</span><span class="t-en">Unprotected tickets can sink</span></span></div>
         <div><b>0 ARK</b><span><span class="t-zh">沉船不再产出</span><span class="t-en">Sunk tickets stop earning</span></span></div>
       </div>
+      <p class="muted" style="margin-top:10px"><span class="t-zh">一天的分界是北京时间 21:00。过了第 N 天的这个点，任何人都可以先 commit，再 settle。当天的 settle 做完，这一晚才算过完。开池并调用 start() 之后，currentDayIndex() 才是第 1 到第 100 晚；开池前没有这个计数。dayState(n).settled 表示第 n 晚是否已结算。沉了的票离船，还在航的票仍在船上。主网后「我的方舟」会显示当前晚数，这页上的第 0 晚只是演示。</span><span class="t-en">The day changes at 21:00 Asia/Shanghai (13:00 UTC). After that time on day N, anyone can commit and then settle the flood. The night counts as done only when that settle finishes. After the pool opens and start() is called, currentDayIndex() is the current night, from 1 to 100. Before the pool opens there is no night counter. dayState(n).settled shows whether night n is finished. A sunk ticket is out; an afloat ticket is still aboard. After mainnet, My Ark will show the current night. Night 0 on this page is demo only.</span></p>
       <div class="steps">
         <article class="step">
           <div class="step-art"><svg viewBox="0 0 200 104" aria-hidden="true"><rect width="200" height="104" fill="#d9f2ff"/><circle cx="150" cy="36" r="16" fill="#ffd56a"/><path d="M16 78 L70 58 L110 78 V92 H16 Z" fill="#c48a4a"/><rect x="78" y="62" width="22" height="16" fill="#8a5528"/><circle cx="40" cy="48" r="8" fill="#ffe08a" stroke="#c48a4a"/><text x="40" y="51" text-anchor="middle" font-size="8" fill="#8a5528">ARK</text><path d="M0 92 Q25 80 50 92 T100 92 T150 92 T200 92 V104 H0 Z" fill="#2ec4c6"/></svg></div>
@@ -268,7 +269,7 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
         </article>
         <article class="step">
           <div class="step-art"><svg viewBox="0 0 200 104" aria-hidden="true"><rect width="200" height="104" fill="#e7f6ff"/><rect x="70" y="40" width="60" height="28" rx="4" fill="#fff8e8" stroke="#c48a4a"/><path d="M0 70 Q30 48 60 70 T120 70 T180 70 T240 70 V104 H0 Z" fill="#178fb8"/><path d="M0 78 Q30 60 60 78 T120 78 T180 78 T240 78 V104 H0 Z" fill="#2ec4c6"/></svg></div>
-          <div class="step-body"><div class="step-no"><span class="t-zh">02 · 夜洪</span><span class="t-en">02 · Flood</span></div><h3><span class="t-zh">约 3%–8% 下沉</span><span class="t-en">About 3–8% sink</span></h3><p><span class="t-zh">每晚 21:00（北京时间）后可结算。没有沙袋的票里，大约这个比例会沉。</span><span class="t-en">The night can be settled after 21:00 Asia/Shanghai. About that share of tickets without a sandbag sink.</span></p></div>
+          <div class="step-body"><div class="step-no"><span class="t-zh">02 · 夜洪</span><span class="t-en">02 · Flood</span></div><h3><span class="t-zh">约 3%–8% 下沉</span><span class="t-en">About 3–8% sink</span></h3><p><span class="t-zh">北京时间 21:00 之后，任何人可以先 commit 再 settle。没有沙袋的票里，大约这个比例会沉。settle 完成，这一晚才算过完。</span><span class="t-en">After 21:00 Asia/Shanghai, anyone can commit and then settle. About that share of tickets without a sandbag sink. The night counts only when settle finishes.</span></p></div>
         </article>
         <article class="step">
           <div class="step-art"><svg viewBox="0 0 200 104" aria-hidden="true"><rect width="200" height="104" fill="#fff6e4"/><ellipse cx="78" cy="70" rx="28" ry="14" fill="#e2c08a"/><ellipse cx="110" cy="62" rx="28" ry="14" fill="#efd0a0"/><ellipse cx="96" cy="50" rx="26" ry="13" fill="#f3d7a8" stroke="#c48a4a"/><path d="M150 78 L176 58 H188 L168 82 Z" fill="#c48a4a"/></svg></div>
@@ -358,7 +359,7 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
         <h2><span class="t-zh">我的方舟</span><span class="t-en">My Ark</span></h2>
         <span class="demo-pill"><span class="t-zh">演示舱单</span><span class="t-en">Demo tickets</span> · DEMO</span>
       </div>
-      <p class="muted"><span class="t-zh">下面 5 张票是写死的样例，用来看舱位、沙袋和沉船长什么样。主网部署前，任何地址都读不到链上余额。</span><span class="t-en">These five tickets are hard-coded samples so you can see a cabin, a sandbag, and a wreck. No address can be read on-chain before mainnet.</span></p>
+      <p class="muted"><span class="t-zh">下面 5 张票是写死的样例，用来看舱位、沙袋和沉船长什么样。主网部署前，任何地址都读不到链上余额，这里也不会显示 currentDayIndex()。开池并 start() 之后，我的方舟才会显示当前是第几晚。</span><span class="t-en">These five tickets are hard-coded samples so you can see a cabin, a sandbag, and a wreck. Before mainnet, no address can be read on-chain, and this panel does not show currentDayIndex(). After the pool opens and start() is called, My Ark will show which night it is.</span></p>
       <form class="lookup" id="lookup">
         <label class="sr-only" for="walletInput" id="walletLabel"><span class="t-zh">钱包地址</span><span class="t-en">Wallet address</span></label>
         <input id="walletInput" name="wallet" placeholder="粘贴地址 · 主网后才读取" data-ph-zh="粘贴地址 · 主网后才读取" data-ph-en="Paste an address · readable after mainnet" autocomplete="off" />
@@ -531,8 +532,8 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
       <details class="rule">
         <summary><span class="r-badge">R3</span> <span class="t-zh">百夜洪水</span><span class="t-en">The hundred nights</span></summary>
         <div class="body">
-          <p class="t-zh">每晚 21:00（北京时间）之后可以结算洪水。没有沙袋的船票里，大约 3%–8% 会在当夜沉没。比例在合约里，不由这个页面调节。第 100 晚结算后，还在船上的人平分奖池。</p>
-          <p class="t-en">After 21:00 Asia/Shanghai the night can be settled. About 3–8% of tickets without a sandbag sink that night. The rate is in the contract, not set by this page. After night 100, whoever is still aboard splits the pot.</p>
+          <p class="t-zh">一天的分界是北京时间 21:00（UTC 13:00）。过了第 N 天的这个点，任何人可以先 commit 再 settle。当天 settle 完成，这一晚才算过完。开池并 start() 之后，currentDayIndex() 是第 1 到第 100 晚；开池前没有晚数。dayState(n).settled 为真，表示第 n 晚已经结算。没有沙袋的船票里，大约 3%–8% 会在当夜沉没。沉了的票离船，还在航的票仍在船上。第 100 晚结算后，还在船上的人平分奖池。</p>
+          <p class="t-en">The day boundary is 21:00 Asia/Shanghai (13:00 UTC). After that time on day N, anyone can commit and then settle. The night counts as done when that settle finishes. After the pool opens and start() is called, currentDayIndex() is the night number from 1 to 100. Before the pool opens there is no counter. dayState(n).settled is true once night n is finished. About 3–8% of tickets without a sandbag sink that night. A sunk ticket is out; an afloat ticket is still aboard. After night 100, whoever is still aboard splits the pot.</p>
         </div>
       </details>
       <details class="rule">
@@ -586,6 +587,27 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
             <li>After you buy one, apply it to your own ticket, or gift it to someone else’s ticket.</li>
             <li>One bag protects against one night of flood only. A ticket with no sandbag has about a 3–8% chance to sink that night. If it sinks, its daily yield becomes 0.</li>
             <li>There is no free, unlimited supply. If a T-1 campaign gives the first night’s sandbag, that is the operators doing a buy and then a gift. It is not a privilege written into the contract.</li>
+          </ul>
+        </div>
+      </details>
+      <details class="faq-item" id="faq-night">
+        <summary><span class="t-zh">怎么算过了一晚？我现在第几晚？</span><span class="t-en">How does a night count? Which night am I on?</span></summary>
+        <div class="body">
+          <p class="t-zh">晚数不是看你自己的手表走到 21:00 就算过完。要等这一天的洪水结算做完。</p>
+          <ul class="t-zh">
+            <li>一天的分界是北京时间 21:00，也就是 UTC 13:00。过了第 N 天的这个点，任何人都可以先 commit，再 settle 当晚的洪水。</li>
+            <li>这一晚要等当天的 settle 完成，才算过完。没结算之前，还停在这一晚。</li>
+            <li>开池并调用 start() 之后，currentDayIndex() 才是当前晚数，从 1 到 100。开池之前没有这个计数，页面上的「第 0 晚」只是演示。</li>
+            <li>dayState(n).settled 表示第 n 晚是否已经结算。票如果沉了，就是离船；还在航的票仍在船上。</li>
+            <li>主网上线后，「我的方舟」会显示当前晚数。主网之前这里读不到链上晚数。</li>
+          </ul>
+          <p class="t-en">A night is not over just because your clock passes 21:00. It counts as done when that day’s flood settle finishes.</p>
+          <ul class="t-en">
+            <li>The day boundary is 21:00 Asia/Shanghai, which is 13:00 UTC. After that time on day N, anyone can commit and then settle that night’s flood.</li>
+            <li>The night counts as done only when that day’s settle finishes. Until then, you are still on that night.</li>
+            <li>After the pool opens and start() is called, currentDayIndex() is the current night, from 1 to 100. Before the pool opens there is no night counter. “Night 0” on this page is demo only.</li>
+            <li>dayState(n).settled shows whether night n is finished. A sunk ticket is out. An afloat ticket is still aboard.</li>
+            <li>After mainnet, My Ark will show the current night. Before mainnet, this site cannot read the on-chain night.</li>
           </ul>
         </div>
       </details>
@@ -780,8 +802,8 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
         }
         if (kind === "land-night") {
           return head + (zh()
-            ? "任务：在北京时间 21:00 之后结算当晚洪水。\n没有沙袋的票大约 3%–8% 会沉。一张沙袋覆盖一夜。\n沉船每天产出 0 ARK。\n精确函数名随主网 ABI 公布。现在还没有可以选择器粘贴。"
-            : "Task: settle tonight's flood after 21:00 Asia/Shanghai.\nAbout 3–8% of tickets without a sandbag sink. A sandbag covers one night.\nSunk tickets produce 0 ARK/day.\nExact function name publishes with the mainnet ABI. There is no selector to paste yet.");
+            ? "任务：在北京时间 21:00（UTC 13:00）之后，先 commit 再 settle 当晚洪水。\n当天 settle 完成，这一晚才算过完。currentDayIndex() 在开池并 start() 之后才是第 1–100 晚。\n没有沙袋的票大约 3%–8% 会沉。一张沙袋覆盖一夜。\n沉船离船，日产变为 0。还在航的票仍在船上。\n精确函数名随主网 ABI 公布。现在不要按假选择器发交易。"
+            : "Task: after 21:00 Asia/Shanghai (13:00 UTC), commit and then settle tonight's flood.\nThe night counts as done only when that settle finishes. currentDayIndex() is night 1-100 only after the pool opens and start() is called.\nAbout 3-8% of tickets without a sandbag sink. A sandbag covers one night.\nA sunk ticket is out and earns 0. An afloat ticket is still aboard.\nExact function name publishes with the mainnet ABI. Do not send a made-up selector.");
         }
         if (kind === "open-pool") {
           return head + (zh()
