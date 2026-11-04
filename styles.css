@@ -786,6 +786,8 @@ tr.sunk .oddbar span { width: 0; }
 }
 .rule .body, .faq-item .body { padding: 0 2px 12px; font-size: 0.88rem; line-height: 1.5; }
 .rule .body p, .faq-item .body p { margin: 0 0 8px; }
+.faq-item .body ul { margin: 0 0 8px; padding-left: 1.15rem; }
+.faq-item .body li { margin: 0 0 6px; }
 
 .risk {
   margin-top: 14px;

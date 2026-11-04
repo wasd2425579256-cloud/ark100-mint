@@ -272,7 +272,7 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
         </article>
         <article class="step">
           <div class="step-art"><svg viewBox="0 0 200 104" aria-hidden="true"><rect width="200" height="104" fill="#fff6e4"/><ellipse cx="78" cy="70" rx="28" ry="14" fill="#e2c08a"/><ellipse cx="110" cy="62" rx="28" ry="14" fill="#efd0a0"/><ellipse cx="96" cy="50" rx="26" ry="13" fill="#f3d7a8" stroke="#c48a4a"/><path d="M150 78 L176 58 H188 L168 82 Z" fill="#c48a4a"/></svg></div>
-          <div class="step-body"><div class="step-no"><span class="t-zh">03 · 沙袋</span><span class="t-en">03 · Sandbag</span></div><h3><span class="t-zh">烧 ARK，保一晚</span><span class="t-en">Burn ARK, cover one night</span></h3><p><span class="t-zh">可以护自己的票，也可以赠送。一张沙袋只覆盖一夜。燃烧数量随合约公布。</span><span class="t-en">Protect your own ticket or gift it. One sandbag lasts one night. The burn amount publishes with the contract.</span></p></div>
+          <div class="step-body"><div class="step-no"><span class="t-zh">03 · 沙袋</span><span class="t-en">03 · Sandbag</span></div><h3><span class="t-zh">烧 ARK，保一晚</span><span class="t-en">Burn ARK, cover one night</span></h3><p><span class="t-zh">开池后用船票每天产出的 ARK，在沙袋店购买。人还多时大约 50 ARK 一袋，幸存者越少越贵。买到后护自己的票，或送给别人。一袋只保一晚。</span><span class="t-en">After the pool opens, spend the ARK your ticket earns each day at the sandbag shop. About 50 ARK a bag while many are still afloat, and more expensive as fewer survive. Apply it to your ticket or gift it. One bag covers one night.</span></p></div>
         </article>
         <article class="step">
           <div class="step-art"><svg viewBox="0 0 200 104" aria-hidden="true"><rect width="200" height="104" fill="#e9f7ff"/><circle cx="100" cy="40" r="18" fill="#ffd56a"/><text x="100" y="44" text-anchor="middle" font-size="11" font-weight="700" fill="#8a5528">100</text><rect x="70" y="62" width="60" height="22" rx="4" fill="#c48a4a"/><path d="M0 96 Q40 84 80 96 T160 96 T240 96 V104 H0 Z" fill="#7edfce"/></svg></div>
@@ -538,8 +538,8 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
       <details class="rule">
         <summary><span class="r-badge">R4</span> <span class="t-zh">沙袋</span><span class="t-en">Sandbags</span></summary>
         <div class="body">
-          <p class="t-zh">燃烧 ARK 买沙袋，可以盖在自己的票上，也可以赠送。一张沙袋保一晚。燃烧数量和函数名随主网合约公布，演示按钮里的指令不会带一个假的数量。</p>
-          <p class="t-en">Burn ARK for a sandbag on your own ticket or as a gift. One sandbag lasts one night. The burn amount and function name publish with the contract. Demo briefs do not invent a quantity.</p>
+          <p class="t-zh">开池之后，用船票每天产出的 ARK 在沙袋店购买：烧掉 ARK 换袋子。存活的票还多时，大约 50 ARK 一袋；幸存者越少，价格越高。买到后可以 apply 护自己的票，或 gift 送给别人的票。一袋只保一晚洪水。没有免费、无限的沙袋。若 T-1 活动送出首晚沙袋，那是运营自己买了再赠送，不是合约里的特权。</p>
+          <p class="t-en">After the pool opens, buy sandbags with the ARK a ticket earns each day: burn ARK at the sandbag shop. While many tickets are still afloat, a bag is about 50 ARK; it gets more expensive as fewer survive. Then apply it to your own ticket, or gift it to someone else’s. One bag covers one flood night only. There is no free, unlimited supply. If a T-1 campaign hands out the first night’s bag, that is the operators buying and gifting, not a privilege in the contract.</p>
         </div>
       </details>
       <details class="rule">
@@ -569,6 +569,25 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
       <details class="faq-item">
         <summary><span class="t-zh">舱位什么时候决定？概率是多少？</span><span class="t-en">When is the cabin drawn, and what are the odds?</span></summary>
         <div class="body"><p class="t-zh">铸造之后。requestCabin，再 settleCabin。经济舱 70% / 100 ARK，商务舱 25% / 200，船长舱 5% / 600。不能在下单时指定。</p><p class="t-en">After mint. requestCabin, then settleCabin. Economy 70% / 100 ARK, Business 25% / 200, Captain 5% / 600. You cannot pick one at checkout.</p></div>
+      </details>
+      <details class="faq-item" id="faq-sandbag">
+        <summary><span class="t-zh">沙袋怎么买、怎么用？</span><span class="t-en">How do sandbags work?</span></summary>
+        <div class="body">
+          <p class="t-zh">开池之后才能买。袋子不是白给的，用的是船票每天产出的 ARK。</p>
+          <ul class="t-zh">
+            <li>在沙袋店烧掉 ARK 购买。船上人还多的时候，大约 50 ARK 一袋；幸存者越少，袋子越贵。</li>
+            <li>买到之后有两个用法：apply，护自己的那张票；或 gift，送给别人的票。</li>
+            <li>一袋只保一晚洪水。当夜没有沙袋的票，大约有 3%–8% 的机会沉没。沉了以后，每天产出变成 0。</li>
+            <li>没有免费、无限的沙袋。如果 T-1 活动送出第一晚的沙袋，那是运营自己买了再赠送，不是合约给的特权。</li>
+          </ul>
+          <p class="t-en">You can buy them only after the pool opens. They are not free. You pay with the ARK your ticket produces each day.</p>
+          <ul class="t-en">
+            <li>Burn ARK at the sandbag shop. While many tickets are still alive, a bag is about 50 ARK. The fewer survivors, the higher the price.</li>
+            <li>After you buy one, apply it to your own ticket, or gift it to someone else’s ticket.</li>
+            <li>One bag protects against one night of flood only. A ticket with no sandbag has about a 3–8% chance to sink that night. If it sinks, its daily yield becomes 0.</li>
+            <li>There is no free, unlimited supply. If a T-1 campaign gives the first night’s sandbag, that is the operators doing a buy and then a gift. It is not a privilege written into the contract.</li>
+          </ul>
+        </div>
       </details>
       <details class="faq-item">
         <summary><span class="t-zh">洪水怎么结算？沉船还有收益吗？</span><span class="t-en">How does the flood settle, and does a wreck still earn?</span></summary>
@@ -746,8 +765,8 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
         }
         if (kind === "sandbag") {
           return head + (zh()
-            ? "任务：给船票 #" + extra + " 买一张沙袋（自用或赠送）。\nARK: " + CONFIG.ark + "\n一张沙袋保一晚。燃烧数量随合约公布，不要编一个数量。\n沉船日产为 0，当夜结算之后无法再救。"
-            : "Task: buy one sandbag for ticket #" + extra + " (self or gift).\nARK: " + CONFIG.ark + "\nOne sandbag lasts one night. Burn amount publishes with the contract — do not invent a quantity.\nSunk tickets produce 0 and cannot be saved after the night settles.");
+            ? "任务：给船票 #" + extra + " 买一张沙袋。\n开池后用船票每天产出的 ARK，在沙袋店烧掉 ARK 购买。\n存活还多时大约 50 ARK/袋，幸存者越少越贵。\n买到后 apply 护自己的票，或 gift 送给别人的票。\n一袋只保一晚。没沙袋的票当夜约 3%–8% 可能沉，沉了日产变 0。\n没有免费无限沙袋。T-1 若送首晚沙袋，是运营 buy+gift，不是合约特权。\nARK: " + CONFIG.ark + "\n精确函数名随主网 ABI 公布。现在不要按假选择器发交易。"
+            : "Task: buy one sandbag for ticket #" + extra + ".\nAfter the pool opens, burn ARK the ticket earns each day at the sandbag shop.\nAbout 50 ARK per bag while many tickets survive; the price rises as fewer remain.\nThen apply it to your own ticket, or gift it to someone else's.\nOne bag covers one night only. A ticket with no sandbag has about a 3-8% chance to sink that night, and then earns 0.\nThere is no free unlimited supply. A T-1 first-night bag, if any, is an operational buy+gift, not a contract privilege.\nARK: " + CONFIG.ark + "\nExact function name publishes with the mainnet ABI. Do not send a made-up selector.");
         }
         if (kind === "listing") {
           return head + (zh()
