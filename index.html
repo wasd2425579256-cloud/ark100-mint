@@ -110,7 +110,7 @@
           <svg class="mark" viewBox="0 0 48 32" aria-hidden="true"><path fill="#c48a4a" d="M4 20 L24 8 L44 20 H38 V26 H10 V20 Z"/><path fill="#8a5528" d="M18 14 h12 v8 h-12z"/><circle cx="36" cy="12" r="2" fill="#ffe08a"/><path fill="#2ec4c6" d="M0 24 Q12 18 24 24 T48 24 V32 H0 Z"/></svg>
           <span class="t-zh">潮位 · 开池线</span><span class="t-en">Tide · open line</span>
         </h2>
-        <p class="muted"><span class="t-zh">水位是已售张数。金绳在 #3000。水没过金绳才开池，LP 进 0xdead。</span><span class="t-en">The waterline is tickets sold. The gold rope is #3000. The pool opens when the water crosses it, and the LP goes to 0xdead.</span></p>
+        <p class="muted"><span class="t-zh">水位是已售张数。金绳在 #3000。水没过金绳才开池，流动性代币进 0xdead。</span><span class="t-en">The waterline is tickets sold. The gold rope is #3000. The pool opens when the water crosses it, and the LP goes to 0xdead.</span></p>
         <div class="tide-well" id="meter" role="meter" aria-valuemin="0" aria-valuemax="10000" aria-valuenow="0" aria-valuetext="0 of 10000 sold. Pool opens at 3000.">
           <div class="cloud c1"></div>
           <div class="cloud c2"></div>
@@ -135,19 +135,19 @@
         <div class="stats">
           <div class="stat"><div class="label"><span class="t-zh">已售</span><span class="t-en">Sold</span></div><div class="value"><span id="sold">0</span> <small>/ 10,000</small></div></div>
           <div class="stat"><div class="label"><span class="t-zh">当前标价</span><span class="t-en">List tier</span></div><div class="value">$<span id="price">2</span> <small id="tierNote"><span class="t-zh">/ 张 · 不含回落</span><span class="t-en">/ ticket · before decay</span></small></div></div>
-          <div class="stat"><div class="label"><span class="t-zh">开池</span><span class="t-en">Pool</span></div><div class="value">#3000 <small>LP → 0xdead</small></div></div>
+          <div class="stat"><div class="label"><span class="t-zh">开池</span><span class="t-en">Pool</span></div><div class="value">#3000 <small><span class="t-zh">流动性进销毁</span><span class="t-en">LP → 0xdead</span></small></div></div>
           <div class="stat"><div class="label"><span class="t-zh">退款</span><span class="t-en">Refund</span></div><div class="value"><span class="t-zh">7 天</span><span class="t-en">7 days</span> <small><span class="t-zh">未开池按票退 BNB</span><span class="t-en">full BNB back if unopened</span></small></div></div>
         </div>
         <div class="refund-strip">
           <strong><span class="t-zh">7 天</span><span class="t-en">7 days</span></strong>
-          <p><span class="t-zh">开售后 7 天仍未到 #3000，按票全额退还已付 BNB。开池前款项 100% 留在 Sale。</span><span class="t-en">If #3000 is still unreached 7 days after the sale starts, each ticket refunds the BNB that was paid. Until the pool opens, 100% stays in the sale contract.</span></p>
+          <p><span class="t-zh">开售后 7 天仍未到 #3000，按票全额退还已付 BNB。开池前款项 100% 留在发售合约。</span><span class="t-en">If #3000 is still unreached 7 days after the sale starts, each ticket refunds the BNB that was paid. Until the pool opens, 100% stays in the sale contract.</span></p>
         </div>
       </section>
 
       <section class="card" id="mint">
         <p class="section-kicker"><span class="t-zh">铸造</span><span class="t-en">Mint</span></p>
         <h2><span class="t-zh">Agent 铸造</span><span class="t-en">Agent mint</span></h2>
-        <p class="muted"><span class="t-zh">连接 BSC 钱包后可以读取 Agent ID 和报价。铸造调用 ArkSale.mint。startTime 还没到时，按钮保持「正式未开售」，不会发送交易。</span><span class="t-en">Connect a BSC wallet to read the Agent ID and the quote. Mint calls ArkSale.mint. Until startTime has arrived, the button stays on “Sale not started” and does not send a transaction.</span></p>
+        <p class="muted"><span class="t-zh">连接 BSC 钱包后可以读取 Agent ID 和报价。开售时间还没到时，按钮保持「正式未开售」，不会发送交易。</span><span class="t-en">Connect a BSC wallet to read the Agent ID and the quote. Mint calls ArkSale.mint. Until startTime has arrived, the button stays on “Sale not started” and does not send a transaction.</span></p>
         <div class="mint-layout">
           <div>
             <div class="ladder" id="ladder">
@@ -161,7 +161,7 @@
             <ul class="split-key">
               <li><i class="swatch team"></i><span class="t-zh">20% 团队 · 开池才付</span><span class="t-en">20% team · paid only when the pool opens</span></li>
               <li><i class="swatch pot"></i><span class="t-zh">15% 奖池</span><span class="t-en">15% pot</span></li>
-              <li><i class="swatch lp"></i><span class="t-zh">65% BNB + 1,500,000 ARK 加池 · LP → dead</span><span class="t-en">65% BNB + 1,500,000 ARK into LP · LP → dead</span></li>
+              <li><i class="swatch lp"></i><span class="t-zh">65% BNB + 1,500,000 ARK 加池 · 流动性进销毁地址</span><span class="t-en">65% BNB + 1,500,000 ARK into LP · LP → dead</span></li>
             </ul>
             <p class="muted" id="tokenLine"><span class="t-zh">代币名 <b>ARK100</b>，符号 <b>ARK</b>。硬顶 <b>20 亿</b>（2,000,000,000），只由船票产出和开池种子铸造，没有预挖。官方池是 PancakeSwap 的 <b>ARK/WBNB</b>：65% 开池 BNB + 150 万 ARK，LP 进 0xdead。</span><span class="t-en">Token name <b>ARK100</b>, symbol <b>ARK</b>. Hard cap <b>2,000,000,000</b>, minted only by ticket yield and the pool seed—no premine. Official pool is PancakeSwap <b>ARK/WBNB</b>: 65% of open BNB plus 1.5 million ARK, LP to 0xdead.</span></p>
           </div>
@@ -202,9 +202,9 @@
               <span class="t-en">Copy mint brief</span>
             </button>
             <p class="copy-status" id="mintStatus" role="status"></p>
-            <pre class="cmd" id="cmd">ARK100 mint brief
-Chain: BNB Smart Chain (chainId 56)
-Reading ArkSale…</pre>
+            <pre class="cmd" id="cmd">ARK100 铸造说明
+链：BNB Smart Chain（chainId 56）
+正在读取发售状态…</pre>
           </div>
         </div>
       </section>
@@ -226,7 +226,7 @@ Reading ArkSale…</pre>
         </article>
         <article class="trust-item">
           <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="20" r="7" fill="none" stroke="#c48a4a" stroke-width="2.4"/><path d="M12 36 q12-8 24 0" fill="none" stroke="#c48a4a" stroke-width="2.4"/><path d="M10 10 l28 28" stroke="#e8b23a" stroke-width="2.4" stroke-linecap="round"/></svg>
-          <h3><span class="t-zh">无 owner</span><span class="t-en">No owner</span></h3>
+          <h3><span class="t-zh">没有管理员</span><span class="t-en">No owner</span></h3>
           <p><span class="t-zh">合约不可升级。税率和团队钱包部署时写死。</span><span class="t-en">The contract is not upgradeable. Tax and the team wallet are fixed at deploy.</span></p>
         </article>
         <article class="trust-item">
@@ -256,13 +256,13 @@ Reading ArkSale…</pre>
         <figcaption><span class="t-zh">首周约 2%–3%，其后约 3%–8%。一袋沙袋只保一晚。</span><span class="t-en">About 2–3% in week one, then 3–8%. One sandbag covers one night.</span></figcaption>
       </figure>
       <div class="nightbar">
-        <div><b id="nightCount"><span class="t-zh">正在读取晚数</span><span class="t-en">Reading the night</span></b><span id="nightHint"><span class="t-zh">开池并 start() 之后才有第 1–100 晚</span><span class="t-en">Nights 1–100 begin after the pool opens and start()</span></span></div>
+        <div><b id="nightCount"><span class="t-zh">正在读取晚数</span><span class="t-en">Reading the night</span></b><span id="nightHint"><span class="t-zh">开池并启动百夜洪水之后，才有第 1 到第 100 晚</span><span class="t-en">Nights 1–100 begin after the pool opens and start()</span></span></div>
         <div><b>21:00</b><span><span class="t-zh">北京时间 · 13:00 UTC</span><span class="t-en">Asia/Shanghai · 13:00 UTC</span></span></div>
         <div><b><span class="t-zh">1–7 晚 · 2–3%</span><span class="t-en">Nights 1–7 · 2–3%</span></b><span><span class="t-zh">第 8–100 晚约 3–8%</span><span class="t-en">Nights 8–100 · about 3–8%</span></span></div>
         <div><b>0 ARK</b><span><span class="t-zh">沉船不再产出</span><span class="t-en">Sunk tickets stop earning</span></span></div>
       </div>
-      <p class="muted" id="sandbagLive" style="margin-top:10px"><span class="t-zh">正在读取沙袋店报价。</span><span class="t-en">Reading the sandbag price.</span></p>
-      <p class="muted" style="margin-top:10px"><span class="t-zh">一天的分界是北京时间 21:00。过了第 N 天的这个点，任何人都可以先 commit，再 settle。当天的 settle 做完，这一晚才算过完。开池并调用 start() 之后，currentDayIndex() 才是第 1 到第 100 晚；开池前没有这个计数。dayState(n).settled 表示第 n 晚是否已结算。沉了的票离船，还在航的票仍在船上。「我的方舟」读取当前晚数。没沙袋的票：第 1–7 晚大约 2%–3% 会沉，第 8–100 晚大约 3%–8%。第一周故意放软，让更多人有机会撑到那个窗口。</span><span class="t-en">The day changes at 21:00 Asia/Shanghai (13:00 UTC). After that time on day N, anyone can commit and then settle the flood. The night counts as done only when that settle finishes. After the pool opens and start() is called, currentDayIndex() is the current night, from 1 to 100. Before the pool opens there is no night counter. dayState(n).settled shows whether night n is finished. A sunk ticket is out; an afloat ticket is still aboard. My Ark reads the current night. Unprotected tickets: about 2–3% sink on nights 1–7, and about 3–8% on nights 8–100. The first week is softer so more players can reach that window.</span></p>
+      <p class="muted" id="sandbagLive" style="margin-top:10px"><span class="t-zh">人还多、票还在航时，一袋大约 50 ARK。幸存者越少越贵。开池、而且还有在航的票之后，才按当时还在船上的人数计价。开池前不把链上的预开数字当成现在要付的价格。</span><span class="t-en">While many tickets are still afloat, a bag is about 50 ARK. The price rises as fewer survive. The shop prices a bag from how many tickets are still afloat only after the pool is open. Until then, this page does not treat the pre-open chain figure as what you pay.</span></p>
+      <p class="muted" style="margin-top:10px"><span class="t-zh">一天以北京时间 21:00 为界。过了这个点，任何人都可以先提交当晚洪水，再结算当晚。这一晚要等洪水结完，才算过完。开池之后再启动百夜洪水，晚数才从第 1 晚计到第 100 晚；在那之前没有晚数。沉了的票离船，还在航的票仍在船上。「我的方舟」在洪水已经开始时会显示当前是第几晚。没沙袋的票：第 1–7 晚大约 2%–3% 会沉，第 8–100 晚大约 3%–8%。第一周故意放软，让更多人有机会撑过那段时间。</span><span class="t-en">The day changes at 21:00 Asia/Shanghai (13:00 UTC). After that time on day N, anyone can commit and then settle the flood. The night counts as done only when that settle finishes. After the pool opens and start() is called, currentDayIndex() is the current night, from 1 to 100. Before the pool opens there is no night counter. dayState(n).settled shows whether night n is finished. A sunk ticket is out; an afloat ticket is still aboard. My Ark reads the current night. Unprotected tickets: about 2–3% sink on nights 1–7, and about 3–8% on nights 8–100. The first week is softer so more players can reach that window.</span></p>
       <div class="steps">
         <article class="step">
           <div class="step-art"><svg viewBox="0 0 200 104" aria-hidden="true"><rect width="200" height="104" fill="#d9f2ff"/><circle cx="150" cy="36" r="16" fill="#ffd56a"/><path d="M16 78 L70 58 L110 78 V92 H16 Z" fill="#c48a4a"/><rect x="78" y="62" width="22" height="16" fill="#8a5528"/><circle cx="40" cy="48" r="8" fill="#ffe08a" stroke="#c48a4a"/><text x="40" y="51" text-anchor="middle" font-size="8" fill="#8a5528">ARK</text><path d="M0 92 Q25 80 50 92 T100 92 T150 92 T200 92 V104 H0 Z" fill="#2ec4c6"/></svg></div>
@@ -270,7 +270,7 @@ Reading ArkSale…</pre>
         </article>
         <article class="step">
           <div class="step-art"><svg viewBox="0 0 200 104" aria-hidden="true"><rect width="200" height="104" fill="#e7f6ff"/><rect x="70" y="40" width="60" height="28" rx="4" fill="#fff8e8" stroke="#c48a4a"/><path d="M0 70 Q30 48 60 70 T120 70 T180 70 T240 70 V104 H0 Z" fill="#178fb8"/><path d="M0 78 Q30 60 60 78 T120 78 T180 78 T240 78 V104 H0 Z" fill="#2ec4c6"/></svg></div>
-          <div class="step-body"><div class="step-no"><span class="t-zh">02 · 夜洪</span><span class="t-en">02 · Flood</span></div><h3><span class="t-zh">首周 2%–3%，之后 3%–8%</span><span class="t-en">2–3% in week one, then 3–8%</span></h3><p><span class="t-zh">北京时间 21:00 之后，任何人可以先 commit 再 settle。没沙袋的票：第 1–7 晚大约 2%–3% 会沉，第 8–100 晚大约 3%–8%。settle 完成，这一晚才算过完。</span><span class="t-en">After 21:00 Asia/Shanghai, anyone can commit and then settle. Unprotected tickets: about 2–3% sink on nights 1–7, and about 3–8% on nights 8–100. The night counts only when settle finishes.</span></p></div>
+          <div class="step-body"><div class="step-no"><span class="t-zh">02 · 夜洪</span><span class="t-en">02 · Flood</span></div><h3><span class="t-zh">首周 2%–3%，之后 3%–8%</span><span class="t-en">2–3% in week one, then 3–8%</span></h3><p><span class="t-zh">北京时间 21:00 之后，任何人可以先提交当晚洪水，再结算当晚。没沙袋的票：第 1–7 晚大约 2%–3% 会沉，第 8–100 晚大约 3%–8%。当晚洪水结完，这一晚才算过完。</span><span class="t-en">After 21:00 Asia/Shanghai, anyone can commit and then settle. Unprotected tickets: about 2–3% sink on nights 1–7, and about 3–8% on nights 8–100. The night counts only when settle finishes.</span></p></div>
         </article>
         <article class="step">
           <div class="step-art"><svg viewBox="0 0 200 104" aria-hidden="true"><rect width="200" height="104" fill="#fff6e4"/><ellipse cx="78" cy="70" rx="28" ry="14" fill="#e2c08a"/><ellipse cx="110" cy="62" rx="28" ry="14" fill="#efd0a0"/><ellipse cx="96" cy="50" rx="26" ry="13" fill="#f3d7a8" stroke="#c48a4a"/><path d="M150 78 L176 58 H188 L168 82 Z" fill="#c48a4a"/></svg></div>
@@ -285,13 +285,13 @@ Reading ArkSale…</pre>
 
     <section class="card" id="cabins">
       <div class="head-row">
-        <h2><span class="t-zh">舱位表 · TicketNFT</span><span class="t-en">Cabin table · TicketNFT</span></h2>
+        <h2><span class="t-zh">舱位表</span><span class="t-en">Cabin table · TicketNFT</span></h2>
         <span class="note-pill"><span class="t-zh">链上概率</span><span class="t-en">On-chain odds</span></span>
       </div>
-      <p class="muted"><span class="t-zh">铸造当时不决定舱位。持有人调用 <code>requestCabin</code>，等未来区块，再由任何人 <code>settleCabin</code>。概率和日产写在 TicketNFT 里。沉船日产为 0，那不是第四种抽舱结果。</span><span class="t-en">Mint does not assign a cabin. The holder calls <code>requestCabin</code>, waits for a future block, then anyone may <code>settleCabin</code>. Odds and daily rates live in TicketNFT. A sunk ticket earns 0. That is not a fourth cabin.</span></p>
+      <p class="muted"><span class="t-zh">铸造当时不决定舱位。持有人先申请抽舱，等未来区块，再由任何人揭晓舱位。概率和日产写在船票合约里。沉船日产为 0，那不是第四种抽舱结果。</span><span class="t-en">Mint does not assign a cabin. The holder calls <code>requestCabin</code>, waits for a future block, then anyone may <code>settleCabin</code>. Odds and daily rates live in TicketNFT. A sunk ticket earns 0. That is not a fourth cabin.</span></p>
       <div class="odds-wrap">
         <table class="odds">
-          <caption class="sr-only"><span class="t-zh">TicketNFT 舱位概率与日产</span><span class="t-en">TicketNFT cabin odds and daily ARK</span></caption>
+          <caption class="sr-only"><span class="t-zh">舱位概率与日产</span><span class="t-en">TicketNFT cabin odds and daily ARK</span></caption>
           <thead>
             <tr>
               <th><span class="t-zh">舱位</span><span class="t-en">Cabin</span></th>
@@ -336,8 +336,8 @@ Reading ArkSale…</pre>
       <p class="ev"><span class="t-zh">0.70、0.25、0.05 是舱位揭晓前的抽中概率：经济舱 70%、商务舱 25%、船长舱 5%。概率不是日产折扣。抽到经济舱之后，这一张票的日产固定是 <strong>100 ARK/天</strong>，不是 0.70×100 = 70。还在航、而且舱位已经揭晓的票，按随机抽舱取期望：0.70×（经济舱的 100）+ 0.25×（商务舱的 200）+ 0.05×（船长舱的 600）= <strong>150 ARK/天</strong>。150 是随机抽舱的期望值，不是一张经济舱的收入。已经抽到经济舱的单张票就是 100 ARK/天；按开盘价来标，大约 7 天盖住 $2 票价，这是设计锚，不是承诺。洪水仍可能把没沙袋的票打成 0。</span><span class="t-en">0.70, 0.25, and 0.05 are the draw probabilities before the cabin settles: Economy 70%, Business 25%, Captain 5%. They are not a cut to the daily rate. After you draw Economy, that ticket earns a fixed <strong>100 ARK/day</strong>. It is not 0.70×100 = 70. For an afloat ticket whose cabin has settled, the expected value across a random draw is 0.70×(Economy’s 100) + 0.25×(Business’s 200) + 0.05×(Captain’s 600) = <strong>150 ARK/day</strong>. 150 is that expected value. It is not what a single Economy ticket earns. One ticket that drew Economy earns 100 ARK/day. About 7 days to cover a $2 ticket at the open price is a design anchor, not a promise. A flood can still turn a ticket with no sandbag into 0.</span></p>
       <ol class="flow">
         <li><b>1 · <span class="t-zh">铸造</span><span class="t-en">Mint</span></b><span class="t-zh">得到船票，舱位仍是空的</span><span class="t-en">You receive a ticket. The cabin is still empty.</span></li>
-        <li><b>2 · requestCabin</b><span class="t-zh">向未来区块要种子</span><span class="t-en">Ask a future block for the seed.</span></li>
-        <li><b>3 · settleCabin</b><span class="t-zh">种子区块出现后，任何人可结算</span><span class="t-en">Once that block exists, anyone may settle.</span></li>
+        <li><b>2 · <span class="t-zh">申请抽舱</span><span class="t-en">requestCabin</span></b><span class="t-zh">向未来区块要种子</span><span class="t-en">Ask a future block for the seed.</span></li>
+        <li><b>3 · <span class="t-zh">揭晓舱位</span><span class="t-en">settleCabin</span></b><span class="t-zh">种子区块出现后，任何人可以揭晓</span><span class="t-en">Once that block exists, anyone may settle.</span></li>
       </ol>
       <div class="cabins">
         <article class="cabin">
@@ -360,7 +360,7 @@ Reading ArkSale…</pre>
         <h2><span class="t-zh">我的方舟</span><span class="t-en">My Ark</span></h2>
         <span class="note-pill"><span class="t-zh">链上舱单</span><span class="t-en">On-chain tickets</span></span>
       </div>
-      <p class="muted"><span class="t-zh">这里读取 TicketNFT。输入钱包地址，或输入船票编号。洪水启动后会显示 currentDayIndex() 和当夜沙袋。</span><span class="t-en">This reads TicketNFT. Paste a wallet, or a ticket id. After the flood starts it shows currentDayIndex() and tonight’s sandbag.</span></p>
+      <p class="muted"><span class="t-zh">这里读取你的船票。输入钱包地址，或输入船票编号。洪水启动后，会显示当前是第几晚，以及当夜有没有沙袋。</span><span class="t-en">This reads TicketNFT. Paste a wallet, or a ticket id. After the flood starts it shows currentDayIndex() and tonight’s sandbag.</span></p>
       <p class="muted" id="arkNight"><span class="t-zh">当前晚数：正在读取。</span><span class="t-en">Current night: reading.</span></p>
       <form class="lookup" id="lookup">
         <label class="sr-only" for="walletInput" id="walletLabel"><span class="t-zh">钱包地址或船票编号</span><span class="t-en">Wallet address or ticket id</span></label>
@@ -412,7 +412,7 @@ Reading ArkSale…</pre>
         <h2><span class="t-zh">船票市场</span><span class="t-en">Ticket market</span></h2>
         <span class="note-pill"><span class="t-zh">链上订单</span><span class="t-en">On-chain book</span></span>
       </div>
-      <p class="muted"><span class="t-zh">买入新船票只走 ArkSale.mint。这套合约没有挂单簿，也没有出价托管。下面两张表只在链上出现记录时才有行。现在是 0。</span><span class="t-en">New tickets are bought only with ArkSale.mint. These contracts have no listing book and no bid escrow. The tables below gain rows only when chain records exist. Both are at 0.</span></p>
+      <p class="muted"><span class="t-zh">买票走铸造合约。这套合约没有挂单簿，也没有出价托管。下面两张表只在链上出现记录时才有行。现在是 0。</span><span class="t-en">New tickets are bought only with ArkSale.mint. These contracts have no listing book and no bid escrow. The tables below gain rows only when chain records exist. Both are at 0.</span></p>
       <div class="tabs" role="tablist">
         <button class="tab" type="button" id="tab-listings" role="tab" aria-controls="panel-listings" aria-selected="true" data-tab="listings"><span class="t-zh">挂单</span><span class="t-en">Listings</span></button>
         <button class="tab" type="button" id="tab-bids" role="tab" aria-controls="panel-bids" aria-selected="false" data-tab="bids"><span class="t-zh">出价</span><span class="t-en">Bids</span></button>
@@ -431,7 +431,7 @@ Reading ArkSale…</pre>
             <tbody id="listingBody"></tbody>
           </table>
         </div>
-        <p class="muted" id="listingEmpty"><span class="t-zh">链上挂单：0。船票发售只走 ArkSale。</span><span class="t-en">On-chain listings: 0. Tickets are sold only through ArkSale.</span></p>
+        <p class="muted" id="listingEmpty"><span class="t-zh">链上挂单：0。船票只通过铸造发售。</span><span class="t-en">On-chain listings: 0. Tickets are sold only through ArkSale.</span></p>
       </div>
       <div role="tabpanel" id="panel-bids" aria-labelledby="tab-bids" hidden>
         <div class="table-wrap">
@@ -456,50 +456,50 @@ Reading ArkSale…</pre>
         <h2><span class="t-zh">公开动作</span><span class="t-en">Public actions</span></h2>
         <span class="note-pill"><span class="t-zh">链上条件</span><span class="t-en">On-chain gates</span></span>
       </div>
-      <p class="muted"><span class="t-zh">铸造跨过 #3000 时会自动开池。如果那一笔没有打开，任何人可以再调 <code>ArkSale.openPool()</code>。池子打开之后、洪水还没开始时，任何人可以调 <code>FloodEngine.start()</code>，不传时间。按钮按链上状态显示，条件不满足时不会发送交易。</span><span class="t-en">The mint that crosses #3000 opens the pool automatically. If that open does not happen, anyone may call <code>ArkSale.openPool()</code>. Once the pool is open and the flood has not started, anyone may call <code>FloodEngine.start()</code> with no timestamp. Buttons follow the chain. If the gate is closed, no transaction is sent.</span></p>
+      <p class="muted"><span class="t-zh">卖到第 3000 张会自动开池。如果那一笔没有打开，任何人可以再点开池。池子打开之后、百夜洪水还没启动时，任何人可以启动洪水，不用手填时间。按钮跟链上状态走，条件不够不会发送交易。</span><span class="t-en">The mint that crosses #3000 opens the pool automatically. If that open does not happen, anyone may call <code>ArkSale.openPool()</code>. Once the pool is open and the flood has not started, anyone may call <code>FloodEngine.start()</code> with no timestamp. Buttons follow the chain. If the gate is closed, no transaction is sent.</span></p>
       <p class="muted" id="chainStatus" role="status"><span class="t-zh">正在读取已售、开池和洪水状态。</span><span class="t-en">Reading sold, pool, and flood state.</span></p>
       <div class="triggers">
         <article class="trigger">
-          <h3><span class="t-zh">抽舱 · requestCabin / settleCabin</span><span class="t-en">Cabin · requestCabin / settleCabin</span></h3>
-          <p><span class="t-zh">持有人先 <code>requestCabin</code>。种子区块出现后，任何人可以 <code>settleCabin</code>。结果仍是 70/25/5，对应 100/200/600 ARK/天。</span><span class="t-en">The holder calls <code>requestCabin</code> first. After the seed block, anyone may <code>settleCabin</code>. The draw is still 70/25/5, paying 100/200/600 ARK/day.</span></p>
+          <h3><span class="t-zh">申请抽舱 / 揭晓舱位</span><span class="t-en">Cabin · requestCabin / settleCabin</span></h3>
+          <p><span class="t-zh">持有人先申请抽舱。种子区块出现后，任何人可以揭晓舱位。结果仍是 70/25/5，对应 100/200/600 ARK/天。</span><span class="t-en">The holder calls <code>requestCabin</code> first. After the seed block, anyone may <code>settleCabin</code>. The draw is still 70/25/5, paying 100/200/600 ARK/day.</span></p>
           <label class="field-label" for="cabinIdInput"><span class="t-zh">船票编号</span><span class="t-en">Ticket id</span></label>
           <input id="cabinIdInput" inputmode="numeric" autocomplete="off" placeholder="例如 1" data-ph-zh="例如 1" data-ph-en="e.g. 1" />
-          <button class="cta" id="requestCabinBtn" type="button"><span class="t-zh">requestCabin</span><span class="t-en">requestCabin</span></button>
-          <button class="cta secondary" id="settleCabinBtn" type="button"><span class="t-zh">settleCabin</span><span class="t-en">settleCabin</span></button>
+          <button class="cta" id="requestCabinBtn" type="button"><span class="t-zh">申请抽舱</span><span class="t-en">requestCabin</span></button>
+          <button class="cta secondary" id="settleCabinBtn" type="button"><span class="t-zh">揭晓舱位</span><span class="t-en">settleCabin</span></button>
         </article>
         <article class="trigger">
-          <h3><span class="t-zh">夜洪 · commit</span><span class="t-en">Flood · commit</span></h3>
-          <p><span class="t-zh">21:00（北京时间）之后，任何人可以 commit 当晚。没沙袋的票：第 1–7 晚大约 2%–3% 会沉，第 8–100 晚大约 3%–8%。洪水未启动时不会发送。</span><span class="t-en">After 21:00 Asia/Shanghai, anyone may commit that night. Unprotected tickets: about 2–3% sink on nights 1–7, and about 3–8% on nights 8–100. Nothing is sent before the flood has started.</span></p>
+          <h3><span class="t-zh">提交当晚洪水</span><span class="t-en">Flood · commit</span></h3>
+          <p><span class="t-zh">21:00（北京时间）之后，任何人可以提交当晚洪水。没沙袋的票：第 1–7 晚大约 2%–3% 会沉，第 8–100 晚大约 3%–8%。洪水还没启动时不会发送。</span><span class="t-en">After 21:00 Asia/Shanghai, anyone may commit that night. Unprotected tickets: about 2–3% sink on nights 1–7, and about 3–8% on nights 8–100. Nothing is sent before the flood has started.</span></p>
           <label class="field-label" for="floodDayInput"><span class="t-zh">晚数</span><span class="t-en">Night</span></label>
           <input id="floodDayInput" inputmode="numeric" autocomplete="off" placeholder="1–100" data-ph-zh="1–100" data-ph-en="1–100" />
-          <button class="cta" id="commitBtn" type="button"><span class="t-zh">commit</span><span class="t-en">commit</span></button>
+          <button class="cta" id="commitBtn" type="button"><span class="t-zh">提交当晚洪水</span><span class="t-en">commit</span></button>
         </article>
         <article class="trigger">
-          <h3><span class="t-zh">沙袋 · buy</span><span class="t-en">Sandbag · buy</span></h3>
+          <h3><span class="t-zh">购买沙袋</span><span class="t-en">Sandbag · buy</span></h3>
           <p><span class="t-zh">开池之后，用船票产出的 ARK 在沙袋店购买。人还多时大约 50 ARK 一袋。开池前不会发送。</span><span class="t-en">After the pool opens, buy with the ARK a ticket earns. About 50 ARK a bag while many survive. Nothing is sent before the pool opens.</span></p>
           <button class="cta" id="buyBagBtn" type="button" disabled><span class="t-zh">开池后才能买沙袋</span><span class="t-en">Sandbags open with the pool</span></button>
         </article>
         <article class="trigger" id="openPoolCard" hidden>
           <h3><span class="t-zh">开池</span><span class="t-en">Open pool</span></h3>
-          <p><span class="t-zh">链上条件已满足：已售至少 3000，还没开池，也没在退款。调用 <code>ArkSale.openPool()</code>。合约把 <code>openedAt</code> 写成当前区块时间。</span><span class="t-en">The chain matches: at least 3,000 sold, not opened, and not refunding. This calls <code>ArkSale.openPool()</code>. The contract sets <code>openedAt</code> to the current block time.</span></p>
-          <button class="cta" id="openPoolBtn" type="button"><span class="t-zh">openPool</span><span class="t-en">openPool</span></button>
+          <p><span class="t-zh">链上条件已满足：已售至少 3000，还没开池，也没在退款。点这一步会打开池子。开池时间由合约写成当前区块时间。</span><span class="t-en">The chain matches: at least 3,000 sold, not opened, and not refunding. This calls <code>ArkSale.openPool()</code>. The contract sets <code>openedAt</code> to the current block time.</span></p>
+          <button class="cta" id="openPoolBtn" type="button"><span class="t-zh">开池</span><span class="t-en">openPool</span></button>
         </article>
         <article class="trigger" id="startFloodCard" hidden>
           <h3><span class="t-zh">启动洪水</span><span class="t-en">Start flood</span></h3>
-          <p><span class="t-zh">链上条件已满足：池子已开，洪水还没 <code>start()</code>。调用 <code>FloodEngine.start()</code>，不要传时间。合约只读 <code>sale.openedAt</code>。</span><span class="t-en">The chain matches: the pool is open and the flood has not started. This calls <code>FloodEngine.start()</code> with no arguments. The contract reads <code>sale.openedAt</code>.</span></p>
-          <button class="cta" id="startFloodBtn" type="button"><span class="t-zh">start</span><span class="t-en">start</span></button>
+          <p><span class="t-zh">链上条件已满足：池子已开，百夜洪水还没启动。点这一步会启动洪水，不用手填时间。合约只认开池时写下的时间。</span><span class="t-en">The chain matches: the pool is open and the flood has not started. This calls <code>FloodEngine.start()</code> with no arguments. The contract reads <code>sale.openedAt</code>.</span></p>
+          <button class="cta" id="startFloodBtn" type="button"><span class="t-zh">启动百夜洪水</span><span class="t-en">start</span></button>
         </article>
         <article class="trigger" id="refundCard" hidden>
           <h3><span class="t-zh">开启退款</span><span class="t-en">Enable refunds</span></h3>
-          <p><span class="t-zh">开售后 7 天仍未开池时，任何人可以调用 <code>enableRefunds()</code>。然后由付款人 <code>refund(tokenId)</code>。</span><span class="t-en">If the pool is still closed 7 days after the sale starts, anyone may call <code>enableRefunds()</code>. The payer then calls <code>refund(tokenId)</code>.</span></p>
-          <button class="cta" id="enableRefundBtn" type="button"><span class="t-zh">enableRefunds</span><span class="t-en">enableRefunds</span></button>
+          <p><span class="t-zh">开售后 7 天仍未开池时，任何人可以开启退款。然后由付款人按船票领回已付的 BNB。</span><span class="t-en">If the pool is still closed 7 days after the sale starts, anyone may call <code>enableRefunds()</code>. The payer then calls <code>refund(tokenId)</code>.</span></p>
+          <button class="cta" id="enableRefundBtn" type="button"><span class="t-zh">开启退款</span><span class="t-en">enableRefunds</span></button>
         </article>
         <article class="trigger">
           <h3><span class="t-zh">第 100 晚领取</span><span class="t-en">Day-100 claim</span></h3>
-          <p><span class="t-zh">满 100 晚并 land 之后，还在船上的船票调用 <code>ArkPot.claimShare(tokenId)</code>。奖池还没靠岸时不会发送。</span><span class="t-en">After night 100 and land, a ticket still aboard calls <code>ArkPot.claimShare(tokenId)</code>. Nothing is sent before the pot has landed.</span></p>
+          <p><span class="t-zh">满 100 晚、奖池靠岸之后，还在船上的船票可以领取自己的一份。奖池还没靠岸时不会发送。</span><span class="t-en">After night 100 and land, a ticket still aboard calls <code>ArkPot.claimShare(tokenId)</code>. Nothing is sent before the pot has landed.</span></p>
           <label class="field-label" for="claimIdInput"><span class="t-zh">船票编号</span><span class="t-en">Ticket id</span></label>
           <input id="claimIdInput" inputmode="numeric" autocomplete="off" placeholder="船票编号" data-ph-zh="船票编号" data-ph-en="Ticket id" />
-          <button class="cta" id="claimShareBtn" type="button"><span class="t-zh">claimShare</span><span class="t-en">claimShare</span></button>
+          <button class="cta" id="claimShareBtn" type="button"><span class="t-zh">领取份额</span><span class="t-en">claimShare</span></button>
         </article>
       </div>
       <p class="copy-status" id="triggerStatus" role="status"></p>
@@ -519,40 +519,40 @@ Reading ArkSale…</pre>
     <section class="card" id="rules">
       <p class="section-kicker"><span class="t-zh">规则</span><span class="t-en">Rules</span></p>
       <h2><span class="t-zh">规则 R1–R5</span><span class="t-en">Rules R1–R5</span></h2>
-      <p class="muted"><span class="t-zh">花钱之前先展开。数字和页面其他位置一致，函数名与已部署合约一致。</span><span class="t-en">Open these before you spend. The numbers match the rest of the page, and the function names match the deployed contracts.</span></p>
+      <p class="muted"><span class="t-zh">花钱之前先展开。数字和页面其他位置一致。</span><span class="t-en">Open these before you spend. The numbers match the rest of the page, and the function names match the deployed contracts.</span></p>
       <details class="rule" open>
         <summary><span class="r-badge">R1</span> <span class="t-zh">门槛与铸造</span><span class="t-en">Gate and mint</span></summary>
         <div class="body">
-          <p class="t-zh">只有持有 .ai Agent ID、且 handle 非空的钱包可以铸造。注册表 <span class="ca">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span> 上检查 balanceOf 与 handleOf。每址最多 10 张。一共 10,000 张，每 2,500 张一档：$2、$3、$4、$5。连续 5 分钟无人铸造，价格降一档，最低 $2。没有免费票，没有 ARK 预挖。团队钱包开铸后按同样上限购买。</p>
+          <p class="t-zh">只有持有 .ai Agent ID、且名字不是空的钱包可以铸造。注册表 <span class="ca">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span> 上要能查到这只钱包持有 Agent ID，并且名字不是空的。每址最多 10 张。一共 10,000 张，每 2,500 张一档：$2、$3、$4、$5。连续 5 分钟无人铸造，价格降一档，最低 $2。没有免费票，没有 ARK 预挖。团队钱包开铸后按同样上限购买。</p>
           <p class="t-en">Only a wallet with a .ai Agent ID and a non-empty handle can mint. The registry <span class="ca">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span> checks balanceOf and handleOf. Max 10 tickets per address. Supply is 10,000, in tiers of 2,500: $2, $3, $4, $5. Five quiet minutes drop one tier, floor $2. No free tickets and no ARK premine. After launch the team wallet buys under the same cap.</p>
         </div>
       </details>
       <details class="rule">
         <summary><span class="r-badge">R2</span> <span class="t-zh">舱位</span><span class="t-en">Cabins</span></summary>
         <div class="body">
-          <p class="t-zh">TicketNFT：经济舱 70% 每天 100 ARK，商务舱 25% 每天 200 ARK，船长舱 5% 每天 600 ARK。0.70 / 0.25 / 0.05 只是揭晓前的抽中概率。铸造不抽舱。之后 <code>requestCabin</code>，再 <code>settleCabin</code>，种子来自未来区块。沉船日产 0。抽到经济舱之后日产固定是 100 ARK/天，不是 0.70×100 = 70。150 ARK/天是还在航、舱位已揭晓的票按随机抽舱取的期望值，不是一张经济舱的收入。洪水另计。</p>
+          <p class="t-zh">经济舱 70% 每天 100 ARK，商务舱 25% 每天 200 ARK，船长舱 5% 每天 600 ARK。0.70 / 0.25 / 0.05 只是揭晓前的抽中概率。铸造不抽舱。之后由持有人申请抽舱，再由任何人揭晓舱位，种子来自未来区块。沉船日产 0。抽到经济舱之后日产固定是 100 ARK/天，不是 0.70×100 = 70。150 ARK/天是还在航、舱位已揭晓的票按随机抽舱取的期望值，不是一张经济舱的收入。洪水另计。</p>
           <p class="t-en">TicketNFT: Economy 70% at 100 ARK/day, Business 25% at 200, Captain 5% at 600. 0.70 / 0.25 / 0.05 are the draw probabilities before the cabin settles. Mint does not draw the cabin. Then <code>requestCabin</code>, then <code>settleCabin</code>, seeded by a future block. Sunk tickets earn 0. After you draw Economy, the daily yield is a fixed 100 ARK/day, not 0.70×100 = 70. 150 ARK/day is the expected value of a random cabin draw for an afloat, settled ticket. It is not what one Economy ticket earns. Flood risk is separate.</p>
         </div>
       </details>
       <details class="rule">
         <summary><span class="r-badge">R3</span> <span class="t-zh">百夜洪水</span><span class="t-en">The hundred nights</span></summary>
         <div class="body">
-          <p class="t-zh">每晚 21:00（北京时间）之后可以结算洪水。没有沙袋的船票：第 1–7 晚约 2%–3%、第 8–100 晚约 3%–8% 会在当夜沉没。比例在合约里，不由这个页面调节。第 100 晚结算后，还在船上的人平分奖池。</p>
+          <p class="t-zh">一天以北京时间 21:00 为界。过了这个点，任何人都可以先提交当晚洪水，再结算当晚。这一晚要等洪水结完，才算过完。开池之后再启动百夜洪水，才有第 1 到第 100 晚；在那之前没有晚数。没沙袋的票：第 1–7 晚大约 2%–3% 会沉，第 8–100 晚大约 3%–8%。第一周故意放软，让更多人有机会撑到后面。沉了的票离船，还在航的票仍在船上。第 100 晚结完后，还在船上的人平分奖池。这些比例写在合约里，不由这个页面调节。</p>
           <p class="t-en">The day boundary is 21:00 Asia/Shanghai (13:00 UTC). After that time on day N, anyone can commit and then settle. The night counts as done when that settle finishes. After the pool opens and start() is called, currentDayIndex() is the night number from 1 to 100. Before the pool opens there is no counter. dayState(n).settled is true once night n is finished. Unprotected tickets: about 2–3% sink on nights 1–7, and about 3–8% on nights 8–100. The first week is softer so more players can reach that window. A sunk ticket is out; an afloat ticket is still aboard. After night 100, whoever is still aboard splits the pot.</p>
         </div>
       </details>
       <details class="rule">
         <summary><span class="r-badge">R4</span> <span class="t-zh">沙袋</span><span class="t-en">Sandbags</span></summary>
         <div class="body">
-          <p class="t-zh">开池之后，用船票每天产出的 ARK 在沙袋店购买：烧掉 ARK 换袋子。存活的票还多时，大约 50 ARK 一袋；幸存者越少，价格越高。买到后可以 apply 护自己的票，或 gift 送给别人的票。一袋只保一晚洪水。没有免费、无限的沙袋。若 T-1 活动送出首晚沙袋，那是运营自己买了再赠送，不是合约里的特权。</p>
+          <p class="t-zh">开池之后，用船票每天产出的 ARK 在沙袋店购买：烧掉 ARK 换袋子。还在船上的票还多时，大约 50 ARK 一袋；幸存者越少，价格越高。买到后可以护自己的票，或送给别人的票。一袋只保一晚洪水。没有免费、无限的沙袋。若 T-1 活动送出首晚沙袋，那是运营自己买了再赠送，不是合约里的特权。</p>
           <p class="t-en">After the pool opens, buy sandbags with the ARK a ticket earns each day: burn ARK at the sandbag shop. While many tickets are still afloat, a bag is about 50 ARK; it gets more expensive as fewer survive. Then apply it to your own ticket, or gift it to someone else’s. One bag covers one flood night only. There is no free, unlimited supply. If a T-1 campaign hands out the first night’s bag, that is the operators buying and gifting, not a privilege in the contract.</p>
         </div>
       </details>
       <details class="rule">
         <summary><span class="r-badge">R5</span> <span class="t-zh">开池、税与退款</span><span class="t-en">Pool, tax, refund</span></summary>
         <div class="body">
-          <p class="t-zh">售到 #3000 才开池。开池前铸造款 100% 留在 Sale。代币名 ARK100，符号 ARK。硬顶 20 亿（2,000,000,000），只由船票产出和开池种子铸造，没有预挖。开池时 20% 给写死的团队钱包，15% 进奖池，65% 的 BNB 与 1,500,000 ARK 在 PancakeSwap 的 ARK/WBNB 池加池，LP 转入 0xdead。交易税写死 2%：销毁 0.5%，奖池 0.5%，团队 1%，不可调。合约无 owner，不可升级。开售后 7 天仍未到 #3000，按票全额退还 BNB。团队地址 <span class="ca">0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74</span>。</p>
-          <p class="t-en">The pool opens at ticket #3000. Until then mint proceeds stay in the sale contract. Token name ARK100, symbol ARK. Hard cap 2,000,000,000, minted only by ticket yield and the pool seed, no premine. At open: 20% to the fixed team wallet, 15% to the pot, 65% of the BNB plus 1,500,000 ARK into the PancakeSwap ARK/WBNB pool, LP to 0xdead. Trade tax is a fixed 2%: 0.5% burn, 0.5% pot, 1% team. No owner and not upgradeable. If #3000 is still unreached 7 days after the sale starts, each ticket refunds its BNB. Team address <span class="ca">0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74</span>.</p>
+          <p class="t-zh">售到 #3000 才开池。开池前铸造款 100% 留在发售合约。代币名 ARK100，符号 ARK。硬顶 20 亿（2,000,000,000），只由船票产出和开池种子铸造，没有预挖。开池时 20% 给写死的团队钱包，15% 进奖池，65% 的 BNB 与 1,500,000 ARK 在 PancakeSwap 的 ARK/WBNB 池加池，流动性代币转入 0xdead。交易税写死 2%：销毁 0.5%，奖池 0.5%，团队 1%，不可调。合约没有管理员，不可升级。开售后 7 天仍未到 #3000，按票全额退还 BNB。</p>
+          <p class="t-en">The pool opens at ticket #3000. Until then mint proceeds stay in the sale contract. Token name ARK100, symbol ARK. Hard cap 2,000,000,000, minted only by ticket yield and the pool seed, no premine. At open: 20% to the fixed team wallet, 15% to the pot, 65% of the BNB plus 1,500,000 ARK into the PancakeSwap ARK/WBNB pool, LP to 0xdead. Trade tax is a fixed 2%: 0.5% burn, 0.5% pot, 1% team. No owner and not upgradeable. If #3000 is still unreached 7 days after the sale starts, each ticket refunds its BNB.</p>
         </div>
       </details>
     </section>
@@ -562,11 +562,11 @@ Reading ArkSale…</pre>
       <h2><span class="t-zh">开船前的问题</span><span class="t-en">Before you board</span></h2>
       <details class="faq-item">
         <summary><span class="t-zh">必须有 Agent ID 吗？</span><span class="t-en">Do I need an Agent ID?</span></summary>
-        <div class="body"><p class="t-zh">铸造必须有。注册表上 balanceOf 大于 0，并且 handle 非空。没有 Agent ID 的钱包不能铸船票。</p><p class="t-en">Yes, to mint. The registry must show balanceOf above 0 and a non-empty handle. A wallet without an Agent ID cannot mint a ticket.</p></div>
+        <div class="body"><p class="t-zh">铸造必须有。注册表上要能查到 Agent ID，并且名字不是空的。没有 Agent ID 的钱包不能铸船票。</p><p class="t-en">Yes, to mint. The registry must show balanceOf above 0 and a non-empty handle. A wallet without an Agent ID cannot mint a ticket.</p></div>
       </details>
       <details class="faq-item">
         <summary><span class="t-zh">什么时候开池？</span><span class="t-en">When does the pool open?</span></summary>
-        <div class="body"><p class="t-zh">卖到第 3000 张的那笔铸造里会自动开池。开池时 65% 的 BNB 加上 1,500,000 ARK 组成流动性，LP 销毁。如果那一笔没有打开，而且已售不少于 3000、还没开池、也没进入退款，任何人可以再调 <code>ArkSale.openPool()</code>。开池时间 <code>openedAt</code> 由合约写成当时的区块时间。洪水用 <code>FloodEngine.start()</code> 启动，不接收时间参数，只读 <code>sale.openedAt</code>，不能填一个假时间。</p><p class="t-en">The mint that sells ticket #3000 opens the pool automatically. At open, 65% of the BNB plus 1,500,000 ARK become the liquidity, and the LP is burned. If that open does not happen, anyone may call <code>ArkSale.openPool()</code> once at least 3,000 are sold, the pool is still closed, and refunds are not on. <code>openedAt</code> is the block timestamp written inside the contract. <code>FloodEngine.start()</code> takes no timestamp. It reads <code>sale.openedAt</code>, so nobody can pass a fake clock.</p></div>
+        <div class="body"><p class="t-zh">卖到第 3000 张的那笔铸造里会自动开池。开池时 65% 的 BNB 加上 1,500,000 ARK 组成流动性，流动性代币销毁。如果那一笔没有打开，而且已售不少于 3000、还没开池、也没进入退款，任何人可以再点开池。开池时间由合约写成当时的区块时间。百夜洪水在开池之后启动，不能自己填时间，合约只认开池那一刻写下的时间。</p><p class="t-en">The mint that sells ticket #3000 opens the pool automatically. At open, 65% of the BNB plus 1,500,000 ARK become the liquidity, and the LP is burned. If that open does not happen, anyone may call <code>ArkSale.openPool()</code> once at least 3,000 are sold, the pool is still closed, and refunds are not on. <code>openedAt</code> is the block timestamp written inside the contract. <code>FloodEngine.start()</code> takes no timestamp. It reads <code>sale.openedAt</code>, so nobody can pass a fake clock.</p></div>
       </details>
       <details class="faq-item" id="faq-payback">
         <summary><span class="t-zh">买一张、抽到经济舱，大概多久回本？</span><span class="t-en">One Economy ticket: how long to pay it back?</span></summary>
@@ -593,7 +593,7 @@ Reading ArkSale…</pre>
       </details>
       <details class="faq-item">
         <summary><span class="t-zh">舱位什么时候决定？概率是多少？</span><span class="t-en">When is the cabin drawn, and what are the odds?</span></summary>
-        <div class="body"><p class="t-zh">铸造之后。requestCabin，再 settleCabin。经济舱 70% / 100 ARK，商务舱 25% / 200，船长舱 5% / 600。不能在下单时指定。</p><p class="t-en">After mint. requestCabin, then settleCabin. Economy 70% / 100 ARK, Business 25% / 200, Captain 5% / 600. You cannot pick one at checkout.</p></div>
+        <div class="body"><p class="t-zh">铸造之后，先申请抽舱，再揭晓舱位。经济舱 70% / 100 ARK，商务舱 25% / 200，船长舱 5% / 600。不能在下单时指定。</p><p class="t-en">After mint. requestCabin, then settleCabin. Economy 70% / 100 ARK, Business 25% / 200, Captain 5% / 600. You cannot pick one at checkout.</p></div>
       </details>
       <details class="faq-item" id="faq-sandbag">
         <summary><span class="t-zh">沙袋怎么买、怎么用？</span><span class="t-en">How do sandbags work?</span></summary>
@@ -601,7 +601,7 @@ Reading ArkSale…</pre>
           <p class="t-zh">开池之后才能买。袋子不是白给的，用的是船票每天产出的 ARK。</p>
           <ul class="t-zh">
             <li>在沙袋店烧掉 ARK 购买。船上人还多的时候，大约 50 ARK 一袋；幸存者越少，袋子越贵。</li>
-            <li>买到之后有两个用法：apply，护自己的那张票；或 gift，送给别人的票。</li>
+            <li>买到之后有两个用法：护自己的那张票，或送给别人的票。</li>
             <li>一袋只保一晚洪水。当夜没有沙袋的票，第 1–7 晚大约 2%–3% 会沉，第 8–100 晚大约 3%–8%。沉了以后，每天产出变成 0。</li>
             <li>没有免费、无限的沙袋。如果 T-1 活动送出第一晚的沙袋，那是运营自己买了再赠送，不是合约给的特权。</li>
           </ul>
@@ -619,11 +619,11 @@ Reading ArkSale…</pre>
         <div class="body">
           <p class="t-zh">晚数不是看你自己的手表走到 21:00 就算过完。要等这一天的洪水结算做完。</p>
           <ul class="t-zh">
-            <li>一天的分界是北京时间 21:00，也就是 UTC 13:00。过了第 N 天的这个点，任何人都可以先 commit，再 settle 当晚的洪水。</li>
-            <li>这一晚要等当天的 settle 完成，才算过完。没结算之前，还停在这一晚。</li>
-            <li>开池并调用 start() 之后，currentDayIndex() 才是当前晚数，从 1 到 100。开池之前没有这个计数。「我的方舟」显示链上读到的晚数。</li>
-            <li>dayState(n).settled 表示第 n 晚是否已经结算。票如果沉了，就是离船；还在航的票仍在船上。</li>
-            <li>「我的方舟」显示链上的当前晚数。洪水还没 start() 时，没有第 1–100 的计数。</li>
+            <li>一天的分界是北京时间 21:00，也就是 UTC 13:00。过了这个点，任何人都可以先提交当晚洪水，再结算当晚。</li>
+            <li>这一晚要等当晚洪水结完，才算过完。没结完之前，还停在这一晚。</li>
+            <li>开池之后再启动百夜洪水，晚数才从 1 计到 100。在那之前没有晚数。「我的方舟」在洪水已经开始时显示当前是第几晚。</li>
+            <li>第几晚有没有过完，要看当晚洪水结完没有。票如果沉了，就是离船；还在航的票仍在船上。</li>
+            <li>洪水还没启动时，没有第 1 到第 100 晚的计数。</li>
           </ul>
           <p class="t-en">A night is not over just because your clock passes 21:00. It counts as done when that day’s flood settle finishes.</p>
           <ul class="t-en">
@@ -641,7 +641,7 @@ Reading ArkSale…</pre>
       </details>
       <details class="faq-item">
         <summary><span class="t-zh">税和权限能改吗？团队有预留吗？</span><span class="t-en">Can tax or control change? Does the team have a reserve?</span></summary>
-        <div class="body"><p class="t-zh">税 2% 写死，合约无 owner、不可升级。没有预挖和免费票。团队地址在部署时固定，购买规则与玩家相同，每址最多 10 张。团队的 20% 要等开池才支付。</p><p class="t-en">The 2% tax is fixed. There is no owner and the contract is not upgradeable. No premine and no free tickets. The team address is fixed at deploy and buys like everyone else, max 10 per address. Its 20% is paid only when the pool opens.</p></div>
+        <div class="body"><p class="t-zh">税 2% 写死，合约没有管理员、不可升级。没有预挖和免费票。团队地址在部署时固定，购买规则与玩家相同，每址最多 10 张。团队的 20% 要等开池才支付。</p><p class="t-en">The 2% tax is fixed. There is no owner and the contract is not upgradeable. No premine and no free tickets. The team address is fixed at deploy and buys like everyone else, max 10 per address. Its 20% is paid only when the pool opens.</p></div>
       </details>
       <details class="faq-item" id="faq-ark-token">
         <summary><span class="t-zh">ARK 总量多少？跟什么交易？</span><span class="t-en">What is ARK supply, and which pair?</span></summary>
@@ -652,13 +652,13 @@ Reading ArkSale…</pre>
       </details>
       <details class="faq-item">
         <summary><span class="t-zh">现在能连钱包、扫货或者领奖吗？</span><span class="t-en">Can I connect a wallet, buy a listing, or claim now?</span></summary>
-        <div class="body"><p class="t-zh">可以连接钱包，并读取舱单、报价和洪水状态。ArkSale 的 startTime 还是 0 时，铸造正式未开售，页面不会发送 mint。发售开始后，铸造才会调用 ArkSale.mint。没有二级挂单合约，挂单和出价只显示链上记录。</p><p class="t-en">Yes. You can connect a wallet and read tickets, quotes, and flood state. While ArkSale startTime is still 0, minting is not open and this page will not send mint. After the sale starts, mint calls ArkSale.mint. There is no secondary order book, so listings and bids show on-chain records only.</p></div>
+        <div class="body"><p class="t-zh">可以连接钱包，并读取舱单、报价和洪水状态。开售时间还没到的时候，铸造正式未开售，页面不会发送铸造。发售开始后才会真正铸造。没有二级挂单合约，挂单和出价只显示链上记录。</p><p class="t-en">Yes. You can connect a wallet and read tickets, quotes, and flood state. While ArkSale startTime is still 0, minting is not open and this page will not send mint. After the sale starts, mint calls ArkSale.mint. There is no secondary order book, so listings and bids show on-chain records only.</p></div>
       </details>
     </section>
 
     <section class="risk" id="risk">
       <h2><span class="t-zh">风险</span><span class="t-en">Risk</span></h2>
-      <p class="t-zh">付费本金和 ARK 都可能归零。洪水会让没有沙袋的船票沉没，奖池没有保底价格。玩法可能受你所在地法规限制。这不是投资建议。铸造正式未开售时，不要为了 mint 转入 BNB。</p>
+      <p class="t-zh">付费本金和 ARK 都可能归零。洪水会让没有沙袋的船票沉没，奖池没有保底价格。玩法可能受你所在地法规限制。这不是投资建议。铸造正式未开售时，不要为了铸造转入 BNB。</p>
       <p class="t-en">Capital and ARK can go to zero. Unprotected tickets can sink, and the pot has no promised price. Flood and pot rules may be restricted where you live. This is not financial advice. Do not send BNB for mint while the sale is not started.</p>
     </section>
   </main>
@@ -694,7 +694,7 @@ Reading ArkSale…</pre>
         <div>
           <h3><span class="t-zh">品牌</span><span class="t-en">Brand</span></h3>
           <p class="muted"><span class="t-zh">白天、浅海蓝、金色太阳、暖木方舟。船票是舱位，不是生物。</span><span class="t-en">Daytime, light-blue sea, golden sun, warm wood ark. A ticket is a cabin, not a creature.</span></p>
-          <p class="muted"><span class="t-zh">本页不保管私钥。铸造由你的钱包签名。发布目录是 <code>./</code>。</span><span class="t-en">This page does not hold keys. Mint is signed by your wallet. Publish path is <code>./</code>.</span></p>
+          <p class="muted"><span class="t-zh">本页不保管私钥。铸造由你的钱包签名。</span><span class="t-en">This page does not hold keys. Mint is signed by your wallet. Publish path is <code>./</code>.</span></p>
         </div>
       </div>
       <ul class="ca-list">
@@ -706,11 +706,10 @@ Reading ArkSale…</pre>
         <li><span><span class="t-zh">奖池</span><span class="t-en">Pot</span></span><span><span class="ca">0xf34aEBBc83Ce872f5692d9e7ae906A8e30f924Fa</span><span class="ca-links"><a href="https://bscscan.com/address/0xf34aEBBc83Ce872f5692d9e7ae906A8e30f924Fa#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0xf34aEBBc83Ce872f5692d9e7ae906A8e30f924Fa" rel="noopener noreferrer">Sourcify</a></span></span></li>
         <li><span><span class="t-zh">校验</span><span class="t-en">Verifier</span></span><span><span class="ca">0xf14F5cF3fCB976082Df08dA1609D1698C39Ff2e2</span><span class="ca-links"><a href="https://bscscan.com/address/0xf14F5cF3fCB976082Df08dA1609D1698C39Ff2e2#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0xf14F5cF3fCB976082Df08dA1609D1698C39Ff2e2" rel="noopener noreferrer">Sourcify</a></span></span></li>
         <li><span><span class="t-zh">注册表</span><span class="t-en">Registry</span></span><span><span class="ca">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span><span class="ca-links"><a href="https://bscscan.com/address/0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F" rel="noopener noreferrer">Sourcify</a></span></span></li>
-        <li><span><span class="t-zh">团队</span><span class="t-en">Team</span></span><span><span class="ca">0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74</span><span class="ca-links"><a href="https://bscscan.com/address/0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74" rel="noopener noreferrer">BscScan</a></span></span></li>
         <li><span><span class="t-zh">路由</span><span class="t-en">Router</span></span><span><span class="ca">0x10ED43C718714eb63d5aA57B78B54704E256024E</span><span class="ca-links"><a href="https://bscscan.com/address/0x10ED43C718714eb63d5aA57B78B54704E256024E#code" rel="noopener noreferrer">BscScan</a></span></span></li>
         <li><span>BNB/USD</span><span><span class="ca">0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE</span><span class="ca-links"><a href="https://bscscan.com/address/0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE#code" rel="noopener noreferrer">BscScan</a></span></span></li>
       </ul>
-      <p class="fine"><span class="t-zh">风险提醒：本金与代币都可能归零；未防护船票会沉；奖池无价格承诺；当地法规可能限制洪水与分池玩法。舱位概率是 TicketNFT 的 70/25/5 与 100/200/600。铸造正式未开售时，不要为了 mint 转入 BNB。</span><span class="t-en">Risk: capital and tokens can go to zero. Unprotected tickets can sink. The pot has no promised price. Local rules may restrict the flood and the split. Cabin odds are the TicketNFT rates (70/25/5, 100/200/600). Do not send BNB for mint while the sale is not started.</span></p>
+      <p class="fine"><span class="t-zh">风险提醒：本金与代币都可能归零；未防护船票会沉；奖池无价格承诺；当地法规可能限制洪水与分池玩法。舱位概率是 70/25/5，日产是 100/200/600。铸造正式未开售时，不要为了铸造转入 BNB。</span><span class="t-en">Risk: capital and tokens can go to zero. Unprotected tickets can sink. The pot has no promised price. Local rules may restrict the flood and the split. Cabin odds are the TicketNFT rates (70/25/5, 100/200/600). Do not send BNB for mint while the sale is not started.</span></p>
     </div>
   </footer>
 
