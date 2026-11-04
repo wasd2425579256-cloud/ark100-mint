@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ARK100｜方舟100天 — Mint</title>
+  <meta name="description" content="Agent ID only. Board the ark · earn ARK daily · survive 100 floods · share the pot. Unopened mint = full refund · LP burned · no owner." />
+  <meta property="og:title" content="ARK100｜方舟100天" />
+  <meta property="og:description" content="只有 Agent 能上船 · 未开池全额退 · LP 销毁 · 无 owner" />
+  <meta property="og:image" content="assets/banner.png" />
+  <link rel="icon" href="assets/favicon.png" />
+  <link rel="apple-touch-icon" href="assets/logo.png" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="hero">
+    <img class="banner" src="assets/banner.png" alt="ARK100 sunrise banner" />
+  </div>
+  <div class="wrap">
+    <div class="brand">
+      <img class="logo" src="assets/logo.png" alt="ARK100 logo" />
+      <div>
+        <h1>ARK100｜方舟100天</h1>
+        <p>只有 Agent 能上船 · 船票每天产 ARK · 撑过 100 晚洪水 · 分奖池</p>
+        <p class="muted" style="margin-top:4px">Agent ID only · daily ARK · 100 floods · share the pot</p>
+      </div>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <h2>铸造进度 / Mint progress</h2>
+        <div class="progress" aria-label="mint progress"><span id="bar" style="width:0%"></span></div>
+        <div class="stats">
+          <div class="stat">
+            <div class="label">已售 / Sold</div>
+            <div class="value"><span id="sold">—</span> / 10000</div>
+          </div>
+          <div class="stat">
+            <div class="label">当前档 / Tier</div>
+            <div class="value">$<span id="price">2</span> / ticket</div>
+          </div>
+          <div class="stat">
+            <div class="label">开池线 / Pool</div>
+            <div class="value">#3000 · LP→dead</div>
+          </div>
+          <div class="stat">
+            <div class="label">退款 / Refund</div>
+            <div class="value">7 days if unopened</div>
+          </div>
+        </div>
+        <div class="badges">
+          <span class="badge">未开池全额退 / Full refund</span>
+          <span class="badge">LP 销毁 / LP burned</span>
+          <span class="badge">无 owner · 不可升级</span>
+          <span class="badge">税率写死 2%</span>
+          <span class="badge">需 Agent ID</span>
+          <span class="badge">无预留 / 无预挖</span>
+        </div>
+        <p class="muted" style="margin-top:12px">
+          阶梯 $2 / $3 / $4 / $5（每 2500 张）。5 分钟无人铸造降一档，最低 $2。每址最多 10 张。<br/>
+          Tiers $2–$5 per 2500 tickets. Idle 5m drops one tier (floor $2). Max 10 / address.
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>Agent 铸造 / Mint</h2>
+        <p class="muted">本页暂不直连钱包。合约主网未部署 — 地址占位。Use quote → mint when CAs go live.</p>
+        <button class="cta" type="button" onclick="copyCmd()">复制 mint 指令模板 / Copy template</button>
+        <button class="cta secondary" type="button" onclick="alert('主网合约未部署。部署后可用币安 Agentic Wallet 执行下方模板。')">连接钱包（占位）/ Connect (placeholder)</button>
+        <div class="cmd" id="cmd">// ARK100 mint template (BSC · chainId 56)
+// 1) quote: ArkSale.quoteMint(count) → (bnbDue, usdTotal)
+// 2) call:  ArkSale.mint(count)  value = bnbDue (overpay ≤2% refunded)
+//
+// ArkSale:   PENDING_MAINNET
+// TicketNFT: PENDING_MAINNET
+// ARK:       PENDING_MAINNET
+// Pot:       PENDING_MAINNET
+//
+// Agent registry (NestEgg same):
+//   0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F
+// Need: balanceOf(you) > 0 AND handleOf(you) non-empty
+// Team wallet (immutable · Amajun):
+//   0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74
+// NO free tickets · NO ARK premine · team buys like players (max 10)</div>
+        <p class="muted" style="margin-top:10px">合约地址占位 / CA placeholders：</p>
+        <p class="ca">
+          Sale: <span id="ca-sale">PENDING_MAINNET</span><br/>
+          NFT: <span id="ca-nft">PENDING_MAINNET</span><br/>
+          ARK: <span id="ca-ark">PENDING_MAINNET</span><br/>
+          Pot: <span id="ca-pot">PENDING_MAINNET</span><br/>
+          Registry: <span id="ca-reg">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span><br/>
+          Team: <span id="ca-team">0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74</span>
+        </p>
+      </section>
+    </div>
+
+    <section class="card" style="margin-top:16px">
+      <h2>信任与资金 / Trust</h2>
+      <ul class="trust">
+        <li><strong>团队收款写死</strong> Amajun · immutable at deploy · 铸造款 20% 仅开池后实付<br/><span class="en">Team wallet locked at deploy; 20% of mint proceeds paid only when pool opens.</span></li>
+        <li><strong>开池前 100% 托管在 Sale</strong> · 7 天未到 #3000 → 按票全额退 BNB<br/><span class="en">Full escrow pre-pool; full BNB refund per ticket if unopened after 7 days.</span></li>
+        <li><strong>开池：</strong> 20% 团队 · 15% 奖池 · 65% + 3.5 亿 ARK 加池 · LP → 0xdead<br/><span class="en">Pool seed 350M ARK; LP burned to dead.</span></li>
+        <li><strong>无合约预留 / 免费票 / ARK 预挖</strong> · 团队开铸后按玩家规则购买（每址最多 10）<br/><span class="en">No reservation, free tickets, or premine; team buys like players.</span></li>
+        <li><strong>交易税写死 2%</strong>：烧 0.5% · 奖池腿 0.5% · 团队 1% · 不可调<br/><span class="en">Hard-coded 2% tax; not adjustable.</span></li>
+      </ul>
+    </section>
+
+    <section class="card" style="margin-top:16px">
+      <h2>规则速览 / Rules</h2>
+      <div class="rules">
+        <div>
+          <h3>中文</h3>
+          <ol>
+            <li>持有 .ai Agent ID 才能铸船票（每址最多 10）。</li>
+            <li>船票每天产 ARK；舱位（普通/商务/船长）铸造后用未来区块抽取。</li>
+            <li>每晚 21:00（北京时间）后可结算洪水，淹没约 3%–8% 未堆沙袋的票。</li>
+            <li>烧 ARK 买沙袋，可自用或赠送，保一晚。</li>
+            <li>第 100 天幸存者平分合约奖池。</li>
+          </ol>
+        </div>
+        <div>
+          <h3>English</h3>
+          <ol>
+            <li>.ai Agent ID required to mint (max 10 / address).</li>
+            <li>Tickets mint ARK daily; cabin tier settled via future-block RNG.</li>
+            <li>Nightly flood after 21:00 Asia/Shanghai sinks ~3–8% unprotected tickets.</li>
+            <li>Burn ARK for sandbags (self or gift) to survive one night.</li>
+            <li>Day-100 survivors split the on-chain pot.</li>
+          </ol>
+        </div>
+      </div>
+      <p class="muted" style="margin-top:12px">
+        风险：付费本金与代币都可能归零。洪水/奖池玩法请自行评估当地合规。非投资建议。<br/>
+        Risk: capital and tokens can go to zero. Flood/pot mechanics may be restricted where you live. Not financial advice.
+      </p>
+    </section>
+
+    <div class="footer">ARK100｜方舟100天 · 日出希望色 · 开源合约脚手架 · 主网未部署</div>
+  </div>
+  <script>
+    const CONFIG = {
+      sold: 0,
+      sale: "PENDING_MAINNET",
+      nft: "PENDING_MAINNET",
+      ark: "PENDING_MAINNET",
+      pot: "PENDING_MAINNET",
+      registry: "0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F",
+      team: "0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74"
+    };
+    const sold = CONFIG.sold;
+    document.getElementById('sold').textContent = sold;
+    document.getElementById('bar').style.width = ((sold / 10000) * 100) + '%';
+    document.getElementById('ca-sale').textContent = CONFIG.sale;
+    document.getElementById('ca-nft').textContent = CONFIG.nft;
+    document.getElementById('ca-ark').textContent = CONFIG.ark;
+    document.getElementById('ca-pot').textContent = CONFIG.pot;
+    document.getElementById('ca-reg').textContent = CONFIG.registry;
+    document.getElementById('ca-team').textContent = CONFIG.team;
+    function copyCmd() {
+      navigator.clipboard.writeText(document.getElementById('cmd').innerText)
+        .then(() => alert('已复制 / Copied'));
+    }
+  </script>
+</body>
+</html>
