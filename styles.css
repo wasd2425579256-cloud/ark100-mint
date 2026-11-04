@@ -166,6 +166,45 @@ button, input { font: inherit; }
   white-space: nowrap;
 }
 .topbar nav a:hover { background: rgba(255, 255, 255, 0.9); }
+.topbar-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+.lang-toggle {
+  display: inline-flex;
+  flex: 0 0 auto;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(196, 138, 74, 0.5);
+  box-shadow: 0 4px 12px rgba(26, 43, 60, 0.06);
+}
+.lang-toggle button {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 0.78rem;
+  line-height: 1;
+  padding: 7px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  min-height: 32px;
+}
+html[data-lang="zh"] #langZh,
+html:not([data-lang]) #langZh,
+html[data-lang="en"] #langEn {
+  background: linear-gradient(180deg, #ffe7a8, #f0c14d);
+  color: #6a4314;
+}
+html[data-lang="zh"] .t-en,
+html:not([data-lang]) .t-en { display: none !important; }
+html[data-lang="en"] .t-zh { display: none !important; }
+.seal .t-zh, .seal .t-en { display: block; }
 
 .statusline {
   display: flex;
