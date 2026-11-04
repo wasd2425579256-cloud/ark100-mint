@@ -788,6 +788,20 @@ tr.sunk .oddbar span { width: 0; }
 .rule .body p, .faq-item .body p { margin: 0 0 8px; }
 .faq-item .body ul { margin: 0 0 8px; padding-left: 1.15rem; }
 .faq-item .body li { margin: 0 0 6px; }
+.promo { margin: 12px 0 0; }
+.promo img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 16px;
+  border: 1px solid rgba(196, 138, 74, 0.28);
+}
+.promo figcaption {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
 
 .risk {
   margin-top: 14px;
