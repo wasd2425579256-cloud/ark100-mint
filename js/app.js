@@ -8,6 +8,12 @@
   var ticketRows = [];
   var lookedUp = "";
   var account = "";
+  var payBook = "bnb";
+  var listingCache = {
+    bnb: { deployed: false, feeBps: 250n, rows: [] },
+    ark: { deployed: false, feeBps: 250n, rows: [] }
+  };
+  var bidCache = { deployed: false, feeBps: 250n, rows: [] };
 
   function zh() { return lang !== "en"; }
   function $(id) { return document.getElementById(id); }
@@ -428,9 +434,502 @@
     shown.forEach(function (item) { list.appendChild(feedLine(item)); });
   }
 
+  function marketAddr(book) {
+    return book === "ark" ? C.ADDR.marketArk : C.ADDR.marketBnb;
+  }
+
+  function feePct(bps) {
+    var n = Number(bps);
+    if (!Number.isFinite(n)) return "2.5%";
+    return (n / 100).toString() + "%";
+  }
+
+  function throwCode(code) {
+    var err = new Error(code);
+    err.code = code;
+    throw err;
+  }
+
+  function marketCabin(row) {
+    if (row.mintedAt === 0n || row.cabin === 4) return { cls: "mute", zh: "已沉", en: "Sunk" };
+    if (row.commit !== 0n) return { cls: "wait", zh: "抽舱中", en: "Cabin pending" };
+    if (row.cabin === 1) return { cls: "eco", zh: "经济舱", en: "Economy" };
+    if (row.cabin === 2) return { cls: "biz", zh: "商务舱", en: "Business" };
+    if (row.cabin === 3) return { cls: "cap", zh: "船长舱", en: "Captain" };
+    return { cls: "wait", zh: "未抽舱", en: "Unsettled" };
+  }
+
+  function marketRate(row) {
+    if (row.mintedAt === 0n || row.cabin === 4) return "0";
+    if (row.cabin === 0 || row.commit !== 0n) return "—";
+    return C.CABIN_RATE[row.cabin] ? String(C.CABIN_RATE[row.cabin]) : "—";
+  }
+
+  function moneyText(amount, unit) {
+    return C.formatUnits(amount, 18, 6) + " " + unit;
+  }
+
+  function bidWant(row) {
+    if (row.kind === 2) return "#" + row.param.toString();
+    if (row.kind === 1) {
+      var names = { 0: ["未抽舱", "Unsettled"], 1: ["经济舱", "Economy"], 2: ["商务舱", "Business"], 3: ["船长舱", "Captain"] };
+      var pair = names[Number(row.param)] || ["舱位", "Cabin"];
+      return zh() ? pair[0] : pair[1];
+    }
+    return zh() ? "任何可挂船票" : "Any listable ticket";
+  }
+
+  function bidExpired(row) {
+    var now = board && board.now ? board.now : BigInt(Math.floor(Date.now() / 1000));
+    return row.expires <= now;
+  }
+
+  function bidStatus(row) {
+    if (!row.open) return zh() ? "已关闭" : "Closed";
+    if (bidExpired(row)) return zh() ? "已过期" : "Expired";
+    var now = board && board.now ? Number(board.now) : Math.floor(Date.now() / 1000);
+    var hrs = Math.max(1, Math.ceil((Number(row.expires) - now) / 3600));
+    return zh() ? ("开放 · 约 " + hrs + " 小时") : ("Open · about " + hrs + "h");
+  }
+
+  function fillMarketOptions() {
+    document.querySelectorAll("#market option[data-zh]").forEach(function (el) {
+      el.textContent = zh() ? el.getAttribute("data-zh") : el.getAttribute("data-en");
+    });
+  }
+
+  function syncBidFields() {
+    var kind = $("bidKind") ? $("bidKind").value : "0";
+    if ($("bidCabinWrap")) $("bidCabinWrap").hidden = kind !== "1";
+    if ($("bidTokenWrap")) $("bidTokenWrap").hidden = kind !== "2";
+    if ($("bidQty")) {
+      $("bidQty").disabled = kind === "2";
+      if (kind === "2") $("bidQty").value = "1";
+    }
+  }
+
+  function showNote(el, textZh, textEn, on) {
+    if (!el) return;
+    el.hidden = !on;
+    if (on) say(el, textZh, textEn);
+  }
+
+  function renderListingTable() {
+    var body = $("listingBody");
+    var book = listingCache[payBook] || { deployed: false, rows: [] };
+    var unit = payBook === "ark" ? "ARK" : "BNB";
+    if ($("priceHead")) setBi($("priceHead"), "价格（" + unit + "）", "Price (" + unit + ")");
+    setBi($("listPriceLabel"), "价格（" + unit + "）", "Price (" + unit + ")");
+    setBi($("listBtn"), payBook === "ark" ? "用 ARK 挂单" : "用 BNB 挂单", payBook === "ark" ? "List for ARK" : "List for BNB");
+    var live = !C.isZeroAddr(marketAddr(payBook));
+    ["listBtn", "cancelListBtn", "cleanListBtn"].forEach(function (id) {
+      if ($(id)) $(id).disabled = !live;
+    });
+    if (!body) return;
+    body.innerHTML = "";
+    var rows = book.rows || [];
+    if (!book.deployed) {
+      showNote($("listingEmpty"), "市场合约待部署。", "Market contracts are not deployed yet.", true);
+      showNote($("listingNote"), "", "", false);
+      return;
+    }
+    showNote($("listingEmpty"), "这本簿上还没有挂单。", "No listings on this book yet.", rows.length === 0);
+    showNote($("listingNote"), "挂单较多，这里只显示前 40 条。", "More than 40 listings. Showing the first 40.", !!book.truncated && rows.length > 0);
+    rows.forEach(function (row) {
+      var tr = document.createElement("tr");
+      var badge = marketCabin(row);
+      tr.innerHTML =
+        "<td>#" + row.id.toString() + "</td>" +
+        "<td><span class=\"badge " + badge.cls + "\"><span class=\"t-zh\">" + badge.zh + "</span><span class=\"t-en\">" + badge.en + "</span></span></td>" +
+        "<td>" + marketRate(row) + "</td>" +
+        "<td>" + moneyText(row.price, unit) + "</td>" +
+        "<td></td><td></td>";
+      tr.children[4].textContent = C.shortAddr(row.seller);
+      var acts = document.createElement("div");
+      acts.className = "row-acts";
+      if (account && sameAddr(account, row.seller)) {
+        var cancel = actionButton("cancel-listing", row.id, "撤单", "Cancel");
+        cancel.setAttribute("data-book", payBook);
+        acts.appendChild(cancel);
+      } else if (row.buyable) {
+        var buy = actionButton("buy-listing", row.id, "购买", "Buy");
+        buy.setAttribute("data-book", payBook);
+        acts.appendChild(buy);
+      } else {
+        var clean = actionButton("clean-listing", row.id, "清理", "Clean");
+        clean.setAttribute("data-book", payBook);
+        acts.appendChild(clean);
+        acts.appendChild(textSpan("现在不能成交", "Not buyable now"));
+      }
+      tr.children[5].appendChild(acts);
+      body.appendChild(tr);
+    });
+  }
+
+  function renderBidTable() {
+    var body = $("bidBody");
+    var live = !C.isZeroAddr(C.ADDR.marketBid);
+    ["postBidBtn", "cancelBidBtn", "refundBidBtn"].forEach(function (id) {
+      if ($(id)) $(id).disabled = !live;
+    });
+    if (!body) return;
+    body.innerHTML = "";
+    var rows = (bidCache && bidCache.rows) || [];
+    if (!bidCache.deployed) {
+      showNote($("bidEmpty"), "市场合约待部署。", "Market contracts are not deployed yet.", true);
+      showNote($("bidNote"), "", "", false);
+      return;
+    }
+    showNote($("bidEmpty"), "这本求购簿上还没有出价。", "No bids on this book yet.", rows.length === 0);
+    showNote($("bidNote"), "求购较多，这里只显示前 40 条。", "More than 40 bids. Showing the first 40.", !!bidCache.truncated && rows.length > 0);
+    rows.forEach(function (row) {
+      var tr = document.createElement("tr");
+      var expired = bidExpired(row);
+      tr.innerHTML =
+        "<td>#" + row.id.toString() + "</td>" +
+        "<td></td>" +
+        "<td>" + moneyText(row.unitPrice, "BNB") + "</td>" +
+        "<td>" + row.qtyLeft.toString() + "</td>" +
+        "<td></td>" +
+        "<td></td><td></td>";
+      tr.children[1].textContent = bidWant(row);
+      tr.children[4].textContent = C.shortAddr(row.buyer);
+      tr.children[5].textContent = bidStatus(row);
+      var acts = document.createElement("div");
+      acts.className = "row-acts";
+      if (row.open && expired) {
+        acts.appendChild(actionButton("refund-bid", row.id, "退回", "Refund"));
+      } else if (row.open) {
+        if (row.kind === 2) {
+          var fillFixed = actionButton("fill-bid", row.param, "成交", "Fill");
+          fillFixed.setAttribute("data-bid", row.id.toString());
+          fillFixed.setAttribute("data-token", row.param.toString());
+          acts.appendChild(fillFixed);
+        } else {
+          var input = document.createElement("input");
+          input.className = "mini-input";
+          input.setAttribute("inputmode", "numeric");
+          input.setAttribute("data-fill-for", row.id.toString());
+          input.placeholder = zh() ? "船票编号" : "Ticket id";
+          var fill = actionButton("fill-bid", row.id, "成交", "Fill");
+          fill.setAttribute("data-bid", row.id.toString());
+          acts.appendChild(input);
+          acts.appendChild(fill);
+        }
+      }
+      if (account && sameAddr(account, row.buyer) && row.open) {
+        acts.appendChild(actionButton("cancel-bid", row.id, "撤销", "Cancel"));
+      }
+      tr.children[6].appendChild(acts);
+      body.appendChild(tr);
+    });
+  }
+
+  function formWei(id) {
+    var el = $(id);
+    if (!el || !String(el.value || "").trim()) return "";
+    try {
+      var parsed = C.parseUnits(el.value, 18);
+      return parsed > 0n ? parsed.toString() : "";
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function marketBrief() {
+    var book = payBook;
+    var market = marketAddr(book);
+    var bnbBps = listingCache.bnb && listingCache.bnb.feeBps != null ? listingCache.bnb.feeBps.toString() : "250";
+    var arkBps = listingCache.ark && listingCache.ark.feeBps != null ? listingCache.ark.feeBps.toString() : "250";
+    var bidBps = bidCache && bidCache.feeBps != null ? bidCache.feeBps.toString() : "250";
+    var ticket = ($("listId") && $("listId").value.trim()) || "TICKET_ID";
+    var price = formWei("listPrice") || "PRICE_WEI";
+    var kind = $("bidKind") ? $("bidKind").value : "0";
+    var param = "0";
+    var qty = ($("bidQty") && $("bidQty").value.trim()) || "1";
+    if (kind === "1") param = $("bidCabin") ? $("bidCabin").value : "0";
+    if (kind === "2") {
+      param = ($("bidTokenId") && $("bidTokenId").value.trim()) || "TICKET_ID";
+      qty = "1";
+    }
+    var unit = formWei("bidPrice") || "UNIT_PRICE_WEI";
+    var hours = ($("bidHours") && $("bidHours").value.trim()) || "168";
+    var deployedNote = (!C.isZeroAddr(C.ADDR.marketBnb) || !C.isZeroAddr(C.ADDR.marketArk) || !C.isZeroAddr(C.ADDR.marketBid))
+      ? ""
+      : (zh() ? "市场合约待部署。下面的地址还是 0，不要发送交易。" : "Market contracts are not deployed yet. The addresses below are still zero. Do not send.");
+    if (zh()) {
+      return [
+        "ARK100 市场说明",
+        "链：BNB Smart Chain（chainId 56）",
+        deployedNote,
+        "不需要 Agent ID。只有铸造需要。",
+        "可成交：还在航，且 cabinCommitBlock 为 0。沉船和正在 requestCabin 的票会被拒绝。",
+        "舱位和未领日产跟着船票走。",
+        "手续费：BNB 簿 MARKET_FEE_BPS=" + bnbBps + "，ARK 簿=" + arkBps + "，求购=" + bidBps + "。由合约付给项目手续费钱包。",
+        "",
+        "BNB 挂单 TicketMarketBNB: " + C.ADDR.marketBnb,
+        "ARK 挂单 TicketMarketARK: " + C.ADDR.marketArk,
+        "BNB 求购 TicketBidMarket: " + C.ADDR.marketBid,
+        "船票 TicketNFT: " + C.ADDR.nft,
+        "ARK: " + C.ADDR.ark,
+        "",
+        "当前挂单簿：" + (book === "ark" ? "ARK" : "BNB"),
+        "1. 船票授权给这本簿（若尚未授权）：TicketNFT.approve(market, " + ticket + ")",
+        "2. list(" + ticket + ", " + price + ")，价格单位是 wei，不要附带 BNB。",
+        book === "ark"
+          ? "购买：ARK.approve(TicketMarketARK, 价格) 然后 buy(" + ticket + ")，value = 0。不要把 BNB 打进 ARK 簿。"
+          : "购买：buy(" + ticket + ")，value = 挂单价格（wei）。多付的 BNB 会退回。",
+        "撤单：cancel(" + ticket + ")，仅卖家。失效记录：cleanListing(" + ticket + ")。",
+        "",
+        "求购：postBid(kind, param, unitPrice, qty, durationSeconds)",
+        "kind 0 任何可挂（param=0），kind 1 舱位（0 未抽舱 / 1 经济 / 2 商务 / 3 船长），kind 2 指定船票且 qty=1。",
+        "这一笔：postBid(" + kind + ", " + param + ", " + unit + ", " + qty + ", " + hours + " * 3600)",
+        "value 必须等于单价 × 数量。",
+        "成交：先把船票授权给求购合约，再 acceptBid(bidId, tokenId)。过期不能成交。",
+        "出价人 cancelBid(bidId) 退回剩余。过期后任何人 refundExpired(bidId)。"
+      ].filter(Boolean).join("\n");
+    }
+    return [
+      "ARK100 market brief",
+      "Chain: BNB Smart Chain (chainId 56)",
+      deployedNote,
+      "No Agent ID. Mint is the only call that checks it.",
+      "Tradable: afloat and cabinCommitBlock == 0. Sunk tickets and tickets inside requestCabin are rejected.",
+      "Cabin and unclaimed yield stay on the ticket.",
+      "Fee: BNB book MARKET_FEE_BPS=" + bnbBps + ", ARK book=" + arkBps + ", bids=" + bidBps + ". The contract pays the project fee wallet.",
+      "",
+      "BNB listings TicketMarketBNB: " + C.ADDR.marketBnb,
+      "ARK listings TicketMarketARK: " + C.ADDR.marketArk,
+      "BNB bids TicketBidMarket: " + C.ADDR.marketBid,
+      "TicketNFT: " + C.ADDR.nft,
+      "ARK: " + C.ADDR.ark,
+      "",
+      "Open listing book: " + (book === "ark" ? "ARK" : "BNB"),
+      "1. Approve the ticket for that book if needed: TicketNFT.approve(market, " + ticket + ")",
+      "2. list(" + ticket + ", " + price + "). Price is wei. Do not attach BNB to list.",
+      book === "ark"
+        ? "Buy: ARK.approve(TicketMarketARK, price) then buy(" + ticket + ") with value 0. Do not send BNB to the ARK book."
+        : "Buy: buy(" + ticket + ") with value = the listing price in wei. Extra BNB is refunded.",
+      "Cancel: cancel(" + ticket + "), seller only. Stale row: cleanListing(" + ticket + ").",
+      "",
+      "Bid: postBid(kind, param, unitPrice, qty, durationSeconds)",
+      "kind 0 any listable (param 0), kind 1 cabin (0 unsettled / 1 economy / 2 business / 3 captain), kind 2 one tokenId and qty 1.",
+      "This form: postBid(" + kind + ", " + param + ", " + unit + ", " + qty + ", " + hours + " * 3600)",
+      "value must equal unitPrice * qty.",
+      "Fill: approve the ticket for the bid market, then acceptBid(bidId, tokenId). Expired bids cannot be filled.",
+      "The bidder calls cancelBid(bidId) to refund the remainder. After expiry anyone calls refundExpired(bidId)."
+    ].filter(Boolean).join("\n");
+  }
+
+  function renderMarketBrief() {
+    var pre = $("marketCmd");
+    if (pre) pre.textContent = marketBrief();
+  }
+
   function renderMarket() {
-    say($("listingEmpty"), "链上挂单：0。船票只通过铸造发售。", "On-chain listings: 0. Tickets are sold only through ArkSale.");
-    say($("bidEmpty"), "链上出价：0。", "On-chain bids: 0.");
+    var bnbLive = !C.isZeroAddr(C.ADDR.marketBnb);
+    var arkLive = !C.isZeroAddr(C.ADDR.marketArk);
+    var bidLive = !C.isZeroAddr(C.ADDR.marketBid);
+    var bps = function (key) {
+      var src = key === "bid" ? bidCache : listingCache[key];
+      return src && src.feeBps != null ? src.feeBps : 250n;
+    };
+    if (!bnbLive && !arkLive && !bidLive) {
+      say($("marketDeploy"),
+        "市场合约待部署。js/chain.js 里 marketBnb、marketArk、marketBid 还是 0 地址，所以下面的表是空的。",
+        "Market contracts are not deployed yet. marketBnb, marketArk, and marketBid in js/chain.js are still the zero address, so these tables stay empty.");
+    } else {
+      say($("marketDeploy"),
+        "已填地址的簿会读链上挂单和求购。还是 0 地址的簿保持空白。",
+        "Books with an address read live listings and bids. A zero address stays blank.");
+    }
+    say($("marketFee"),
+      "手续费 " + feePct(bps(payBook)) + "（MARKET_FEE_BPS）。BNB 簿 " + bps("bnb").toString() + "，ARK 簿 " + bps("ark").toString() + "，求购 " + bps("bid").toString() + "。",
+      "Fee " + feePct(bps(payBook)) + " (MARKET_FEE_BPS). BNB book " + bps("bnb").toString() + ", ARK book " + bps("ark").toString() + ", bids " + bps("bid").toString() + ".");
+    fillMarketOptions();
+    syncBidFields();
+    renderListingTable();
+    renderBidTable();
+    renderMarketBrief();
+  }
+
+  async function loadMarket() {
+    var results = await Promise.allSettled([
+      C.readListingBook(C.ADDR.marketBnb),
+      C.readListingBook(C.ADDR.marketArk),
+      C.readBidBook(C.ADDR.marketBid)
+    ]);
+    if (results[0].status === "fulfilled") listingCache.bnb = results[0].value;
+    if (results[1].status === "fulfilled") listingCache.ark = results[1].value;
+    if (results[2].status === "fulfilled") bidCache = results[2].value;
+    renderMarket();
+    var failed = results.find(function (item) { return item.status === "rejected"; });
+    if (failed) throw failed.reason || new Error("market");
+  }
+
+  async function marketTrack(hash) {
+    var slot = $("marketStatus");
+    say(slot, "交易已提交，等待确认。", "Transaction submitted, waiting for confirmation.");
+    if (slot) {
+      slot.appendChild(document.createTextNode(" "));
+      slot.appendChild(txLink(hash));
+    }
+    var rec = await C.waitReceipt(hash);
+    if (!rec) {
+      say(slot, "交易已提交，确认还没返回。", "Submitted. The receipt is not back yet.");
+      if (slot) { slot.appendChild(document.createTextNode(" ")); slot.appendChild(txLink(hash)); }
+      return false;
+    }
+    var ok = rec.status === "0x1";
+    say(slot, ok ? "交易已确认。" : "交易失败。", ok ? "Transaction confirmed." : "Transaction failed.");
+    if (slot) { slot.appendChild(document.createTextNode(" ")); slot.appendChild(txLink(hash)); }
+    if (ok) refresh().catch(function () {});
+    return ok;
+  }
+
+  async function ensureNftApproval(market, id) {
+    var approved = "";
+    try { approved = await C.getApproved(id); } catch (e) { approved = ""; }
+    var all = false;
+    if (account) {
+      try { all = await C.isApprovedForAll(account, market); } catch (e2) { all = false; }
+    }
+    if (all || sameAddr(approved, market)) return true;
+    say($("marketStatus"), "先授权船票给市场，确认后再继续。", "Approve the ticket for the market, then this continues.");
+    var hash = await C.sendApproveNft(market, id);
+    return marketTrack(hash);
+  }
+
+  async function doList() {
+    var market = marketAddr(payBook);
+    if (C.isZeroAddr(market)) throwCode("market-not-deployed");
+    var id = idFrom("listId");
+    if (!id) throwCode("bad-id");
+    var price = C.parseUnits($("listPrice").value, 18);
+    if (price <= 0n) throwCode("bad-amount");
+    if (!await ensureNftApproval(market, id)) return;
+    say($("marketStatus"), "正在发送挂单。", "Sending list.");
+    await marketTrack(await C.sendList(market, id, price));
+  }
+
+  async function doCancelListing(id) {
+    var market = marketAddr(payBook);
+    if (C.isZeroAddr(market)) throwCode("market-not-deployed");
+    if (!/^\d+$/.test(String(id || ""))) throwCode("bad-id");
+    say($("marketStatus"), "正在撤单。", "Sending cancel.");
+    await marketTrack(await C.sendCancelListing(market, id));
+  }
+
+  async function doCleanListing(id) {
+    var market = marketAddr(payBook);
+    if (C.isZeroAddr(market)) throwCode("market-not-deployed");
+    if (!/^\d+$/.test(String(id || ""))) throwCode("bad-id");
+    say($("marketStatus"), "正在清理失效挂单。", "Sending cleanListing.");
+    await marketTrack(await C.sendCleanListing(market, id));
+  }
+
+  async function doBuy(book, id) {
+    var market = marketAddr(book);
+    if (C.isZeroAddr(market)) throwCode("market-not-deployed");
+    if (!/^\d+$/.test(String(id || ""))) throwCode("bad-id");
+    if (book === "ark") {
+      var row = await C.readListing(market, id);
+      if (row.price === 0n) throwCode("unlisted");
+      var allowance = 0n;
+      if (account) {
+        try { allowance = await C.arkAllowance(account, market); } catch (e) { allowance = 0n; }
+      }
+      if (allowance < row.price) {
+        say($("marketStatus"), "先授权 ARK，确认后再购买。", "Approve ARK, then the buy continues.");
+        if (!await marketTrack(await C.sendApproveArk(market, row.price))) return;
+      }
+      say($("marketStatus"), "正在发送 ARK 购买。", "Sending the ARK buy.");
+      await marketTrack(await C.sendBuyArk(id));
+      return;
+    }
+    say($("marketStatus"), "正在发送 BNB 购买。", "Sending the BNB buy.");
+    await marketTrack(await C.sendBuyBnb(id));
+  }
+
+  function readBidForm() {
+    if (C.isZeroAddr(C.ADDR.marketBid)) throwCode("market-not-deployed");
+    var kind = Number($("bidKind").value);
+    if (kind !== 0 && kind !== 1 && kind !== 2) throwCode("bad-kind");
+    var qtyText = String($("bidQty").value || "").trim();
+    if (!/^\d+$/.test(qtyText) || BigInt(qtyText) <= 0n) throwCode("bad-qty");
+    var qty = BigInt(qtyText);
+    var param = 0n;
+    if (kind === 1) param = BigInt($("bidCabin").value);
+    if (kind === 2) {
+      var token = idFrom("bidTokenId");
+      if (!token) throwCode("bad-id");
+      param = BigInt(token);
+      qty = 1n;
+    }
+    var unit = C.parseUnits($("bidPrice").value, 18);
+    if (unit <= 0n) throwCode("bad-amount");
+    var hoursText = String($("bidHours").value || "").trim();
+    if (!/^\d+$/.test(hoursText)) throwCode("bad-duration");
+    var hours = BigInt(hoursText);
+    if (hours < 1n || hours > 720n) throwCode("bad-duration");
+    return { kind: kind, param: param, unit: unit, qty: qty, duration: hours * 3600n };
+  }
+
+  async function doPostBid() {
+    var spec = readBidForm();
+    var total = spec.unit * spec.qty;
+    say($("marketStatus"),
+      "正在发布求购，托管 " + C.formatUnits(total, 18, 6) + " BNB。",
+      "Posting the bid. Escrow " + C.formatUnits(total, 18, 6) + " BNB.");
+    await marketTrack(await C.sendPostBid(spec.kind, spec.param, spec.unit, spec.qty, spec.duration));
+  }
+
+  async function doFill(bidId, tokenId) {
+    if (C.isZeroAddr(C.ADDR.marketBid)) throwCode("market-not-deployed");
+    if (!/^\d+$/.test(String(bidId || "")) || !/^\d+$/.test(String(tokenId || ""))) throwCode("bad-id");
+    if (!await ensureNftApproval(C.ADDR.marketBid, tokenId)) return;
+    say($("marketStatus"), "正在成交求购。", "Sending acceptBid.");
+    await marketTrack(await C.sendAcceptBid(bidId, tokenId));
+  }
+
+  async function doCancelBid(id) {
+    if (!/^\d+$/.test(String(id || ""))) throwCode("bad-id");
+    say($("marketStatus"), "正在撤销求购。", "Sending cancelBid.");
+    await marketTrack(await C.sendCancelBid(id));
+  }
+
+  async function doRefundBid(id) {
+    if (!/^\d+$/.test(String(id || ""))) throwCode("bad-id");
+    say($("marketStatus"), "正在退回过期求购。", "Sending refundExpired.");
+    await marketTrack(await C.sendRefundExpired(id));
+  }
+
+  function wireMarket(id, run) {
+    var btn = $(id);
+    if (!btn || btn.dataset.marketBound) return;
+    btn.dataset.marketBound = "1";
+    btn.addEventListener("click", function () {
+      Promise.resolve().then(run).catch(function (e) {
+        say($("marketStatus"), walletError(e), walletError(e));
+      });
+    });
+  }
+
+  function initMarket() {
+    ["listId", "listPrice", "cancelListId", "cleanListId", "bidKind", "bidCabin", "bidTokenId", "bidPrice", "bidQty", "bidHours"].forEach(function (id) {
+      var el = $(id);
+      if (!el || el.dataset.marketBound) return;
+      el.dataset.marketBound = "1";
+      var update = function () { syncBidFields(); renderMarketBrief(); };
+      el.addEventListener("input", update);
+      el.addEventListener("change", update);
+    });
+    wireMarket("listBtn", doList);
+    wireMarket("cancelListBtn", function () { return doCancelListing(idFrom("cancelListId")); });
+    wireMarket("cleanListBtn", function () { return doCleanListing(idFrom("cleanListId")); });
+    wireMarket("postBidBtn", doPostBid);
+    wireMarket("cancelBidBtn", function () { return doCancelBid(idFrom("cancelBidId")); });
+    wireMarket("refundBidBtn", function () { return doRefundBid(idFrom("cancelBidId")); });
   }
 
   function explain(code, detail) {
@@ -447,6 +946,12 @@
       "pool-not-open": ["开池之后才能买沙袋，没有发送交易。", "Sandbags can be bought after the pool opens. No transaction was sent."],
       "pot-not-landed": ["奖池尚未靠岸，没有发送交易。", "The pot has not landed. No transaction was sent."],
       "bad-id": ["请输入船票编号。", "Enter a ticket id."],
+      "market-not-deployed": ["市场合约待部署，没有发送交易。", "Market contracts are not deployed. No transaction was sent."],
+      "bad-amount": ["价格格式不正确。用十进制数量，最多 18 位小数。", "Price must be a decimal with at most 18 fractional digits."],
+      "bad-qty": ["求购数量要是正整数。指定船票时数量只能是 1。", "Bid quantity must be a positive integer. A specific ticket allows quantity 1."],
+      "bad-duration": ["求购时长要在 1 到 720 小时之间。", "Bid duration must be from 1 to 720 hours."],
+      "bad-kind": ["求购类型不正确。", "That bid kind is not valid."],
+      "unlisted": ["这张船票没有挂单。", "That ticket is not listed."],
       "revert": ["合约拒绝了这笔调用，没有发出交易。", "The contract rejected the call. No transaction was sent."]
     };
     var pair = map[code] || ["操作没有完成。", "The action did not complete."];
@@ -497,6 +1002,11 @@
     renderQuote();
     await refreshQuote();
     say($("statusRead"), "链上读取", "On-chain");
+    try {
+      await loadMarket();
+    } catch (e) {
+      say($("marketStatus"), zh() ? "市场暂时读不到。" : "The market could not be read.");
+    }
   }
 
   async function loadFeed() {
@@ -602,6 +1112,7 @@
     document.querySelectorAll("[data-aria-zh]").forEach(function (el) {
       el.setAttribute("aria-label", zh() ? el.getAttribute("data-aria-zh") : el.getAttribute("data-aria-en"));
     });
+    fillMarketOptions();
     var toggle = $("langToggle");
     if (toggle) toggle.setAttribute("aria-label", zh() ? "语言" : "Language");
     var nav = $("siteNav");
@@ -636,6 +1147,15 @@
       refreshQuote();
       return;
     }
+    var pay = event.target.closest("[data-pay]");
+    if (pay) {
+      payBook = pay.getAttribute("data-pay") === "ark" ? "ark" : "bnb";
+      document.querySelectorAll("[data-pay]").forEach(function (btn) {
+        btn.setAttribute("aria-selected", btn === pay ? "true" : "false");
+      });
+      renderMarket();
+      return;
+    }
     var tab = event.target.closest("[data-tab]");
     if (tab) {
       var name = tab.getAttribute("data-tab");
@@ -664,6 +1184,12 @@
     if (copyBtn) {
       copyText(mintBrief()).then(function (ok) {
         say($("mintStatus"), ok ? "已复制铸造说明。" : "无法写入剪贴板，说明仍留在页面上。", ok ? "Mint brief copied." : "Clipboard blocked. The brief is still on the page.");
+      });
+    }
+    var copyMarket = event.target.closest("[data-copy='market']");
+    if (copyMarket) {
+      copyText(marketBrief()).then(function (ok) {
+        say($("marketStatus"), ok ? "已复制市场说明。" : "无法写入剪贴板，说明仍留在页面上。", ok ? "Market brief copied." : "Clipboard blocked. The brief is still on the page.");
       });
     }
   });
@@ -794,6 +1320,31 @@
       }
       say($("arkStatus"), "正在发送领退款。", "Sending the refund claim.");
       run = function () { return C.sendRefund(id); };
+    } else if (act === "buy-listing" || act === "cancel-listing" || act === "clean-listing" || act === "fill-bid" || act === "cancel-bid" || act === "refund-bid") {
+      var book = btn.getAttribute("data-book") || payBook;
+      var bidId = btn.getAttribute("data-bid") || id;
+      var tokenId = btn.getAttribute("data-token");
+      if (!tokenId && act === "fill-bid") {
+        var fillInput = document.querySelector("[data-fill-for='" + bidId + "']");
+        tokenId = fillInput ? String(fillInput.value || "").trim() : "";
+      }
+      var job = null;
+      if (act === "buy-listing") job = doBuy(book, id);
+      else if (act === "cancel-listing") {
+        payBook = book;
+        job = doCancelListing(id);
+      }
+      else if (act === "clean-listing") {
+        payBook = book;
+        job = doCleanListing(id);
+      }
+      else if (act === "fill-bid") job = doFill(bidId, tokenId);
+      else if (act === "cancel-bid") job = doCancelBid(id);
+      else job = doRefundBid(id);
+      Promise.resolve(job).catch(function (e) {
+        say($("marketStatus"), walletError(e), walletError(e));
+      });
+      return;
     } else return;
     Promise.resolve().then(run).then(function (hash) {
       return track(hash, $("arkStatus"));
@@ -812,16 +1363,19 @@
     account = addr || "";
     if ($("walletChip")) $("walletChip").textContent = account ? C.shortAddr(account) : "";
     renderTickets();
+    renderMarket();
   });
 
   setLang(lang, false);
   renderMarket();
+  initMarket();
   renderTickets();
   refresh().catch(function () {
     say($("statusRead"), "链上读取失败", "Chain read failed");
     say($("mintStatus"), "链上状态暂时读不到。铸造保持关闭，不会发送交易。", "Chain state could not be read. Mint stays closed and no transaction will be sent.");
     setBi($("mintBtn"), "正式未开售", "Sale not started");
     $("mintBtn").disabled = true;
+    loadMarket().catch(function () {});
   });
   loadFeed();
 
