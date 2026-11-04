@@ -25,6 +25,7 @@ interface IArkPotLand {
 
 /// @title FloodEngine — nightly flood with two-step future-block randomness.
 /// @notice Day boundary: 21:00 Asia/Shanghai = 13:00 UTC. Anyone may commit/settle.
+/// @notice Water: days 1–7 soft 2–3%; days 8–100: 3–8%. Cabin rates unchanged.
 contract FloodEngine {
     uint256 public constant DAY0_OFFSET = 13 hours; // 21:00 CST = 13:00 UTC
     uint256 public constant COMMIT_DELAY = 5; // blocks
@@ -43,7 +44,7 @@ contract FloodEngine {
     struct DayState {
         uint64 commitBlock; // block to read hash from
         bool settled;
-        uint8 waterBps; // 300..800 meaning 3.00%..8.00%  (stored as 3..8 for simplicity)
+        uint8 waterBps; // percent points: days 1–7 soft 2..3; days 8–100: 3..8
         uint32 sunkCount;
     }
 
@@ -128,7 +129,14 @@ contract FloodEngine {
         require(h != bytes32(0), "no hash");
 
         uint256 seed = uint256(keccak256(abi.encodePacked(h, dayIndex, address(this))));
-        uint8 waterPct = uint8(3 + (seed % 6)); // 3..8 inclusive
+        // Soft flood week 1 so most unprotected tickets can survive toward ~7d economy payback.
+        // Days 1–7: 2..3% inclusive (2 + seed%2). Days 8–100: legacy 3..8% (3 + seed%6).
+        uint8 waterPct;
+        if (dayIndex <= 7) {
+            waterPct = uint8(2 + (seed % 2)); // 2..3
+        } else {
+            waterPct = uint8(3 + (seed % 6)); // 3..8
+        }
         st.waterBps = waterPct;
 
         // Filter alive & unprotected

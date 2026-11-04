@@ -159,7 +159,7 @@ contract Ark100Test is Test {
 
 
     function test_lockedDefaults_poolSeedAndTeamImmutable() public view {
-        assertEq(sale.POOL_SEED_ARK(), 350_000_000 ether);
+        assertEq(sale.POOL_SEED_ARK(), 1_500_000 ether);
         assertEq(sale.OPEN_AT(), 3_000);
         assertEq(sale.MAX_SUPPLY(), 10_000);
         assertEq(sale.MAX_PER_ADDRESS(), 10);
@@ -289,9 +289,25 @@ contract Ark100Test is Test {
         flood.settle(1, candidates);
         uint256 aliveAfter = tickets.aliveCount();
         assertLt(aliveAfter, aliveBefore);
-        // water 3-8% of ~100 => sink 3..8
-        assertGe(aliveBefore - aliveAfter, 3);
-        assertLe(aliveBefore - aliveAfter, 8);
+        // night 1 is the soft week: 2..3% of ~100 => sink 2..3
+        assertGe(aliveBefore - aliveAfter, 2);
+        assertLe(aliveBefore - aliveAfter, 3);
+        (,, uint8 water1,) = flood.dayState(1);
+        assertGe(water1, 2);
+        assertLe(water1, 3);
+
+        // nights 8–100 stay on the 3..8% band
+        vm.warp(block.timestamp + 7 days);
+        flood.commit(8);
+        vm.roll(block.number + 6);
+        uint256 aliveMid = tickets.aliveCount();
+        flood.settle(8, candidates);
+        uint256 sunk8 = aliveMid - tickets.aliveCount();
+        assertGe(sunk8, (aliveMid * 3) / 100);
+        assertLe(sunk8, (aliveMid * 8) / 100);
+        (,, uint8 water8,) = flood.dayState(8);
+        assertGe(water8, 3);
+        assertLe(water8, 8);
     }
 
     // ---- openPool insurance ----
