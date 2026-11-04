@@ -207,28 +207,54 @@
     try { return await callUint(to, sel, arg); } catch (e) { return null; }
   }
 
-  async function readBoard() {
+  async function readBlockHead() {
     var blockHex = await callRpc("eth_blockNumber", []);
     var block = await callRpc("eth_getBlockByNumber", [blockHex, false]);
-    var now = BigInt(block.timestamp);
-    var sold = await callUint(ADDR.sale, SEL.sold);
-    var startTime = await callUint(ADDR.sale, SEL.startTime);
-    var opened = (await callUint(ADDR.sale, SEL.opened)) !== 0n;
-    var openedAt = await callUint(ADDR.sale, SEL.openedAt);
-    var refunding = (await callUint(ADDR.sale, SEL.refunding)) !== 0n;
-    var tier = await callUint(ADDR.sale, SEL.currentTier);
-    var priceUsd = await callUint(ADDR.sale, SEL.priceUsd);
-    var lastMintTime = await callUint(ADDR.sale, SEL.lastMintTime);
-    var floodStarted = (await callUint(ADDR.flood, SEL.started)) !== 0n;
-    var totalMinted = await callUint(ADDR.nft, SEL.totalMinted);
-    var aliveCount = await callUint(ADDR.nft, SEL.aliveCount);
-    var shopPrice = await callUint(ADDR.shop, SEL.shopPrice);
-    var basePrice = await callUint(ADDR.shop, SEL.basePrice);
-    var landed = (await callUint(ADDR.pot, SEL.landed)) !== 0n;
-    var survivors = await callUint(ADDR.pot, SEL.survivorCount);
-    var share = await callUint(ADDR.pot, SEL.sharePerTicket);
-    var pair = await tryUint(ADDR.sale, SEL.pair);
-    var officialPair = await tryUint(ADDR.ark, SEL.officialPair);
+    return { blockHex: blockHex, now: BigInt(block.timestamp) };
+  }
+
+  async function readBoard() {
+    var row = await Promise.all([
+      readBlockHead(),
+      callUint(ADDR.sale, SEL.sold),
+      callUint(ADDR.sale, SEL.startTime),
+      callUint(ADDR.sale, SEL.opened),
+      callUint(ADDR.sale, SEL.openedAt),
+      callUint(ADDR.sale, SEL.refunding),
+      callUint(ADDR.sale, SEL.currentTier),
+      callUint(ADDR.sale, SEL.priceUsd),
+      callUint(ADDR.sale, SEL.lastMintTime),
+      callUint(ADDR.flood, SEL.started),
+      callUint(ADDR.nft, SEL.totalMinted),
+      callUint(ADDR.nft, SEL.aliveCount),
+      callUint(ADDR.shop, SEL.shopPrice),
+      callUint(ADDR.shop, SEL.basePrice),
+      callUint(ADDR.pot, SEL.landed),
+      callUint(ADDR.pot, SEL.survivorCount),
+      callUint(ADDR.pot, SEL.sharePerTicket),
+      tryUint(ADDR.sale, SEL.pair),
+      tryUint(ADDR.ark, SEL.officialPair)
+    ]);
+    var head = row[0];
+    var now = head.now;
+    var sold = row[1];
+    var startTime = row[2];
+    var opened = row[3] !== 0n;
+    var openedAt = row[4];
+    var refunding = row[5] !== 0n;
+    var tier = row[6];
+    var priceUsd = row[7];
+    var lastMintTime = row[8];
+    var floodStarted = row[9] !== 0n;
+    var totalMinted = row[10];
+    var aliveCount = row[11];
+    var shopPrice = row[12];
+    var basePrice = row[13];
+    var landed = row[14] !== 0n;
+    var survivors = row[15];
+    var share = row[16];
+    var pair = row[17];
+    var officialPair = row[18];
     var dayIndex = null;
     var day = null;
     if (floodStarted) {
@@ -252,7 +278,7 @@
     var refundWindow = 7n * 24n * 60n * 60n;
     var canEnableRefunds = !opened && !refunding && startTime !== 0n && now >= startTime + refundWindow;
     return {
-      block: BigInt(blockHex),
+      block: BigInt(head.blockHex),
       now: now,
       sold: sold,
       startTime: startTime,
