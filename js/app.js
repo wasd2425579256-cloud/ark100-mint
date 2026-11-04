@@ -734,7 +734,11 @@
       var src = key === "bid" ? bidCache : listingCache[key];
       return src && src.feeBps != null ? src.feeBps : 250n;
     };
-    if (!bnbLive && !arkLive && !bidLive) {
+    if (bnbLive && arkLive && bidLive) {
+      say($("marketDeploy"),
+        "三本市场簿已接上 BSC 主网。",
+        "All three market books are on BSC mainnet.");
+    } else if (!bnbLive && !arkLive && !bidLive) {
       say($("marketDeploy"),
         "市场合约待部署。js/chain.js 里 marketBnb、marketArk、marketBid 还是 0 地址，所以下面的表是空的。",
         "Market contracts are not deployed yet. marketBnb, marketArk, and marketBid in js/chain.js are still the zero address, so these tables stay empty.");

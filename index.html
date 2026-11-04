@@ -414,7 +414,7 @@
         <span class="note-pill"><span class="t-zh">二级市场</span><span class="t-en">Secondary book</span></span>
       </div>
       <p class="muted"><span class="t-zh">两本挂单簿分开收钱：一本用 BNB，一本用 ARK，两种币不进同一份合约。求购只用 BNB 托管。每笔成交收取 2.5%（读合约里的 MARKET_FEE_BPS），付给项目手续费钱包。还在航、而且没有待揭晓抽舱的船票可以挂和买；沉船，以及正在 requestCabin 的票会被拒绝。舱位和未领日产跟着船票走。挂单、购买、求购都不需要 Agent ID，只有铸造需要。</span><span class="t-en">Two listing books, currencies never mixed: one takes BNB, one takes ARK. Quantity bids escrow BNB only. Every fill pays 2.5% (read MARKET_FEE_BPS on the contract) to the project fee wallet. Afloat tickets with no cabin request in flight can list and sell. Sunk tickets, and tickets inside requestCabin, are rejected. Cabin and unclaimed yield stay on the ticket. List, buy, and bid do not need an Agent ID. Only mint does.</span></p>
-      <p class="copy-status" id="marketDeploy" role="status"><span class="t-zh">市场合约待部署。</span><span class="t-en">Market contracts are not deployed yet.</span></p>
+      <p class="copy-status" id="marketDeploy" role="status"><span class="t-zh">正在读取挂单和求购。</span><span class="t-en">Reading listings and bids.</span></p>
       <p class="muted" id="marketFee"><span class="t-zh">手续费 2.5%（MARKET_FEE_BPS = 250）。</span><span class="t-en">Fee 2.5% (MARKET_FEE_BPS = 250).</span></p>
       <div class="tabs" role="tablist">
         <button class="tab" type="button" id="tab-listings" role="tab" aria-controls="panel-listings" aria-selected="true" data-tab="listings"><span class="t-zh">挂单</span><span class="t-en">Listings</span></button>
@@ -438,7 +438,7 @@
             <tbody id="listingBody"></tbody>
           </table>
         </div>
-        <p class="muted" id="listingEmpty"><span class="t-zh">市场合约待部署。</span><span class="t-en">Market contracts are not deployed yet.</span></p>
+        <p class="muted" id="listingEmpty"><span class="t-zh">正在读取挂单。</span><span class="t-en">Reading listings.</span></p>
         <p class="muted" id="listingNote" hidden></p>
         <div class="market-grid">
           <article class="trigger">
@@ -477,7 +477,7 @@
             <tbody id="bidBody"></tbody>
           </table>
         </div>
-        <p class="muted" id="bidEmpty"><span class="t-zh">市场合约待部署。</span><span class="t-en">Market contracts are not deployed yet.</span></p>
+        <p class="muted" id="bidEmpty"><span class="t-zh">正在读取求购。</span><span class="t-en">Reading bids.</span></p>
         <p class="muted" id="bidNote" hidden></p>
         <div class="market-grid">
           <article class="trigger">
@@ -745,7 +745,7 @@
       </details>
       <details class="faq-item">
         <summary><span class="t-zh">现在能连钱包、扫货或者领奖吗？</span><span class="t-en">Can I connect a wallet, buy a listing, or claim now?</span></summary>
-        <div class="body"><p class="t-zh">可以连接钱包，并读取舱单、报价、洪水和二级市场。开售时间还没到的时候，铸造正式未开售，页面不会发送铸造。发售开始后才会真正铸造。二级市场分 BNB 挂单、ARK 挂单和 BNB 求购，成交抽 2.5%。买卖和求购不需要 Agent ID。市场合约还没部署时，页面写「市场合约待部署」，表保持空白。</p><p class="t-en">Yes. You can connect a wallet and read tickets, quotes, the flood, and the secondary market. While ArkSale startTime is still 0, minting is not open and this page will not send mint. After the sale starts, mint calls ArkSale.mint. The secondary market is a BNB book, an ARK book, and BNB quantity bids, with a 2.5% fee on each fill. Buying, listing, and bidding do not need an Agent ID. Until those contracts are deployed, the page says the market contracts are not deployed yet and leaves the tables empty.</p></div>
+        <div class="body"><p class="t-zh">可以连接钱包，并读取舱单、报价、洪水和二级市场。开售时间还没到的时候，铸造正式未开售，页面不会发送铸造。发售开始后才会真正铸造。二级市场已经在 BSC 上：BNB 挂单、ARK 挂单和 BNB 求购，成交抽 2.5%。买卖和求购不需要 Agent ID。某一本簿的地址如果被清成 0，页面会写「市场合约待部署」，那一本表保持空白。</p><p class="t-en">Yes. You can connect a wallet and read tickets, quotes, the flood, and the secondary market. While ArkSale startTime is still 0, minting is not open and this page will not send mint. After the sale starts, mint calls ArkSale.mint. The secondary market is live on BSC: a BNB book, an ARK book, and BNB quantity bids, with a 2.5% fee on each fill. Buying, listing, and bidding do not need an Agent ID. If one of those addresses is cleared back to zero, that book says the market contract is not deployed and its table stays empty.</p></div>
       </details>
     </section>
 
@@ -792,6 +792,9 @@
       </div>
       <ul class="ca-list">
         <li><span><span class="t-zh">铸造</span><span class="t-en">Sale</span></span><span><span class="ca">0x5f92105341Cbc09462A0a10973664a322505BF32</span><span class="ca-links"><a href="https://bscscan.com/address/0x5f92105341Cbc09462A0a10973664a322505BF32#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0x5f92105341Cbc09462A0a10973664a322505BF32" rel="noopener noreferrer">Sourcify</a></span></span></li>
+        <li><span><span class="t-zh">BNB 挂单</span><span class="t-en">BNB market</span></span><span><span class="ca">0xC24b79485705cEF5AfF36fb4c4cCda34F8423d95</span><span class="ca-links"><a href="https://bscscan.com/address/0xC24b79485705cEF5AfF36fb4c4cCda34F8423d95" rel="noopener noreferrer">BscScan</a><a href="https://bscscan.com/tx/0xc1d70e60ef4b9e7c3e1fb137b665701bcee5c9c0722eb16ec7b20bc68642055b" rel="noopener noreferrer">Deploy tx</a></span></span></li>
+        <li><span><span class="t-zh">ARK 挂单</span><span class="t-en">ARK market</span></span><span><span class="ca">0x3fF61e70B89dc5b0EDD9a7f27435d6604683Bd64</span><span class="ca-links"><a href="https://bscscan.com/address/0x3fF61e70B89dc5b0EDD9a7f27435d6604683Bd64" rel="noopener noreferrer">BscScan</a><a href="https://bscscan.com/tx/0x1a8c2859d6957be284da4bf2353446467fb4cc0733d5392d943b7deede78abb0" rel="noopener noreferrer">Deploy tx</a></span></span></li>
+        <li><span><span class="t-zh">求购</span><span class="t-en">Bid market</span></span><span><span class="ca">0xbC58134B8596e8A12050fcDF2435F42Ea0E2Aa32</span><span class="ca-links"><a href="https://bscscan.com/address/0xbC58134B8596e8A12050fcDF2435F42Ea0E2Aa32" rel="noopener noreferrer">BscScan</a><a href="https://bscscan.com/tx/0x1277e5eca9d58adb69bab65b88848961afdf9ec408159f56a646f4f3444f67e7" rel="noopener noreferrer">Deploy tx</a></span></span></li>
         <li><span>TicketNFT</span><span><span class="ca">0x815202403e51C6525452dB09FC7c40dD2762D87e</span><span class="ca-links"><a href="https://bscscan.com/address/0x815202403e51C6525452dB09FC7c40dD2762D87e#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0x815202403e51C6525452dB09FC7c40dD2762D87e" rel="noopener noreferrer">Sourcify</a></span></span></li>
         <li><span>ARK</span><span><span class="ca">0xBCbA6cFc97d2c0A4Dcf22295D92EF5227B5db712</span><span class="ca-links"><a href="https://bscscan.com/address/0xBCbA6cFc97d2c0A4Dcf22295D92EF5227B5db712#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0xBCbA6cFc97d2c0A4Dcf22295D92EF5227B5db712" rel="noopener noreferrer">Sourcify</a></span></span></li>
         <li><span><span class="t-zh">洪水</span><span class="t-en">Flood</span></span><span><span class="ca">0xf15C1130fA9A5D0BAD783558379E39664aD79200</span><span class="ca-links"><a href="https://bscscan.com/address/0xf15C1130fA9A5D0BAD783558379E39664aD79200#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0xf15C1130fA9A5D0BAD783558379E39664aD79200" rel="noopener noreferrer">Sourcify</a></span></span></li>

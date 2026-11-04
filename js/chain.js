@@ -9,12 +9,11 @@
     flood: "0xf15C1130fA9A5D0BAD783558379E39664aD79200",
     shop: "0xcFC60dfb112Ab6BF19bE16d1d114990264aFF3bF",
     pot: "0xf34aEBBc83Ce872f5692d9e7ae906A8e30f924Fa",
-    // TicketMarketBNB / TicketMarketARK / TicketBidMarket. Zero until deployed.
-    // Replace these three; do not invent a fee recipient here. The markets pay
-    // feeRecipient set in their constructors (ArkSale.projectWallet()).
-    marketBnb: "0x0000000000000000000000000000000000000000",
-    marketArk: "0x0000000000000000000000000000000000000000",
-    marketBid: "0x0000000000000000000000000000000000000000",
+    // TicketMarketBNB / TicketMarketARK / TicketBidMarket on BSC mainnet.
+    // feeRecipient is the constructor arg 0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74.
+    marketBnb: "0xC24b79485705cEF5AfF36fb4c4cCda34F8423d95",
+    marketArk: "0x3fF61e70B89dc5b0EDD9a7f27435d6604683Bd64",
+    marketBid: "0xbC58134B8596e8A12050fcDF2435F42Ea0E2Aa32",
     verifier: "0xf14F5cF3fCB976082Df08dA1609D1698C39Ff2e2",
     registry: "0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F",
     router: "0x10ED43C718714eb63d5aA57B78B54704E256024E",

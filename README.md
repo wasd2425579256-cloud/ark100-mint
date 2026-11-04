@@ -4,7 +4,7 @@ Static site for ARK100 on BNB Smart Chain (chainId 56). Publish path `./`, build
 
 The page reads ArkSale, TicketNFT, ARK, FloodEngine, SandbagShop, and ArkPot. A connected wallet can send `ArkSale.mint` only after `startTime` is set and the current block is at or after that time. Until then the mint control stays on 正式未开售 / Sale not started and does not send a transaction.
 
-Secondary trading is a separate set of contracts (`TicketMarketBNB`, `TicketMarketARK`, `TicketBidMarket`). Until their addresses replace the zero addresses in `js/chain.js`, the market section says 市场合约待部署 and does not send trades.
+Secondary trading is live on BSC: `TicketMarketBNB`, `TicketMarketARK`, and `TicketBidMarket`. Addresses are in `js/chain.js`. A zero address would leave that book blank with 市场合约待部署; these three are set.
 
 Cabin rates are the TicketNFT numbers: Economy 70% at 100 ARK/day, Business 25% at 200, Captain 5% at 600, drawn after mint with `requestCabin` / `settleCabin`. Sunk tickets produce 0. The 0.70 / 0.25 / 0.05 figures are cabin-draw probabilities. 150 ARK/day is the expected value across that draw, not a floor. A roughly 7-day payback is an open-price anchor, not a promise. Unprotected tickets: about 2–3% on nights 1–7, about 3–8% on nights 8–100.
 
@@ -28,18 +28,20 @@ Bid kinds match NestEgg EggBidMarketV2: `0` any listable ticket (`param` 0), `1`
 
 The live TicketNFT (`0x815202403e51C6525452dB09FC7c40dD2762D87e`) is a normal ERC-721. `transferFrom` / `approve` are open. There is no transfer hook blocking sales, so this change does not redeploy TicketNFT, ArkSale, or FloodEngine.
 
-### Deploy (not done in this PR)
+### Deployed on BSC mainnet
 
-`script/DeployMarkets.s.sol` deploys all three. Constructor args, BSC mainnet:
+Do not deploy these again. `script/DeployMarkets.s.sol` records the constructor args used:
 
 - `ticketNft`: `0x815202403e51C6525452dB09FC7c40dD2762D87e`
 - `arkToken` (ARK market only): `0xBCbA6cFc97d2c0A4Dcf22295D92EF5227B5db712`
 - `feeRecipient`: ArkSale `projectWallet()`, also ArkToken `projectWallet()`, `0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74`
 
-```bash
-forge script script/DeployMarkets.s.sol --rpc-url https://bsc-dataseed.binance.org --broadcast --private-key $DEPLOYER_KEY
-```
+| Book | Address | Deploy tx |
+| --- | --- | --- |
+| `TicketMarketBNB` (`marketBnb`) | `0xC24b79485705cEF5AfF36fb4c4cCda34F8423d95` | [`0xc1d70e60ef4b9e7c3e1fb137b665701bcee5c9c0722eb16ec7b20bc68642055b`](https://bscscan.com/tx/0xc1d70e60ef4b9e7c3e1fb137b665701bcee5c9c0722eb16ec7b20bc68642055b) |
+| `TicketMarketARK` (`marketArk`) | `0x3fF61e70B89dc5b0EDD9a7f27435d6604683Bd64` | [`0x1a8c2859d6957be284da4bf2353446467fb4cc0733d5392d943b7deede78abb0`](https://bscscan.com/tx/0x1a8c2859d6957be284da4bf2353446467fb4cc0733d5392d943b7deede78abb0) |
+| `TicketBidMarket` (`marketBid`) | `0xbC58134B8596e8A12050fcDF2435F42Ea0E2Aa32` | [`0x1277e5eca9d58adb69bab65b88848961afdf9ec408159f56a646f4f3444f67e7`](https://bscscan.com/tx/0x1277e5eca9d58adb69bab65b88848961afdf9ec408159f56a646f4f3444f67e7) |
 
-Paste the three addresses into `js/chain.js` (`marketBnb`, `marketArk`, `marketBid`) in place of the zero addresses. ABIs for those contracts are in `abi/`. The site encodes the same function selectors directly, the same way mint does. The page reads `MARKET_FEE_BPS` from whichever book is deployed.
+Those addresses are already in `js/chain.js`. ABIs are in `abi/`. The site encodes the same function selectors directly, the same way mint does, and reads `MARKET_FEE_BPS` from each book.
 
 `forge test` runs `test/market` (fee, cancel, sunk and pending-cabin rejects, bid post / fill / cancel / expiry). The older `test/Ark100.t.sol` imports contracts that are not published in this repo, so it sits outside that test path.
