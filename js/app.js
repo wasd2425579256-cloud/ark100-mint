@@ -71,11 +71,11 @@
 
   function mintBrief() {
     var price = board ? usdText(board.priceUsd) : "2";
-    var due = quote ? bnbText(quote.bnbDue) : (zh() ? "读取 quoteMint" : "read quoteMint");
+    var due = quote ? bnbText(quote.bnbDue) : (zh() ? "正在读取应付金额" : "read quoteMint");
     var state = !board || !board.saleStarted
-      ? (zh() ? "正式未开售。startTime 仍为 0 时不要发送 mint。" : "Sale not started. Do not send mint while startTime is 0.")
+      ? (zh() ? "正式未开售。开售时间还没到之前，不要发送铸造。" : "Sale not started. Do not send mint while startTime is 0.")
       : (board.mintOpen
-        ? (zh() ? "发售已开始，可以发送 mint。" : "The sale has started. mint can be sent.")
+        ? (zh() ? "发售已开始，可以发送铸造。" : "The sale has started. mint can be sent.")
         : (zh() ? "发售状态不允许铸造。" : "Mint is not open in the current sale state."));
     if (zh()) {
       return [
@@ -83,24 +83,23 @@
         "链：BNB Smart Chain（chainId 56）",
         "状态：" + state,
         "",
-        "门槛：必须持有 Agent ID，handle 非空。",
+        "门槛：必须持有 Agent ID，名字不能是空的。",
         "注册表：" + C.ADDR.registry,
         "校验：" + C.ADDR.verifier,
         "",
         "数量：" + qty,
-        "链上标价：$" + price + " / 张（含 5 分钟回落）。",
-        "quoteMint(" + qty + ") 的 bnbDue：" + due,
+        "链上标价：$" + price + " / 张（连续 5 分钟没人铸造就降一档）。",
+        "这一笔应付的 BNB：" + due,
         "",
-        "1. 读取 ArkSale.quoteMint(" + qty + ") → (bnbDue, usdTotal)。",
-        "   ArkSale: " + C.ADDR.sale,
+        "1. 先向发售合约读取这一笔要付多少 BNB。",
+        "   发售合约：" + C.ADDR.sale,
         "2. 把报价给用户看，等明确确认。",
-        "3. 仅在发售已开始时发送 ArkSale.mint(" + qty + ")，value = bnbDue。",
+        "3. 只有发售已经开始，才发送铸造，转入的 BNB 等于报价。",
         "",
-        "TicketNFT: " + C.ADDR.nft,
-        "ARK: " + C.ADDR.ark,
-        "奖池: " + C.ADDR.pot,
-        "团队：" + C.ADDR.team,
-        "这次调用不选择舱位。之后 requestCabin，再 settleCabin。",
+        "船票合约：" + C.ADDR.nft,
+        "ARK：" + C.ADDR.ark,
+        "奖池：" + C.ADDR.pot,
+        "这次铸造不抽舱。之后由持有人申请抽舱，等未来区块出现后，再由任何人揭晓舱位。",
         "经济舱 70% = 100 ARK/天，商务舱 25% = 200，船长舱 5% = 600。沉船日产为 0。"
       ].join("\n");
     }
@@ -125,7 +124,6 @@
       "TicketNFT: " + C.ADDR.nft,
       "ARK: " + C.ADDR.ark,
       "Pot: " + C.ADDR.pot,
-      "Team: " + C.ADDR.team,
       "This call does not choose a cabin. Then requestCabin, then settleCabin.",
       "Economy 70% = 100 ARK/day, Business 25% = 200, Captain 5% = 600. Sunk tickets earn 0."
     ].join("\n");
@@ -172,7 +170,7 @@
     if (board.opened) {
       say($("remainLine"), "池子已经打开。", "The pool is open.");
     } else if (remain === 0) {
-      say($("remainLine"), "已售已到 #3000。若池子还没打开，任何人可以调用 openPool()。", "Sold has reached #3000. If the pool is still closed, anyone may call openPool().");
+      say($("remainLine"), "已售已到 #3000。若池子还没打开，任何人可以再点开池。", "Sold has reached #3000. If the pool is still closed, anyone may call openPool().");
     } else {
       say($("remainLine"), "距开池还差 " + C.formatInt(remain) + " 张。$3 档含 #3000，开池落在这一档里面。", C.formatInt(remain) + " tickets still to the open line. #3000 sits inside the $3 tier.");
     }
@@ -199,29 +197,43 @@
     }
   }
 
+  function plainArk(value, fallback) {
+    if (value == null) return fallback;
+    var text = C.formatUnits(value, 18, 2);
+    if (!text || text === "0") return fallback;
+    return text;
+  }
+
   function renderNight() {
     var count = $("nightCount");
     var hint = $("nightHint");
     if (!board) return;
     if (!board.floodStarted || !board.dayIndex) {
       setBi(count, "洪水未启动", "Flood not started");
-      setBi(hint, "开池并 start() 之后才有第 1–100 晚", "Nights 1–100 begin after the pool opens and start()");
+      setBi(hint, "开池并启动百夜洪水之后，才有第 1 到第 100 晚", "Nights 1–100 begin after the pool opens and start()");
     } else {
       var n = board.dayIndex.toString();
       var settled = board.day && board.day.settled;
       setBi(count, "第 " + n + " / 100 晚", "Night " + n + " / 100");
-      setBi(hint, settled ? "这一晚已结算" : "这一晚尚未结算", settled ? "This night is settled" : "This night is not settled yet");
+      setBi(hint, settled ? "这一晚已经过完" : "这一晚还没过完", settled ? "This night is settled" : "This night is not settled yet");
     }
     if ($("arkNight")) {
       if (!board.floodStarted || !board.dayIndex) say($("arkNight"), "当前晚数：洪水未启动。", "Current night: the flood has not started.");
-      else say($("arkNight"), "当前晚数：第 " + board.dayIndex.toString() + " 晚。", "Current night: " + board.dayIndex.toString() + ".");
+      else say($("arkNight"), "当前是第 " + board.dayIndex.toString() + " 晚。", "Current night: " + board.dayIndex.toString() + ".");
     }
-    var price = board.shopPrice != null ? C.formatUnits(board.shopPrice, 18, 4) : "…";
-    var base = board.basePrice != null ? C.formatUnits(board.basePrice, 18, 2) : "50";
-    var alive = board.aliveCount != null ? C.formatInt(board.aliveCount) : "0";
-    say($("sandbagLive"),
-      "沙袋店基准价 " + base + " ARK。当前链上 price() 为 " + price + " ARK（存活 " + alive + "）。人还多时大约 50 ARK 一袋，幸存者越少越贵。",
-      "Sandbag base price is " + base + " ARK. On-chain price() is " + price + " ARK (alive " + alive + "). About 50 ARK a bag while many tickets survive; the price rises as fewer remain.");
+    var base = plainArk(board.basePrice, "50");
+    var showLive = !!(board.opened && board.aliveCount != null && board.aliveCount > 0n && board.shopPrice != null);
+    if (showLive) {
+      var price = plainArk(board.shopPrice, base);
+      var alive = C.formatInt(board.aliveCount);
+      say($("sandbagLive"),
+        "现在还在船上的票有 " + alive + " 张，一袋大约 " + price + " ARK。人还多时大约 " + base + " ARK 一袋，幸存者越少越贵。",
+        "With " + alive + " tickets still afloat, a bag is about " + price + " ARK. While many tickets are still afloat it is about " + base + " ARK, and the price rises as fewer survive.");
+    } else {
+      say($("sandbagLive"),
+        "人还多、票还在航时，一袋大约 " + base + " ARK。幸存者越少越贵。开池、而且还有在航的票之后，才按当时还在船上的人数计价。开池前不把链上的预开数字当成现在要付的价格。",
+        "While many tickets are still afloat, a bag is about " + base + " ARK. The price rises as fewer survive. The shop prices a bag from how many tickets are still afloat only after the pool is open. Until then, this page does not treat the pre-open chain figure as what you pay.");
+    }
   }
 
   function renderActions() {
@@ -380,7 +392,7 @@
   }
 
   function renderMarket() {
-    say($("listingEmpty"), "链上挂单：0。船票发售只走 ArkSale。", "On-chain listings: 0. Tickets are sold only through ArkSale.");
+    say($("listingEmpty"), "链上挂单：0。船票只通过铸造发售。", "On-chain listings: 0. Tickets are sold only through ArkSale.");
     say($("bidEmpty"), "链上出价：0。", "On-chain bids: 0.");
   }
 
@@ -683,37 +695,37 @@
   wireSend("requestCabinBtn", "triggerStatus", function () {
     var id = idFrom("cabinIdInput");
     if (!id) throw C && Object.assign(new Error("bad-id"), { code: "bad-id" });
-    say($("triggerStatus"), "正在发送 requestCabin。", "Sending requestCabin.");
+    say($("triggerStatus"), "正在发送申请抽舱。", "Sending requestCabin.");
     return C.sendRequestCabin(id);
   });
   wireSend("settleCabinBtn", "triggerStatus", function () {
     var id = idFrom("cabinIdInput");
     if (!id) throw Object.assign(new Error("bad-id"), { code: "bad-id" });
-    say($("triggerStatus"), "正在发送 settleCabin。", "Sending settleCabin.");
+    say($("triggerStatus"), "正在发送揭晓舱位。", "Sending settleCabin.");
     return C.sendSettleCabin(id);
   });
   wireSend("commitBtn", "triggerStatus", function () {
     var id = idFrom("floodDayInput");
     if (!id) throw Object.assign(new Error("bad-id"), { code: "bad-id" });
-    say($("triggerStatus"), "正在发送 commit。", "Sending commit.");
+    say($("triggerStatus"), "正在提交当晚洪水。", "Sending commit.");
     return C.sendCommit(id, board);
   });
   wireSend("openPoolBtn", "triggerStatus", function () {
-    say($("triggerStatus"), "正在发送 openPool。", "Sending openPool.");
+    say($("triggerStatus"), "正在发送开池。", "Sending openPool.");
     return C.sendOpenPool(board);
   });
   wireSend("startFloodBtn", "triggerStatus", function () {
-    say($("triggerStatus"), "正在发送 start。", "Sending start.");
+    say($("triggerStatus"), "正在启动百夜洪水。", "Sending start.");
     return C.sendStartFlood(board);
   });
   wireSend("enableRefundBtn", "triggerStatus", function () {
-    say($("triggerStatus"), "正在发送 enableRefunds。", "Sending enableRefunds.");
+    say($("triggerStatus"), "正在发送开启退款。", "Sending enableRefunds.");
     return C.sendEnableRefunds(board);
   });
   wireSend("claimShareBtn", "triggerStatus", function () {
     var id = idFrom("claimIdInput");
     if (!id) throw Object.assign(new Error("bad-id"), { code: "bad-id" });
-    say($("triggerStatus"), "正在发送 claimShare。", "Sending claimShare.");
+    say($("triggerStatus"), "正在发送领取奖池份额。", "Sending claimShare.");
     return C.sendClaimShare(id, board);
   });
   wireSend("buyBagBtn", "triggerStatus", function () {
