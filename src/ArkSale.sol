@@ -36,7 +36,7 @@ contract ArkSale is ReentrancyGuard {
     uint256 public constant REFUND_WINDOW = 7 days;
     uint256 public constant POT_BPS = 1_500;
     uint256 public constant TEAM_BPS = 2_000;
-    uint256 public constant POOL_SEED_ARK = 350_000_000 ether;
+    uint256 public constant POOL_SEED_ARK = 1_500_000 ether; // ~7d economy payback at open (~$0.0028/ARK if LP≈$4225)
     address public constant DEAD = 0x000000000000000000000000000000000000dEaD;
 
     uint256 public constant PRICE_T0 = 2 ether;
