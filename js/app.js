@@ -252,6 +252,11 @@
       : (C.formatInt(board.sold) + " / 10,000 sold. Pool: " + (board.opened ? "open" : "closed") + ". Refunds: " + (board.refunding ? "on" : "off") + ". Flood: " + (board.floodStarted ? "started" : "not started") + "."));
     if (!board.saleStarted) parts.push(zh() ? "铸造正式未开售。" : "Minting is not open yet.");
     else if (board.mintOpen) parts.push(zh() ? "铸造已开放。" : "Minting is open.");
+    if (board.refunding) {
+      parts.push(zh()
+        ? "到「我的方舟」，用当时付款的钱包按票领取。"
+        : "In My Ark, claim each ticket from the wallet that paid.");
+    }
     say($("chainStatus"), parts.join(" "));
     var buy = $("buyBagBtn");
     if (buy) {
@@ -269,7 +274,30 @@
     return { cls: "wait", zh: "未抽舱", en: "Unsettled" };
   }
 
+  function sameAddr(a, b) {
+    return !!a && !!b && String(a).toLowerCase() === String(b).toLowerCase();
+  }
+
+  function refundOffer(row) {
+    if (!board || !board.refunding) return null;
+    if (row.paidBnb == null || row.payerKnown === false) {
+      return { kind: "mute", zh: "退款信息暂时读不到", en: "Refund details could not be read" };
+    }
+    var paid = BigInt(row.paidBnb);
+    if (paid === 0n) return { kind: "mute", zh: "已领回", en: "Already claimed" };
+    var payer = row.payer || "";
+    if (account && sameAddr(account, payer)) return { kind: "button", paid: paid };
+    if (!account && C.isAddr(lookedUp) && sameAddr(lookedUp, payer)) return { kind: "button", paid: paid };
+    if (account && C.isAddr(lookedUp) && sameAddr(lookedUp, payer) && !sameAddr(account, payer)) {
+      return { kind: "mute", zh: "请换付款钱包再领", en: "Switch to the paying wallet to claim" };
+    }
+    if (!account) return { kind: "mute", zh: "连接付款钱包后可领", en: "Connect the paying wallet to claim" };
+    return { kind: "mute", zh: "只有付款人能领", en: "Only the payer can claim" };
+  }
+
   function renderTickets() {
+    var hint = $("refundHint");
+    if (hint) hint.hidden = !(board && board.refunding);
     var body = $("ticketBody");
     if (!body) return;
     body.innerHTML = "";
@@ -300,7 +328,16 @@
         "<td><span class=\"t-zh\">" + bagZh + "</span><span class=\"t-en\">" + bagEn + "</span></td>" +
         "<td></td>";
       var cell = tr.lastChild;
-      if (state === "pending") cell.appendChild(actionButton("request-cabin", row.id, "抽舱", "Draw cabin"));
+      var offer = refundOffer(row);
+      if (offer && offer.kind === "button") {
+        var wrap = document.createElement("div");
+        wrap.className = "row-acts";
+        wrap.appendChild(actionButton("claim-refund", row.id, "领退款", "Claim refund", "refund"));
+        wrap.appendChild(textSpan(bnbText(offer.paid), bnbText(offer.paid)));
+        cell.appendChild(wrap);
+      } else if (offer) {
+        cell.appendChild(textSpan(offer.zh, offer.en));
+      } else if (state === "pending") cell.appendChild(actionButton("request-cabin", row.id, "抽舱", "Draw cabin"));
       else if (state === "afloat") cell.appendChild(actionButton("apply-bag", row.id, "沙袋护住", "Apply sandbag"));
       else cell.appendChild(textSpan("无产出", "No yield"));
       body.appendChild(tr);
@@ -328,10 +365,10 @@
     return span;
   }
 
-  function actionButton(act, id, zhText, enText) {
+  function actionButton(act, id, zhText, enText, extraClass) {
     var btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "ghost";
+    btn.className = extraClass ? ("ghost " + extraClass) : "ghost";
     btn.setAttribute("data-act", act);
     btn.setAttribute("data-id", id.toString());
     btn.innerHTML = "<span class=\"t-zh\"></span><span class=\"t-en\"></span>";
@@ -405,6 +442,7 @@
       "open-not-ready": ["还不能开池：需要已售至少 3000、池子未开、且不在退款。没有发送交易。", "openPool is not ready: sold must be at least 3,000, the pool closed, and refunds off. No transaction was sent."],
       "start-not-ready": ["还不能启动洪水：需要池子已开且洪水未启动。没有发送交易。", "start() is not ready: the pool must be open and the flood not started. No transaction was sent."],
       "refund-not-ready": ["退款窗口还没到。没有发送交易。", "The refund window is not open. No transaction was sent."],
+      "refund-closed": ["退款还没开启，没有发送交易。", "Refunds are not on yet. No transaction was sent."],
       "flood-not-started": ["洪水尚未启动，没有发送交易。", "The flood has not started. No transaction was sent."],
       "pool-not-open": ["开池之后才能买沙袋，没有发送交易。", "Sandbags can be bought after the pool opens. No transaction was sent."],
       "pot-not-landed": ["奖池尚未靠岸，没有发送交易。", "The pot has not landed. No transaction was sent."],
@@ -455,6 +493,7 @@
     renderSale();
     renderNight();
     renderActions();
+    renderTickets();
     renderQuote();
     await refreshQuote();
     say($("statusRead"), "链上读取", "On-chain");
@@ -516,7 +555,7 @@
       return;
     }
     say(note, "正在读取 " + C.shortAddr(raw) + " 的船票。", "Reading tickets for " + C.shortAddr(raw) + ".");
-    var found = await C.ticketsOf(raw);
+    var found = await C.ticketsOf(raw, { includePayer: !!(board && board.refunding) });
     lookedUp = raw;
     var rows = found.tickets || [];
     if (board && board.dayIndex) {
@@ -524,9 +563,12 @@
     }
     ticketRows = rows;
     var extra = found.truncated ? (zh() ? " 已铸造数量较大，本次只扫描了前 800 个编号。" : " Supply is large, so this pass scanned the first 800 ids.") : "";
+    var transferred = (board && board.refunding && rows.length > Number(found.balance))
+      ? (zh() ? " 其中有已转出、但仍由这只钱包领退款的票。" : " Some were transferred away and can still be refunded by this wallet.")
+      : "";
     say(note,
-      C.shortAddr(raw) + " 持有 " + found.balance.toString() + " 张，下面列出 " + rows.length + " 张。" + extra,
-      C.shortAddr(raw) + " holds " + found.balance.toString() + ". Showing " + rows.length + "." + extra);
+      C.shortAddr(raw) + " 持有 " + found.balance.toString() + " 张，下面列出 " + rows.length + " 张。" + transferred + extra,
+      C.shortAddr(raw) + " holds " + found.balance.toString() + ". Showing " + rows.length + "." + transferred + extra);
     renderTickets();
   }
 
@@ -739,12 +781,28 @@
     var act = btn.getAttribute("data-act");
     var id = btn.getAttribute("data-id");
     var run;
-    if (act === "request-cabin") run = function () { return C.sendRequestCabin(id); };
-    else if (act === "apply-bag") run = function () { return C.sendApplyBag(id, board && board.dayIndex, board); };
-    else return;
-    say($("arkStatus"), "正在发送交易。", "Sending the transaction.");
+    if (act === "request-cabin") {
+      say($("arkStatus"), "正在发送交易。", "Sending the transaction.");
+      run = function () { return C.sendRequestCabin(id); };
+    } else if (act === "apply-bag") {
+      say($("arkStatus"), "正在发送交易。", "Sending the transaction.");
+      run = function () { return C.sendApplyBag(id, board && board.dayIndex, board); };
+    } else if (act === "claim-refund") {
+      if (!board || !board.refunding) {
+        say($("arkStatus"), explain("refund-closed"), explain("refund-closed"));
+        return;
+      }
+      say($("arkStatus"), "正在发送领退款。", "Sending the refund claim.");
+      run = function () { return C.sendRefund(id); };
+    } else return;
     Promise.resolve().then(run).then(function (hash) {
       return track(hash, $("arkStatus"));
+    }).then(function () {
+      if (act === "claim-refund" && $("walletInput") && String($("walletInput").value || "").trim()) {
+        return lookup($("walletInput").value).catch(function () {
+          say($("lookupNote"), "舱单暂时读不到。", "Tickets could not be read.");
+        });
+      }
     }).catch(function (e) {
       say($("arkStatus"), walletError(e), walletError(e));
     });
@@ -753,6 +811,7 @@
   C.onWallet(function (addr) {
     account = addr || "";
     if ($("walletChip")) $("walletChip").textContent = account ? C.shortAddr(account) : "";
+    renderTickets();
   });
 
   setLang(lang, false);

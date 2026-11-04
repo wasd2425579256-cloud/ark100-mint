@@ -40,6 +40,8 @@
     openPool: "0xeb5797a4",
     enableRefunds: "0x8c52dc41",
     refund: "0x278ecde1",
+    payer: "0x561874ee",
+    paidBnb: "0xf88e127c",
     started: "0x1f2698ab",
     currentDayIndex: "0xdbb8cc46",
     dayState: "0x68b9fa97",
@@ -152,6 +154,14 @@
 
   function isAddr(a) {
     return /^0x[0-9a-fA-F]{40}$/.test(String(a || "").trim());
+  }
+
+  function addrFromWord(raw) {
+    var hex = String(raw || "").replace(/^0x/, "");
+    if (hex.length < 40) return "";
+    var body = hex.slice(-40);
+    if (/^0+$/.test(body)) return "";
+    return "0x" + body.toLowerCase();
   }
 
   async function rpc(urls, method, params) {
@@ -301,7 +311,8 @@
     } catch (e) {
       return null;
     }
-    var owner = "0x" + ownerRaw.replace(/^0x/, "").slice(-40);
+    var owner = addrFromWord(ownerRaw);
+    if (!owner) return null;
     var cabin = await callUint(ADDR.nft, SEL.cabinOf, tokenId);
     var alive = (await callUint(ADDR.nft, SEL.isAlive, tokenId)) !== 0n;
     var pending = 0n;
@@ -311,6 +322,16 @@
       var info = await ethCall(ADDR.nft, SEL.tickets + hexUint(tokenId));
       commitBlock = word(info, 4);
     } catch (e2) { commitBlock = 0n; }
+    var payer = "";
+    var payerKnown = true;
+    try {
+      payer = addrFromWord(await ethCall(ADDR.sale, SEL.payer + hexUint(tokenId)));
+    } catch (e3) {
+      payer = "";
+      payerKnown = false;
+    }
+    var paidBnb = null;
+    try { paidBnb = await callUint(ADDR.sale, SEL.paidBnb, tokenId); } catch (e4) { paidBnb = null; }
     var c = Number(cabin);
     var sunk = !alive || c === 4;
     var unsettled = !sunk && (c === 0);
@@ -324,28 +345,41 @@
       unsettled: unsettled,
       rate: rate,
       pendingArk: pending,
-      commitBlock: commitBlock
+      commitBlock: commitBlock,
+      payer: payer,
+      payerKnown: payerKnown,
+      paidBnb: paidBnb
     };
   }
 
-  async function ticketsOf(owner) {
+  async function ticketsOf(owner, opts) {
     if (!isAddr(owner)) throw fail("bad-address");
     var target = owner.toLowerCase();
     var minted = await callUint(ADDR.nft, SEL.totalMinted);
     var balance = await callUint(ADDR.nft, SEL.balanceOf, owner);
     var rows = [];
-    if (balance === 0n || minted === 0n) return { balance: balance, minted: minted, tickets: rows };
+    var wantPayer = !!(opts && opts.includePayer);
+    if (minted === 0n || (balance === 0n && !wantPayer)) return { balance: balance, minted: minted, tickets: rows };
     var limit = minted > 800n ? 800n : minted;
     var ids = [];
     for (var i = 1n; i <= limit; i++) ids.push(i);
     var owners = await mapPool(ids, 12, async function (id) {
       try {
-        var raw = await ethCall(ADDR.nft, SEL.ownerOf + hexUint(id));
-        return "0x" + raw.replace(/^0x/, "").slice(-40).toLowerCase();
+        return addrFromWord(await ethCall(ADDR.nft, SEL.ownerOf + hexUint(id)));
       } catch (e) { return ""; }
     });
     var mine = [];
     owners.forEach(function (who, idx) { if (who === target) mine.push(ids[idx]); });
+    if (wantPayer) {
+      var payers = await mapPool(ids, 12, async function (id) {
+        try {
+          return addrFromWord(await ethCall(ADDR.sale, SEL.payer + hexUint(id)));
+        } catch (e) { return ""; }
+      });
+      payers.forEach(function (who, idx) {
+        if (who === target && mine.indexOf(ids[idx]) === -1) mine.push(ids[idx]);
+      });
+    }
     rows = await mapPool(mine, 6, function (id) { return readTicket(id); });
     return {
       balance: balance,
