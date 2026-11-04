@@ -9,6 +9,11 @@
     flood: "0xf15C1130fA9A5D0BAD783558379E39664aD79200",
     shop: "0xcFC60dfb112Ab6BF19bE16d1d114990264aFF3bF",
     pot: "0xf34aEBBc83Ce872f5692d9e7ae906A8e30f924Fa",
+    // TicketMarketBNB / TicketMarketARK / TicketBidMarket on BSC mainnet.
+    // feeRecipient is the constructor arg 0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74.
+    marketBnb: "0xC24b79485705cEF5AfF36fb4c4cCda34F8423d95",
+    marketArk: "0x3fF61e70B89dc5b0EDD9a7f27435d6604683Bd64",
+    marketBid: "0xbC58134B8596e8A12050fcDF2435F42Ea0E2Aa32",
     verifier: "0xf14F5cF3fCB976082Df08dA1609D1698C39Ff2e2",
     registry: "0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F",
     router: "0x10ED43C718714eb63d5aA57B78B54704E256024E",
@@ -74,7 +79,25 @@
     pair: "0xa8aa1b31",
     totalSupply: "0x18160ddd",
     verify: "0x63a9c3d7",
-    handleOf: "0xc50a1514"
+    handleOf: "0xc50a1514",
+    marketFeeBps: "0x553c0248",
+    marketList: "0x50fd7367",
+    marketBuy: "0xd96a094a",
+    marketCancel: "0x40e58ee5",
+    cleanListing: "0x48f0fda2",
+    listings: "0xde74e57b",
+    activeListingIds: "0xc771682a",
+    buyable: "0xb0936aa2",
+    postBid: "0x03ddc73f",
+    acceptBid: "0x02e9d5e4",
+    cancelBid: "0x9703ef35",
+    refundExpired: "0x1402b17a",
+    bidOf: "0x649ccc14",
+    activeBidIds: "0x9985df97",
+    approve: "0x095ea7b3",
+    allowance: "0xdd62ed3e",
+    getApproved: "0x081812fc",
+    isApprovedForAll: "0xe985e9c5"
   };
   var PLAYER_TOPIC = {
     "0xd8b419dcb55349414000518e58bc0ec29a3419a418cc9ab706cd9db1260cb2f4": "minted",
@@ -501,6 +524,172 @@
     });
   }
 
+  function isZeroAddr(a) {
+    var h = String(a || "").toLowerCase().replace(/^0x/, "");
+    return !/^[0-9a-f]{40}$/.test(h) || /^0+$/.test(h);
+  }
+
+  function parseUnits(text, decimals) {
+    var s = String(text || "").trim();
+    if (!/^\d+(\.\d+)?$/.test(s)) throw fail("bad-amount");
+    var parts = s.split(".");
+    var fracSrc = parts[1] || "";
+    if (fracSrc.length > decimals) throw fail("bad-amount");
+    var whole = parts[0].replace(/^0+(?=\d)/, "") || "0";
+    var frac = fracSrc.padEnd(decimals, "0");
+    var base = 10n ** BigInt(decimals);
+    return BigInt(whole) * base + (frac ? BigInt(frac) : 0n);
+  }
+
+  function addrAt(hex, index) {
+    var h = String(hex || "").replace(/^0x/, "");
+    var slice = h.slice(index * 64, index * 64 + 64);
+    if (slice.length < 64) return "";
+    var body = slice.slice(24).toLowerCase();
+    if (!/^[0-9a-f]{40}$/.test(body) || /^0+$/.test(body)) return "";
+    return "0x" + body;
+  }
+
+  function decodeUintArray(hex) {
+    var h = String(hex || "").replace(/^0x/, "");
+    if (h.length < 128) return [];
+    var offset = Number(BigInt("0x" + h.slice(0, 64)));
+    var start = offset * 2;
+    if (h.length < start + 64) return [];
+    var len = Number(BigInt("0x" + h.slice(start, start + 64)));
+    if (!Number.isFinite(len) || len < 0) return [];
+    var out = [];
+    var cap = Math.min(len, 40);
+    for (var i = 0; i < cap; i++) {
+      var w = h.slice(start + 64 + i * 64, start + 64 + i * 64 + 64);
+      if (w.length < 64) break;
+      out.push(BigInt("0x" + w));
+    }
+    out.truncated = len > cap;
+    return out;
+  }
+
+  async function readListingBook(market) {
+    if (isZeroAddr(market)) return { deployed: false, feeBps: 250n, rows: [], truncated: false };
+    var feeBps = await callUint(market, SEL.marketFeeBps);
+    var ids = decodeUintArray(await ethCall(market, SEL.activeListingIds));
+    var truncated = !!ids.truncated;
+    var rows = await mapPool(ids, 6, async function (id) {
+      var listingRaw = await ethCall(market, SEL.listings + hexUint(id));
+      var info = await ethCall(ADDR.nft, SEL.tickets + hexUint(id));
+      var buyable = 0n;
+      try { buyable = await callUint(market, SEL.buyable, id); } catch (e) { buyable = 0n; }
+      return {
+        id: id,
+        seller: addrAt(listingRaw, 0),
+        price: word(listingRaw, 1),
+        cabin: Number(word(info, 0)),
+        mintedAt: word(info, 2),
+        commit: word(info, 4),
+        buyable: buyable !== 0n
+      };
+    });
+    return { deployed: true, feeBps: feeBps, rows: rows.filter(Boolean), truncated: truncated };
+  }
+
+  async function readBidBook(market) {
+    if (isZeroAddr(market)) return { deployed: false, feeBps: 250n, rows: [], truncated: false };
+    var feeBps = await callUint(market, SEL.marketFeeBps);
+    var ids = decodeUintArray(await ethCall(market, SEL.activeBidIds));
+    var truncated = !!ids.truncated;
+    var rows = await mapPool(ids, 6, async function (id) {
+      var raw = await ethCall(market, SEL.bidOf + hexUint(id));
+      return {
+        id: id,
+        buyer: addrAt(raw, 0),
+        unitPrice: word(raw, 1),
+        qtyLeft: word(raw, 2),
+        kind: Number(word(raw, 3)),
+        param: word(raw, 4),
+        expires: word(raw, 5),
+        open: word(raw, 6) !== 0n
+      };
+    });
+    return { deployed: true, feeBps: feeBps, rows: rows.filter(Boolean), truncated: truncated };
+  }
+
+  async function readListing(market, id) {
+    var raw = await ethCall(market, SEL.listings + hexUint(id));
+    return { seller: addrAt(raw, 0), price: word(raw, 1) };
+  }
+
+  async function getApproved(id) {
+    var raw = await ethCall(ADDR.nft, SEL.getApproved + hexUint(id));
+    return addrAt(raw, 0);
+  }
+
+  async function isApprovedForAll(owner, operator) {
+    var raw = await ethCall(ADDR.nft, SEL.isApprovedForAll + hexAddr(owner) + hexAddr(operator));
+    return word(raw, 0) !== 0n;
+  }
+
+  async function arkAllowance(owner, spender) {
+    var raw = await ethCall(ADDR.ark, SEL.allowance + hexAddr(owner) + hexAddr(spender));
+    return word(raw, 0);
+  }
+
+  function sendApproveNft(spender, id) {
+    return sendTx(ADDR.nft, SEL.approve + hexAddr(spender) + hexUint(id), 0);
+  }
+
+  function sendApproveArk(spender, amount) {
+    return sendTx(ADDR.ark, SEL.approve + hexAddr(spender) + hexUint(amount), 0);
+  }
+
+  function sendList(market, id, priceWei) {
+    if (isZeroAddr(market)) throw fail("market-not-deployed");
+    return sendTx(market, SEL.marketList + hexUint(id) + hexUint(priceWei), 0);
+  }
+
+  async function sendBuyBnb(id) {
+    if (isZeroAddr(ADDR.marketBnb)) throw fail("market-not-deployed");
+    var row = await readListing(ADDR.marketBnb, id);
+    if (row.price === 0n) throw fail("unlisted");
+    return sendTx(ADDR.marketBnb, SEL.marketBuy + hexUint(id), row.price);
+  }
+
+  function sendBuyArk(id) {
+    if (isZeroAddr(ADDR.marketArk)) throw fail("market-not-deployed");
+    return sendTx(ADDR.marketArk, SEL.marketBuy + hexUint(id), 0);
+  }
+
+  function sendCancelListing(market, id) {
+    if (isZeroAddr(market)) throw fail("market-not-deployed");
+    return sendTx(market, SEL.marketCancel + hexUint(id), 0);
+  }
+
+  function sendCleanListing(market, id) {
+    if (isZeroAddr(market)) throw fail("market-not-deployed");
+    return sendTx(market, SEL.cleanListing + hexUint(id), 0);
+  }
+
+  function sendPostBid(kind, param, unitPrice, qty, duration) {
+    if (isZeroAddr(ADDR.marketBid)) throw fail("market-not-deployed");
+    var total = BigInt(unitPrice) * BigInt(qty);
+    var data = SEL.postBid + hexUint(kind) + hexUint(param) + hexUint(unitPrice) + hexUint(qty) + hexUint(duration);
+    return sendTx(ADDR.marketBid, data, total);
+  }
+
+  function sendAcceptBid(bidId, tokenId) {
+    if (isZeroAddr(ADDR.marketBid)) throw fail("market-not-deployed");
+    return sendTx(ADDR.marketBid, SEL.acceptBid + hexUint(bidId) + hexUint(tokenId), 0);
+  }
+
+  function sendCancelBid(bidId) {
+    if (isZeroAddr(ADDR.marketBid)) throw fail("market-not-deployed");
+    return sendTx(ADDR.marketBid, SEL.cancelBid + hexUint(bidId), 0);
+  }
+
+  function sendRefundExpired(bidId) {
+    if (isZeroAddr(ADDR.marketBid)) throw fail("market-not-deployed");
+    return sendTx(ADDR.marketBid, SEL.refundExpired + hexUint(bidId), 0);
+  }
+
   function provider() {
     return global.ethereum || null;
   }
@@ -650,7 +839,15 @@
     formatInt: formatInt,
     shortAddr: shortAddr,
     isAddr: isAddr,
+    isZeroAddr: isZeroAddr,
+    parseUnits: parseUnits,
     readBoard: readBoard,
+    readListingBook: readListingBook,
+    readBidBook: readBidBook,
+    readListing: readListing,
+    getApproved: getApproved,
+    isApprovedForAll: isApprovedForAll,
+    arkAllowance: arkAllowance,
     quoteMint: quoteMint,
     verifyAgent: verifyAgent,
     readTicket: readTicket,
@@ -671,6 +868,17 @@
     sendCommit: sendCommit,
     sendBuyBag: sendBuyBag,
     sendApplyBag: sendApplyBag,
+    sendApproveNft: sendApproveNft,
+    sendApproveArk: sendApproveArk,
+    sendList: sendList,
+    sendBuyBnb: sendBuyBnb,
+    sendBuyArk: sendBuyArk,
+    sendCancelListing: sendCancelListing,
+    sendCleanListing: sendCleanListing,
+    sendPostBid: sendPostBid,
+    sendAcceptBid: sendAcceptBid,
+    sendCancelBid: sendCancelBid,
+    sendRefundExpired: sendRefundExpired,
     waitReceipt: waitReceipt,
     onWallet: onWallet
   };

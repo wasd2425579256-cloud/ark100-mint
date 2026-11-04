@@ -614,7 +614,7 @@ h1 { margin: 0; font-size: clamp(1.4rem, 4vw, 1.9rem); line-height: 1.15; }
   font-weight: 800;
 }
 .field-label { display: block; margin-top: 8px; font-size: 0.75rem; font-weight: 800; color: var(--muted); }
-.trigger input {
+.trigger input, .trigger select {
   width: 100%;
   min-height: 44px;
   margin-top: 6px;
@@ -623,7 +623,20 @@ h1 { margin: 0; font-size: clamp(1.4rem, 4vw, 1.9rem); line-height: 1.15; }
   padding: 0 12px;
   background: #fff;
   color: var(--ink);
+  font-weight: 700;
 }
+.market-grid { display: grid; gap: 10px; margin-top: 12px; }
+.mini-input {
+  width: 108px;
+  min-height: 32px;
+  border-radius: 8px;
+  border: 2px solid #d7e6f2;
+  padding: 0 8px;
+  background: #fff;
+  color: var(--ink);
+}
+.market-cmd { max-height: 240px; }
+.market-cmd-wrap { margin-top: 12px; }
 .cta:hover:not(:disabled) { filter: brightness(1.03); }
 .ghost { width: auto; min-height: 36px; padding: 6px 10px; font-size: 0.75rem; color: var(--wood-deep); border-color: var(--line); }
 .ghost.refund {
@@ -892,6 +905,9 @@ tr.sunk .oddbar span { width: 0; }
   .triggers { grid-template-columns: 1fr 1fr; }
   .steps { grid-template-columns: 1fr 1fr; }
   .footer-grid { grid-template-columns: 1.2fr 0.8fr 0.9fr; }
+}
+@media (min-width: 900px) {
+  .market-grid { grid-template-columns: 1fr 1fr; }
 }
 @media (min-width: 980px) {
   .wrap { padding: 0 20px 28px; }

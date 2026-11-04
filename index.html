@@ -411,44 +411,121 @@
     <section class="card" id="market">
       <div class="head-row">
         <h2><span class="t-zh">船票市场</span><span class="t-en">Ticket market</span></h2>
-        <span class="note-pill"><span class="t-zh">链上订单</span><span class="t-en">On-chain book</span></span>
+        <span class="note-pill"><span class="t-zh">二级市场</span><span class="t-en">Secondary book</span></span>
       </div>
-      <p class="muted"><span class="t-zh">买票走铸造合约。这套合约没有挂单簿，也没有出价托管。下面两张表只在链上出现记录时才有行。现在是 0。</span><span class="t-en">New tickets are bought only with ArkSale.mint. These contracts have no listing book and no bid escrow. The tables below gain rows only when chain records exist. Both are at 0.</span></p>
+      <p class="muted"><span class="t-zh">两本挂单簿分开收钱：一本用 BNB，一本用 ARK，两种币不进同一份合约。求购只用 BNB 托管。每笔成交收取 2.5%（读合约里的 MARKET_FEE_BPS），付给项目手续费钱包。还在航、而且没有待揭晓抽舱的船票可以挂和买；沉船，以及正在 requestCabin 的票会被拒绝。舱位和未领日产跟着船票走。挂单、购买、求购都不需要 Agent ID，只有铸造需要。</span><span class="t-en">Two listing books, currencies never mixed: one takes BNB, one takes ARK. Quantity bids escrow BNB only. Every fill pays 2.5% (read MARKET_FEE_BPS on the contract) to the project fee wallet. Afloat tickets with no cabin request in flight can list and sell. Sunk tickets, and tickets inside requestCabin, are rejected. Cabin and unclaimed yield stay on the ticket. List, buy, and bid do not need an Agent ID. Only mint does.</span></p>
+      <p class="copy-status" id="marketDeploy" role="status"><span class="t-zh">正在读取挂单和求购。</span><span class="t-en">Reading listings and bids.</span></p>
+      <p class="muted" id="marketFee"><span class="t-zh">手续费 2.5%（MARKET_FEE_BPS = 250）。</span><span class="t-en">Fee 2.5% (MARKET_FEE_BPS = 250).</span></p>
       <div class="tabs" role="tablist">
         <button class="tab" type="button" id="tab-listings" role="tab" aria-controls="panel-listings" aria-selected="true" data-tab="listings"><span class="t-zh">挂单</span><span class="t-en">Listings</span></button>
-        <button class="tab" type="button" id="tab-bids" role="tab" aria-controls="panel-bids" aria-selected="false" data-tab="bids"><span class="t-zh">出价</span><span class="t-en">Bids</span></button>
+        <button class="tab" type="button" id="tab-bids" role="tab" aria-controls="panel-bids" aria-selected="false" data-tab="bids"><span class="t-zh">求购</span><span class="t-en">Bids</span></button>
       </div>
       <div role="tabpanel" id="panel-listings" aria-labelledby="tab-listings">
+        <div class="tabs" role="tablist" aria-label="Listing currency">
+          <button class="tab" type="button" id="pay-bnb" data-pay="bnb" aria-selected="true">BNB</button>
+          <button class="tab" type="button" id="pay-ark" data-pay="ark" aria-selected="false">ARK</button>
+        </div>
         <div class="table-wrap">
           <table class="data">
             <thead><tr>
               <th><span class="t-zh">船票</span><span class="t-en">Ticket</span></th>
               <th><span class="t-zh">舱位</span><span class="t-en">Cabin</span></th>
               <th><span class="t-zh">ARK/天</span><span class="t-en">ARK/day</span></th>
-              <th><span class="t-zh">价格</span><span class="t-en">Price</span></th>
+              <th id="priceHead"><span class="t-zh">价格</span><span class="t-en">Price</span></th>
               <th><span class="t-zh">卖家</span><span class="t-en">Seller</span></th>
-              <th><span class="t-zh">今夜</span><span class="t-en">Tonight</span></th>
+              <th><span class="t-zh">操作</span><span class="t-en">Action</span></th>
             </tr></thead>
             <tbody id="listingBody"></tbody>
           </table>
         </div>
-        <p class="muted" id="listingEmpty"><span class="t-zh">链上挂单：0。船票只通过铸造发售。</span><span class="t-en">On-chain listings: 0. Tickets are sold only through ArkSale.</span></p>
+        <p class="muted" id="listingEmpty"><span class="t-zh">正在读取挂单。</span><span class="t-en">Reading listings.</span></p>
+        <p class="muted" id="listingNote" hidden></p>
+        <div class="market-grid">
+          <article class="trigger">
+            <h3><span class="t-zh">挂单</span><span class="t-en">List</span></h3>
+            <p><span class="t-zh">先把这张船票授权给当前这本簿，再挂价。船票留在你的钱包里，直到被人买走。</span><span class="t-en">Approve this ticket for the open book, then list. The ticket stays in your wallet until it sells.</span></p>
+            <label class="field-label" for="listId"><span class="t-zh">船票编号</span><span class="t-en">Ticket id</span></label>
+            <input id="listId" inputmode="numeric" autocomplete="off" placeholder="例如 1" data-ph-zh="例如 1" data-ph-en="e.g. 1" />
+            <label class="field-label" for="listPrice" id="listPriceLabel"><span class="t-zh">价格（BNB）</span><span class="t-en">Price (BNB)</span></label>
+            <input id="listPrice" inputmode="decimal" autocomplete="off" placeholder="例如 0.05" data-ph-zh="例如 0.05" data-ph-en="e.g. 0.05" />
+            <button class="cta" id="listBtn" type="button" disabled><span class="t-zh">用 BNB 挂单</span><span class="t-en">List for BNB</span></button>
+          </article>
+          <article class="trigger">
+            <h3><span class="t-zh">撤单 / 清理</span><span class="t-en">Cancel / clean</span></h3>
+            <p><span class="t-zh">卖家可以撤掉自己的挂单。票已经转走、授权取消、沉了，或者正在抽舱时，任何人可以清理这条失效记录。</span><span class="t-en">The seller can cancel. Anyone can clean a row after a transfer, a pulled approval, a sinking, or a cabin request.</span></p>
+            <label class="field-label" for="cancelListId"><span class="t-zh">撤单编号</span><span class="t-en">Cancel ticket</span></label>
+            <input id="cancelListId" inputmode="numeric" autocomplete="off" placeholder="船票编号" data-ph-zh="船票编号" data-ph-en="Ticket id" />
+            <button class="cta secondary" id="cancelListBtn" type="button" disabled><span class="t-zh">撤单</span><span class="t-en">Cancel</span></button>
+            <label class="field-label" for="cleanListId"><span class="t-zh">清理编号</span><span class="t-en">Clean ticket</span></label>
+            <input id="cleanListId" inputmode="numeric" autocomplete="off" placeholder="船票编号" data-ph-zh="船票编号" data-ph-en="Ticket id" />
+            <button class="cta secondary" id="cleanListBtn" type="button" disabled><span class="t-zh">清理失效挂单</span><span class="t-en">cleanListing</span></button>
+          </article>
+        </div>
       </div>
       <div role="tabpanel" id="panel-bids" aria-labelledby="tab-bids" hidden>
         <div class="table-wrap">
           <table class="data">
             <thead><tr>
-              <th><span class="t-zh">出价</span><span class="t-en">Bid</span></th>
+              <th><span class="t-zh">求购</span><span class="t-en">Bid</span></th>
               <th><span class="t-zh">想要</span><span class="t-en">Wants</span></th>
-              <th><span class="t-zh">金额</span><span class="t-en">Amount</span></th>
+              <th><span class="t-zh">单价</span><span class="t-en">Unit price</span></th>
+              <th><span class="t-zh">剩余</span><span class="t-en">Left</span></th>
               <th><span class="t-zh">出价人</span><span class="t-en">Bidder</span></th>
               <th><span class="t-zh">状态</span><span class="t-en">Status</span></th>
+              <th><span class="t-zh">操作</span><span class="t-en">Action</span></th>
             </tr></thead>
             <tbody id="bidBody"></tbody>
           </table>
         </div>
-        <p class="muted" id="bidEmpty"><span class="t-zh">链上出价：0。</span><span class="t-en">On-chain bids: 0.</span></p>
+        <p class="muted" id="bidEmpty"><span class="t-zh">正在读取求购。</span><span class="t-en">Reading bids.</span></p>
+        <p class="muted" id="bidNote" hidden></p>
+        <div class="market-grid">
+          <article class="trigger">
+            <h3><span class="t-zh">发布求购</span><span class="t-en">Post a bid</span></h3>
+            <p><span class="t-zh">BNB 按单价 × 数量锁进求购合约。种类：任何可挂船票、某一舱位，或指定一张票（数量只能是 1）。时长 1 到 720 小时。</span><span class="t-en">BNB escrow is unit price times quantity. Kinds: any listable ticket, one cabin, or one token id (quantity must be 1). Duration is 1 to 720 hours.</span></p>
+            <label class="field-label" for="bidKind"><span class="t-zh">种类</span><span class="t-en">Kind</span></label>
+            <select id="bidKind">
+              <option value="0" data-zh="任何可挂船票" data-en="Any listable ticket"></option>
+              <option value="1" data-zh="按舱位" data-en="By cabin"></option>
+              <option value="2" data-zh="指定船票" data-en="Specific ticket"></option>
+            </select>
+            <div id="bidCabinWrap" hidden>
+              <label class="field-label" for="bidCabin"><span class="t-zh">舱位</span><span class="t-en">Cabin</span></label>
+              <select id="bidCabin">
+                <option value="0" data-zh="未抽舱" data-en="Unsettled"></option>
+                <option value="1" data-zh="经济舱" data-en="Economy"></option>
+                <option value="2" data-zh="商务舱" data-en="Business"></option>
+                <option value="3" data-zh="船长舱" data-en="Captain"></option>
+              </select>
+            </div>
+            <div id="bidTokenWrap" hidden>
+              <label class="field-label" for="bidTokenId"><span class="t-zh">船票编号</span><span class="t-en">Ticket id</span></label>
+              <input id="bidTokenId" inputmode="numeric" autocomplete="off" placeholder="例如 1" data-ph-zh="例如 1" data-ph-en="e.g. 1" />
+            </div>
+            <label class="field-label" for="bidPrice"><span class="t-zh">单价（BNB）</span><span class="t-en">Unit price (BNB)</span></label>
+            <input id="bidPrice" inputmode="decimal" autocomplete="off" placeholder="例如 0.05" data-ph-zh="例如 0.05" data-ph-en="e.g. 0.05" />
+            <label class="field-label" for="bidQty"><span class="t-zh">数量</span><span class="t-en">Quantity</span></label>
+            <input id="bidQty" inputmode="numeric" autocomplete="off" value="1" />
+            <label class="field-label" for="bidHours"><span class="t-zh">时长（小时）</span><span class="t-en">Duration (hours)</span></label>
+            <input id="bidHours" inputmode="numeric" autocomplete="off" value="168" />
+            <button class="cta" id="postBidBtn" type="button" disabled><span class="t-zh">发布求购</span><span class="t-en">postBid</span></button>
+          </article>
+          <article class="trigger">
+            <h3><span class="t-zh">撤销 / 退回</span><span class="t-en">Cancel / refund</span></h3>
+            <p><span class="t-zh">出价人可以撤销，剩下的 BNB 原路退回。过期之后，任何人可以退回剩余托管。成交请在表里填写你的船票编号。</span><span class="t-en">The bidder can cancel and get the remaining BNB back. After expiry anyone can refund the escrow. To fill, enter your ticket id in the table.</span></p>
+            <label class="field-label" for="cancelBidId"><span class="t-zh">求购编号</span><span class="t-en">Bid id</span></label>
+            <input id="cancelBidId" inputmode="numeric" autocomplete="off" placeholder="例如 1" data-ph-zh="例如 1" data-ph-en="e.g. 1" />
+            <button class="cta secondary" id="cancelBidBtn" type="button" disabled><span class="t-zh">撤销求购</span><span class="t-en">cancelBid</span></button>
+            <button class="cta secondary" id="refundBidBtn" type="button" disabled><span class="t-zh">退回过期求购</span><span class="t-en">refundExpired</span></button>
+          </article>
+        </div>
       </div>
+      <article class="trigger market-cmd-wrap">
+        <h3><span class="t-zh">交给 Agent</span><span class="t-en">Hand to your agent</span></h3>
+        <p><span class="t-zh">先把这段说明给用户看，等明确确认，再发交易。市场不检查 Agent ID。</span><span class="t-en">Show this brief and wait for an explicit yes before sending. The market does not check Agent ID.</span></p>
+        <button class="ghost copy-wide" id="copyMarket" type="button" data-copy="market"><span class="t-zh">复制市场说明</span><span class="t-en">Copy market brief</span></button>
+        <pre class="cmd market-cmd" id="marketCmd"></pre>
+      </article>
       <p class="copy-status" id="marketStatus" role="status"></p>
     </section>
 
@@ -524,8 +601,8 @@
       <details class="rule" open>
         <summary><span class="r-badge">R1</span> <span class="t-zh">门槛与铸造</span><span class="t-en">Gate and mint</span></summary>
         <div class="body">
-          <p class="t-zh">只有持有 .ai Agent ID、且名字不是空的钱包可以铸造。注册表 <span class="ca">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span> 上要能查到这只钱包持有 Agent ID，并且名字不是空的。每址最多 10 张。一共 10,000 张，每 2,500 张一档：$2、$3、$4、$5。连续 5 分钟无人铸造，价格降一档，最低 $2。没有免费票，没有 ARK 预挖。团队钱包开铸后按同样上限购买。</p>
-          <p class="t-en">Only a wallet with a .ai Agent ID and a non-empty handle can mint. The registry <span class="ca">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span> checks balanceOf and handleOf. Max 10 tickets per address. Supply is 10,000, in tiers of 2,500: $2, $3, $4, $5. Five quiet minutes drop one tier, floor $2. No free tickets and no ARK premine. After launch the team wallet buys under the same cap.</p>
+          <p class="t-zh">只有持有 .ai Agent ID、且名字不是空的钱包可以铸造。注册表 <span class="ca">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span> 上要能查到这只钱包持有 Agent ID，并且名字不是空的。每址最多 10 张。一共 10,000 张，每 2,500 张一档：$2、$3、$4、$5。连续 5 分钟无人铸造，价格降一档，最低 $2。没有免费票，没有 ARK 预挖。团队钱包开铸后按同样上限购买。挂单、购买和求购不需要 Agent ID。</p>
+          <p class="t-en">Only a wallet with a .ai Agent ID and a non-empty handle can mint. The registry <span class="ca">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span> checks balanceOf and handleOf. Max 10 tickets per address. Supply is 10,000, in tiers of 2,500: $2, $3, $4, $5. Five quiet minutes drop one tier, floor $2. No free tickets and no ARK premine. After launch the team wallet buys under the same cap. Listing, buying, and bidding do not require an Agent ID.</p>
         </div>
       </details>
       <details class="rule">
@@ -563,7 +640,7 @@
       <h2><span class="t-zh">开船前的问题</span><span class="t-en">Before you board</span></h2>
       <details class="faq-item">
         <summary><span class="t-zh">必须有 Agent ID 吗？</span><span class="t-en">Do I need an Agent ID?</span></summary>
-        <div class="body"><p class="t-zh">铸造必须有。注册表上要能查到 Agent ID，并且名字不是空的。没有 Agent ID 的钱包不能铸船票。</p><p class="t-en">Yes, to mint. The registry must show balanceOf above 0 and a non-empty handle. A wallet without an Agent ID cannot mint a ticket.</p></div>
+        <div class="body"><p class="t-zh">铸造必须有。注册表上要能查到 Agent ID，并且名字不是空的。没有 Agent ID 的钱包不能铸船票。已经持有的船票可以挂单、购买和求购，这三步不检查 Agent ID。</p><p class="t-en">Yes, to mint. The registry must show balanceOf above 0 and a non-empty handle. A wallet without an Agent ID cannot mint a ticket. A wallet that already holds a ticket can list, buy, and bid. Those three calls do not check Agent ID.</p></div>
       </details>
       <details class="faq-item">
         <summary><span class="t-zh">什么时候开池？</span><span class="t-en">When does the pool open?</span></summary>
@@ -668,7 +745,7 @@
       </details>
       <details class="faq-item">
         <summary><span class="t-zh">现在能连钱包、扫货或者领奖吗？</span><span class="t-en">Can I connect a wallet, buy a listing, or claim now?</span></summary>
-        <div class="body"><p class="t-zh">可以连接钱包，并读取舱单、报价和洪水状态。开售时间还没到的时候，铸造正式未开售，页面不会发送铸造。发售开始后才会真正铸造。没有二级挂单合约，挂单和出价只显示链上记录。</p><p class="t-en">Yes. You can connect a wallet and read tickets, quotes, and flood state. While ArkSale startTime is still 0, minting is not open and this page will not send mint. After the sale starts, mint calls ArkSale.mint. There is no secondary order book, so listings and bids show on-chain records only.</p></div>
+        <div class="body"><p class="t-zh">可以连接钱包，并读取舱单、报价、洪水和二级市场。开售时间还没到的时候，铸造正式未开售，页面不会发送铸造。发售开始后才会真正铸造。二级市场已经在 BSC 上：BNB 挂单、ARK 挂单和 BNB 求购，成交抽 2.5%。买卖和求购不需要 Agent ID。某一本簿的地址如果被清成 0，页面会写「市场合约待部署」，那一本表保持空白。</p><p class="t-en">Yes. You can connect a wallet and read tickets, quotes, the flood, and the secondary market. While ArkSale startTime is still 0, minting is not open and this page will not send mint. After the sale starts, mint calls ArkSale.mint. The secondary market is live on BSC: a BNB book, an ARK book, and BNB quantity bids, with a 2.5% fee on each fill. Buying, listing, and bidding do not need an Agent ID. If one of those addresses is cleared back to zero, that book says the market contract is not deployed and its table stays empty.</p></div>
       </details>
     </section>
 
@@ -715,6 +792,9 @@
       </div>
       <ul class="ca-list">
         <li><span><span class="t-zh">铸造</span><span class="t-en">Sale</span></span><span><span class="ca">0x5f92105341Cbc09462A0a10973664a322505BF32</span><span class="ca-links"><a href="https://bscscan.com/address/0x5f92105341Cbc09462A0a10973664a322505BF32#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0x5f92105341Cbc09462A0a10973664a322505BF32" rel="noopener noreferrer">Sourcify</a></span></span></li>
+        <li><span><span class="t-zh">BNB 挂单</span><span class="t-en">BNB market</span></span><span><span class="ca">0xC24b79485705cEF5AfF36fb4c4cCda34F8423d95</span><span class="ca-links"><a href="https://bscscan.com/address/0xC24b79485705cEF5AfF36fb4c4cCda34F8423d95" rel="noopener noreferrer">BscScan</a><a href="https://bscscan.com/tx/0xc1d70e60ef4b9e7c3e1fb137b665701bcee5c9c0722eb16ec7b20bc68642055b" rel="noopener noreferrer">Deploy tx</a></span></span></li>
+        <li><span><span class="t-zh">ARK 挂单</span><span class="t-en">ARK market</span></span><span><span class="ca">0x3fF61e70B89dc5b0EDD9a7f27435d6604683Bd64</span><span class="ca-links"><a href="https://bscscan.com/address/0x3fF61e70B89dc5b0EDD9a7f27435d6604683Bd64" rel="noopener noreferrer">BscScan</a><a href="https://bscscan.com/tx/0x1a8c2859d6957be284da4bf2353446467fb4cc0733d5392d943b7deede78abb0" rel="noopener noreferrer">Deploy tx</a></span></span></li>
+        <li><span><span class="t-zh">求购</span><span class="t-en">Bid market</span></span><span><span class="ca">0xbC58134B8596e8A12050fcDF2435F42Ea0E2Aa32</span><span class="ca-links"><a href="https://bscscan.com/address/0xbC58134B8596e8A12050fcDF2435F42Ea0E2Aa32" rel="noopener noreferrer">BscScan</a><a href="https://bscscan.com/tx/0x1277e5eca9d58adb69bab65b88848961afdf9ec408159f56a646f4f3444f67e7" rel="noopener noreferrer">Deploy tx</a></span></span></li>
         <li><span>TicketNFT</span><span><span class="ca">0x815202403e51C6525452dB09FC7c40dD2762D87e</span><span class="ca-links"><a href="https://bscscan.com/address/0x815202403e51C6525452dB09FC7c40dD2762D87e#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0x815202403e51C6525452dB09FC7c40dD2762D87e" rel="noopener noreferrer">Sourcify</a></span></span></li>
         <li><span>ARK</span><span><span class="ca">0xBCbA6cFc97d2c0A4Dcf22295D92EF5227B5db712</span><span class="ca-links"><a href="https://bscscan.com/address/0xBCbA6cFc97d2c0A4Dcf22295D92EF5227B5db712#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0xBCbA6cFc97d2c0A4Dcf22295D92EF5227B5db712" rel="noopener noreferrer">Sourcify</a></span></span></li>
         <li><span><span class="t-zh">洪水</span><span class="t-en">Flood</span></span><span><span class="ca">0xf15C1130fA9A5D0BAD783558379E39664aD79200</span><span class="ca-links"><a href="https://bscscan.com/address/0xf15C1130fA9A5D0BAD783558379E39664aD79200#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0xf15C1130fA9A5D0BAD783558379E39664aD79200" rel="noopener noreferrer">Sourcify</a></span></span></li>
