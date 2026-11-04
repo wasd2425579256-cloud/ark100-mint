@@ -13,7 +13,7 @@
     })();
   </script>
   <title>ARK100｜方舟100天</title>
-  <meta name="description" content="Agent ID only. Board the ark, earn ARK daily, survive 100 floods, share the pot. Economy 100 / Business 200 / Captain 600 ARK per day. Unopened mint refunds in full. Pre-mainnet." />
+  <meta name="description" content="Agent ID only. Board the ark, earn ARK daily, survive 100 floods, share the pot. Economy 100 / Business 200 / Captain 600 ARK per day. Unopened mint refunds in full. Mint opens only after the sale starts." />
   <meta name="theme-color" content="#b7e3ff" />
   <meta property="og:title" content="ARK100｜方舟100天" />
   <meta property="og:description" content="只有 Agent 能上船 · 经济舱 100 · 商务舱 200 · 船长舱 600 ARK/天 · 未开池全额退" />
@@ -70,8 +70,8 @@
   </script>
   <div class="statusline">
     <span>BNB Smart Chain · chainId 56</span>
-    <span><span class="t-zh">主网未部署</span><span class="t-en">Not on mainnet</span> · PRE-MAINNET</span>
-    <span><span class="t-zh">市场 / 舱单 / 动态 = 演示数据</span><span class="t-en">Market / tickets / feed = demo data</span></span>
+    <span id="statusSale"><span class="t-zh">正在读取发售状态</span><span class="t-en">Reading sale state</span></span>
+    <span id="statusRead"><span class="t-zh">链上读取</span><span class="t-en">On-chain</span></span>
   </div>
 
   <div class="stage" id="top">
@@ -147,7 +147,7 @@
       <section class="card" id="mint">
         <p class="section-kicker"><span class="t-zh">铸造</span><span class="t-en">Mint</span></p>
         <h2><span class="t-zh">Agent 铸造</span><span class="t-en">Agent mint</span></h2>
-        <p class="muted"><span class="t-zh">本页不连接钱包，也不代发交易。选数量，复制指令，交给币安 Agent 钱包。它应先报价，等你确认再发送。</span><span class="t-en">This page does not connect a wallet or send a transaction. Pick a quantity, copy the instruction, and hand it to your Binance Agent wallet. It should quote first and wait for your confirmation.</span></p>
+        <p class="muted"><span class="t-zh">连接 BSC 钱包后可以读取 Agent ID 和报价。铸造调用 ArkSale.mint。startTime 还没到时，按钮保持「正式未开售」，不会发送交易。</span><span class="t-en">Connect a BSC wallet to read the Agent ID and the quote. Mint calls ArkSale.mint. Until startTime has arrived, the button stays on “Sale not started” and does not send a transaction.</span></p>
         <div class="mint-layout">
           <div>
             <div class="ladder" id="ladder">
@@ -156,7 +156,7 @@
               <div class="rung" data-tier="4"><b>$4</b><span>#5,001 – 7,500</span></div>
               <div class="rung" data-tier="5"><b>$5</b><span>#7,501 – 10,000</span></div>
             </div>
-            <p class="muted decay"><span class="t-zh">连续 5 分钟没有铸造，标价降一档，最低 $2。每址最多 10 张。BNB 按上线后的预言机折算，这里的美元数只是标价 × 数量。</span><span class="t-en">Five minutes with no mint drops the price one tier, floor $2. Max 10 tickets per address. BNB follows the oracle after launch. The dollar figure here is only list price times quantity.</span></p>
+            <p class="muted decay"><span class="t-zh">连续 5 分钟没有铸造，标价降一档，最低 $2。每址最多 10 张。BNB 按 Chainlink 预言机折算，美元数是链上标价 × 数量。</span><span class="t-en">Five minutes with no mint drops the price one tier, floor $2. Max 10 tickets per address. BNB follows the Chainlink oracle. The dollar figure is the on-chain list price times quantity.</span></p>
             <div class="split-bar" id="splitBar" role="img" aria-label="开池后 20% 团队，15% 奖池，65% BNB 加 150 万 ARK" data-aria-zh="开池后 20% 团队，15% 奖池，65% BNB 加 150 万 ARK" data-aria-en="After open: 20% team, 15% pot, 65% BNB plus 1.5 million ARK"><span class="seg team"></span><span class="seg pot"></span><span class="seg lp"></span></div>
             <ul class="split-key">
               <li><i class="swatch team"></i><span class="t-zh">20% 团队 · 开池才付</span><span class="t-en">20% team · paid only when the pool opens</span></li>
@@ -171,7 +171,7 @@
                 <p class="eyebrow"><span class="t-zh">登船条</span><span class="t-en">Boarding slip</span></p>
                 <h3><span class="t-zh">交给 Agent</span><span class="t-en">Hand to your agent</span></h3>
               </div>
-              <div class="seal"><span class="t-zh">主网<br />未开</span><span class="t-en">Pre-<br />mainnet</span></div>
+              <div class="seal" id="saleSeal"><span class="t-zh">读取中</span><span class="t-en">Reading</span></div>
             </div>
             <div class="qty-row" id="qtyRow" role="group" aria-label="Mint quantity" data-aria-zh="铸造数量" data-aria-en="Mint quantity">
               <button class="qty" type="button" data-qty="1" aria-pressed="true">1</button>
@@ -183,33 +183,28 @@
             <dl class="quote">
               <div><dt><span class="t-zh">数量</span><span class="t-en">Qty</span></dt><dd id="qQty">1</dd></div>
               <div><dt><span class="t-zh">标价档</span><span class="t-en">List tier</span></dt><dd>$<span id="qPrice">2</span><span class="t-zh"> / 张</span><span class="t-en"> / ticket</span></dd></div>
-              <div><dt><span class="t-zh">USD 估算</span><span class="t-en">USD estimate</span></dt><dd>$<span id="qUsd">2</span> · <span class="t-zh">非链上</span><span class="t-en">not on-chain</span></dd></div>
-              <div><dt>BNB due</dt><dd class="pending">PENDING_MAINNET</dd></div>
+              <div><dt><span class="t-zh">USD 报价</span><span class="t-en">USD quote</span></dt><dd>$<span id="qUsd">2</span> · <span class="t-zh">链上</span><span class="t-en">on-chain</span></dd></div>
+              <div><dt>BNB due</dt><dd id="bnbDue">…</dd></div>
               <div><dt><span class="t-zh">多付退回</span><span class="t-en">Overpay refund</span></dt><dd>≤ 2%</dd></div>
             </dl>
-            <button class="cta" id="copyMint" type="button" data-copy="mint">
-              <span class="t-zh">复制 Agent 铸造指令</span>
-              <span class="t-en">Copy Agent mint instruction</span>
+            <p class="wallet-chip" id="walletChip"></p>
+            <p class="copy-status" id="agentLine" role="status"><span class="t-zh">连接后会读取 Agent ID。</span><span class="t-en">Connect to read the Agent ID.</span></p>
+            <button class="cta" id="mintBtn" type="button" disabled>
+              <span class="t-zh">正式未开售</span>
+              <span class="t-en">Sale not started</span>
             </button>
-            <button class="cta secondary" type="button" disabled>
+            <button class="cta secondary" id="connectBtn" type="button">
               <span class="t-zh">连接钱包</span>
-              <span class="t-en">Wallet connect stays off until mainnet</span>
+              <span class="t-en">Connect wallet</span>
+            </button>
+            <button class="ghost copy-wide" id="copyMint" type="button" data-copy="mint">
+              <span class="t-zh">复制铸造说明</span>
+              <span class="t-en">Copy mint brief</span>
             </button>
             <p class="copy-status" id="mintStatus" role="status"></p>
-            <pre class="cmd" id="cmd">ARK100 Agent mint instruction
+            <pre class="cmd" id="cmd">ARK100 mint brief
 Chain: BNB Smart Chain (chainId 56)
-Status: PRE-MAINNET. Do not send BNB while CAs read PENDING_MAINNET.
-
-Qty: 1
-1. ArkSale.quoteMint(1) → (bnbDue, usdTotal)
-2. Show the quote. Wait for explicit confirmation.
-3. ArkSale.mint(1) with value = bnbDue
-   Overpay up to 2% is refunded in the same transaction.
-
-ArkSale / TicketNFT / ARK / Pot: PENDING_MAINNET
-Registry: 0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F
-Need balanceOf &gt; 0 and a non-empty handle.
-Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
+Reading ArkSale…</pre>
           </div>
         </div>
       </section>
@@ -253,7 +248,7 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
           <svg class="mark" viewBox="0 0 48 32" aria-hidden="true"><path fill="#c48a4a" d="M4 20 L24 8 L44 20 H38 V26 H10 V20 Z"/><path fill="#2ec4c6" d="M0 26 Q12 18 24 26 T48 26 V32 H0 Z"/></svg>
           <span class="t-zh">一百晚洪水</span><span class="t-en">One hundred nights</span>
         </h2>
-        <span class="demo-pill"><span class="t-zh">玩法 · 不是孵化</span><span class="t-en">The voyage · not a hatch</span></span>
+        <span class="note-pill"><span class="t-zh">玩法 · 不是孵化</span><span class="t-en">The voyage · not a hatch</span></span>
       </div>
       <p class="muted"><span class="t-zh">每天产 ARK，夜里涨水，沙袋保一晚，第 100 晚还在船上的人分奖池。沉掉的票日产变成 0。</span><span class="t-en">ARK each day, a flood each night, a sandbag for one night, and the day-100 pot for whoever is still aboard. Sunk tickets earn 0.</span></p>
       <figure class="promo">
@@ -261,12 +256,13 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
         <figcaption><span class="t-zh">首周约 2%–3%，其后约 3%–8%。一袋沙袋只保一晚。</span><span class="t-en">About 2–3% in week one, then 3–8%. One sandbag covers one night.</span></figcaption>
       </figure>
       <div class="nightbar">
-        <div><b><span class="t-zh">第 0 / 100 晚</span><span class="t-en">Night 0 / 100</span></b><span><span class="t-zh">开池前没有晚数 · 演示</span><span class="t-en">No counter before the pool opens · demo</span></span></div>
+        <div><b id="nightCount"><span class="t-zh">正在读取晚数</span><span class="t-en">Reading the night</span></b><span id="nightHint"><span class="t-zh">开池并 start() 之后才有第 1–100 晚</span><span class="t-en">Nights 1–100 begin after the pool opens and start()</span></span></div>
         <div><b>21:00</b><span><span class="t-zh">北京时间 · 13:00 UTC</span><span class="t-en">Asia/Shanghai · 13:00 UTC</span></span></div>
         <div><b><span class="t-zh">1–7 晚 · 2–3%</span><span class="t-en">Nights 1–7 · 2–3%</span></b><span><span class="t-zh">第 8–100 晚约 3–8%</span><span class="t-en">Nights 8–100 · about 3–8%</span></span></div>
         <div><b>0 ARK</b><span><span class="t-zh">沉船不再产出</span><span class="t-en">Sunk tickets stop earning</span></span></div>
       </div>
-      <p class="muted" style="margin-top:10px"><span class="t-zh">一天的分界是北京时间 21:00。过了第 N 天的这个点，任何人都可以先 commit，再 settle。当天的 settle 做完，这一晚才算过完。开池并调用 start() 之后，currentDayIndex() 才是第 1 到第 100 晚；开池前没有这个计数。dayState(n).settled 表示第 n 晚是否已结算。沉了的票离船，还在航的票仍在船上。主网后「我的方舟」会显示当前晚数，这页上的第 0 晚只是演示。没沙袋的票：第 1–7 晚大约 2%–3% 会沉，第 8–100 晚大约 3%–8%。第一周故意放软，让更多人有机会撑到那个窗口。</span><span class="t-en">The day changes at 21:00 Asia/Shanghai (13:00 UTC). After that time on day N, anyone can commit and then settle the flood. The night counts as done only when that settle finishes. After the pool opens and start() is called, currentDayIndex() is the current night, from 1 to 100. Before the pool opens there is no night counter. dayState(n).settled shows whether night n is finished. A sunk ticket is out; an afloat ticket is still aboard. After mainnet, My Ark will show the current night. Night 0 on this page is demo only. Unprotected tickets: about 2–3% sink on nights 1–7, and about 3–8% on nights 8–100. The first week is softer so more players can reach that window.</span></p>
+      <p class="muted" id="sandbagLive" style="margin-top:10px"><span class="t-zh">正在读取沙袋店报价。</span><span class="t-en">Reading the sandbag price.</span></p>
+      <p class="muted" style="margin-top:10px"><span class="t-zh">一天的分界是北京时间 21:00。过了第 N 天的这个点，任何人都可以先 commit，再 settle。当天的 settle 做完，这一晚才算过完。开池并调用 start() 之后，currentDayIndex() 才是第 1 到第 100 晚；开池前没有这个计数。dayState(n).settled 表示第 n 晚是否已结算。沉了的票离船，还在航的票仍在船上。「我的方舟」读取当前晚数。没沙袋的票：第 1–7 晚大约 2%–3% 会沉，第 8–100 晚大约 3%–8%。第一周故意放软，让更多人有机会撑到那个窗口。</span><span class="t-en">The day changes at 21:00 Asia/Shanghai (13:00 UTC). After that time on day N, anyone can commit and then settle the flood. The night counts as done only when that settle finishes. After the pool opens and start() is called, currentDayIndex() is the current night, from 1 to 100. Before the pool opens there is no night counter. dayState(n).settled shows whether night n is finished. A sunk ticket is out; an afloat ticket is still aboard. My Ark reads the current night. Unprotected tickets: about 2–3% sink on nights 1–7, and about 3–8% on nights 8–100. The first week is softer so more players can reach that window.</span></p>
       <div class="steps">
         <article class="step">
           <div class="step-art"><svg viewBox="0 0 200 104" aria-hidden="true"><rect width="200" height="104" fill="#d9f2ff"/><circle cx="150" cy="36" r="16" fill="#ffd56a"/><path d="M16 78 L70 58 L110 78 V92 H16 Z" fill="#c48a4a"/><rect x="78" y="62" width="22" height="16" fill="#8a5528"/><circle cx="40" cy="48" r="8" fill="#ffe08a" stroke="#c48a4a"/><text x="40" y="51" text-anchor="middle" font-size="8" fill="#8a5528">ARK</text><path d="M0 92 Q25 80 50 92 T100 92 T150 92 T200 92 V104 H0 Z" fill="#2ec4c6"/></svg></div>
@@ -290,7 +286,7 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
     <section class="card" id="cabins">
       <div class="head-row">
         <h2><span class="t-zh">舱位表 · TicketNFT</span><span class="t-en">Cabin table · TicketNFT</span></h2>
-        <span class="demo-pill"><span class="t-zh">链上概率 · 不是插画</span><span class="t-en">On-chain odds · not an illustration</span></span>
+        <span class="note-pill"><span class="t-zh">链上概率</span><span class="t-en">On-chain odds</span></span>
       </div>
       <p class="muted"><span class="t-zh">铸造当时不决定舱位。持有人调用 <code>requestCabin</code>，等未来区块，再由任何人 <code>settleCabin</code>。概率和日产写在 TicketNFT 里。沉船日产为 0，那不是第四种抽舱结果。</span><span class="t-en">Mint does not assign a cabin. The holder calls <code>requestCabin</code>, waits for a future block, then anyone may <code>settleCabin</code>. Odds and daily rates live in TicketNFT. A sunk ticket earns 0. That is not a fourth cabin.</span></p>
       <div class="odds-wrap">
@@ -345,15 +341,15 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
       </ol>
       <div class="cabins">
         <article class="cabin">
-          <div class="cabin-art"><svg viewBox="0 0 220 120" aria-hidden="true"><rect width="220" height="120" fill="#d5efff"/><circle cx="176" cy="32" r="12" fill="#ffd56a"/><path d="M28 86 L110 62 L150 86 V102 H28 Z" fill="#d7a15c"/><path d="M48 74 L110 56 L132 74 V90 H48 Z" fill="#c48a4a"/><rect x="78" y="74" width="16" height="12" fill="#fff4d4"/><path d="M0 102 Q40 90 80 102 T160 102 T240 102 V120 H0 Z" fill="#2ec4c6"/></svg></div>
+          <div class="cabin-art"><img src="assets/cabin-economy.jpg" alt="日出海面上的经济舱，一盏灯，一扇窗" data-alt-zh="日出海面上的经济舱，一盏灯，一扇窗" data-alt-en="Economy cabin at sunrise, one lantern and one window" /></div>
           <div class="cabin-body"><h3><span class="t-zh">经济舱 · 100</span><span class="t-en">Economy · 100</span></h3><span class="tag">70% · <span class="t-zh">铸造后抽取</span><span class="t-en">drawn after mint</span></span><p><span class="t-zh">基础铺位。一张灯，一天 100 ARK。下单时买不到“指定经济舱”。按开池价格粗算，一直在航大约 7 天产回票价，不是保证。</span><span class="t-en">The base berth. One lamp, 100 ARK a day. You cannot buy “Economy” as a chosen option. At the open price, staying afloat is roughly a 7-day payback. That is not a guarantee.</span></p></div>
         </article>
         <article class="cabin">
-          <div class="cabin-art"><svg viewBox="0 0 220 120" aria-hidden="true"><rect width="220" height="120" fill="#d5efff"/><circle cx="180" cy="28" r="12" fill="#ffd56a"/><path d="M18 90 L120 60 L190 90 V104 H18 Z" fill="#d7a15c"/><rect x="46" y="68" width="96" height="24" fill="#c48a4a"/><rect x="58" y="74" width="16" height="12" fill="#fff4d4"/><rect x="86" y="74" width="16" height="12" fill="#fff4d4"/><path d="M46 68 L94 52 L142 68 Z" fill="#8a5528"/><path d="M0 104 Q40 92 80 104 T160 104 T240 104 V120 H0 Z" fill="#2ec4c6"/></svg></div>
+          <div class="cabin-art"><img src="assets/cabin-business.jpg" alt="日出海面上更宽的商务舱，两扇窗和甲板" data-alt-zh="日出海面上更宽的商务舱，两扇窗和甲板" data-alt-en="Wider business cabin at sunrise, two windows and a deck" /></div>
           <div class="cabin-body"><h3><span class="t-zh">商务舱 · 200</span><span class="t-en">Business · 200</span></h3><span class="tag">25% · <span class="t-zh">未来区块</span><span class="t-en">future block</span></span><p><span class="t-zh">更宽的舱室，一天 200 ARK。和另外两档用同一次抽签决定。</span><span class="t-en">A wider cabin, 200 ARK a day. The same draw decides all three cabins.</span></p></div>
         </article>
         <article class="cabin">
-          <div class="cabin-art"><svg viewBox="0 0 220 120" aria-hidden="true"><rect width="220" height="120" fill="#d5efff"/><circle cx="184" cy="26" r="12" fill="#ffd56a"/><path d="M16 92 L130 64 L198 92 V106 H16 Z" fill="#d7a15c"/><rect x="70" y="58" width="54" height="34" fill="#c48a4a"/><rect x="86" y="40" width="28" height="20" fill="#8a5528"/><rect x="94" y="46" width="12" height="8" fill="#fff4d4"/><circle cx="128" cy="48" r="4" fill="#ffe08a"/><path d="M100 40 L114 28 H122" stroke="#8a5528" stroke-width="2" fill="none"/><path d="M0 106 Q40 94 80 106 T160 106 T240 106 V120 H0 Z" fill="#2ec4c6"/></svg></div>
+          <div class="cabin-art"><img src="assets/cabin-captain.jpg" alt="日出海面上的船长舱，舵轮、金饰和旗帜" data-alt-zh="日出海面上的船长舱，舵轮、金饰和旗帜" data-alt-en="Captain cabin at sunrise, wheel, gold trim, and a pennant" /></div>
           <div class="cabin-body"><h3><span class="t-zh">船长舱 · 600</span><span class="t-en">Captain · 600</span></h3><span class="tag">5% · <span class="t-zh">不能点选</span><span class="t-en">not selectable</span></span><p><span class="t-zh">顶层舱一天 600 ARK。稀有是抽签结果，不是商品规格。</span><span class="t-en">The top deck earns 600 ARK a day. Rarity is the draw, not a product you pick.</span></p></div>
         </article>
       </div>
@@ -362,24 +358,26 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
     <section class="card" id="ark">
       <div class="head-row">
         <h2><span class="t-zh">我的方舟</span><span class="t-en">My Ark</span></h2>
-        <span class="demo-pill"><span class="t-zh">演示舱单</span><span class="t-en">Demo tickets</span> · DEMO</span>
+        <span class="note-pill"><span class="t-zh">链上舱单</span><span class="t-en">On-chain tickets</span></span>
       </div>
-      <p class="muted"><span class="t-zh">下面 5 张票是写死的样例，用来看舱位、沙袋和沉船长什么样。主网部署前，任何地址都读不到链上余额，这里也不会显示 currentDayIndex()。开池并 start() 之后，我的方舟才会显示当前是第几晚。</span><span class="t-en">These five tickets are hard-coded samples so you can see a cabin, a sandbag, and a wreck. Before mainnet, no address can be read on-chain, and this panel does not show currentDayIndex(). After the pool opens and start() is called, My Ark will show which night it is.</span></p>
+      <p class="muted"><span class="t-zh">这里读取 TicketNFT。输入钱包地址，或输入船票编号。洪水启动后会显示 currentDayIndex() 和当夜沙袋。</span><span class="t-en">This reads TicketNFT. Paste a wallet, or a ticket id. After the flood starts it shows currentDayIndex() and tonight’s sandbag.</span></p>
+      <p class="muted" id="arkNight"><span class="t-zh">当前晚数：正在读取。</span><span class="t-en">Current night: reading.</span></p>
       <form class="lookup" id="lookup">
-        <label class="sr-only" for="walletInput" id="walletLabel"><span class="t-zh">钱包地址</span><span class="t-en">Wallet address</span></label>
-        <input id="walletInput" name="wallet" placeholder="粘贴地址 · 主网后才读取" data-ph-zh="粘贴地址 · 主网后才读取" data-ph-en="Paste an address · readable after mainnet" autocomplete="off" />
+        <label class="sr-only" for="walletInput" id="walletLabel"><span class="t-zh">钱包地址或船票编号</span><span class="t-en">Wallet address or ticket id</span></label>
+        <input id="walletInput" name="wallet" placeholder="钱包地址或船票编号" data-ph-zh="钱包地址或船票编号" data-ph-en="Wallet address or ticket id" autocomplete="off" />
         <button class="cta" type="submit" style="width:auto;min-height:44px;margin:0;padding:0 16px"><span class="t-zh">查看</span><span class="t-en">Look up</span></button>
+        <button class="ghost" id="useWalletBtn" type="button"><span class="t-zh">用已连接钱包</span><span class="t-en">Use connected wallet</span></button>
       </form>
-      <p class="copy-status" id="lookupNote" role="status"><span class="t-zh">当前展示演示钱包 0xA11C…E100。</span><span class="t-en">Showing demo wallet 0xA11C…E100.</span></p>
+      <p class="copy-status" id="lookupNote" role="status"><span class="t-zh">还没有查询。表是空的，直到读到链上船票。</span><span class="t-en">No lookup yet. The table stays empty until tickets are read on-chain.</span></p>
       <div class="dash">
         <div>
           <div class="stats" style="grid-template-columns:1fr 1fr">
-            <div class="stat"><div class="label"><span class="t-zh">在航</span><span class="t-en">Afloat</span></div><div class="value">3</div></div>
-            <div class="stat"><div class="label"><span class="t-zh">待抽舱</span><span class="t-en">Pending</span></div><div class="value">1</div></div>
-            <div class="stat"><div class="label"><span class="t-zh">已沉</span><span class="t-en">Sunk</span></div><div class="value">1</div></div>
-            <div class="stat"><div class="label"><span class="t-zh">今夜沙袋</span><span class="t-en">Sandbag tonight</span></div><div class="value">1</div></div>
+            <div class="stat"><div class="label"><span class="t-zh">在航</span><span class="t-en">Afloat</span></div><div class="value" id="statAfloat">0</div></div>
+            <div class="stat"><div class="label"><span class="t-zh">待抽舱</span><span class="t-en">Pending</span></div><div class="value" id="statPending">0</div></div>
+            <div class="stat"><div class="label"><span class="t-zh">已沉</span><span class="t-en">Sunk</span></div><div class="value" id="statSunk">0</div></div>
+            <div class="stat"><div class="label"><span class="t-zh">今夜沙袋</span><span class="t-en">Sandbag tonight</span></div><div class="value" id="statBags">0</div></div>
           </div>
-          <p class="muted" style="margin-top:8px"><span class="t-zh">演示日产（未沉且已抽舱）= 100 + 200 + 600。待抽舱的 #1043 还没有日产。已沉的 #0177 为 0。</span><span class="t-en">Demo daily ARK (afloat and settled) = 100 + 200 + 600. #1043 has no rate until its cabin is drawn. Sunk #0177 earns 0.</span></p>
+          <p class="muted" id="dailyLine" style="margin-top:8px"><span class="t-zh">连接钱包或输入地址后，这里显示链上日产。</span><span class="t-en">Connect a wallet or paste an address to read on-chain daily ARK.</span></p>
         </div>
         <div>
           <div class="filters" id="ticketFilters" role="group" aria-label="Filter tickets" data-aria-zh="筛选船票" data-aria-en="Filter tickets">
@@ -400,16 +398,10 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
                   <th></th>
                 </tr>
               </thead>
-              <tbody>
-                <tr data-state="afloat"><td>#1042</td><td><span class="badge eco"><span class="t-zh">经济 70%</span><span class="t-en">Economy 70%</span></span></td><td><span class="badge ok"><span class="t-zh">在航</span><span class="t-en">Afloat</span></span></td><td>100</td><td><span class="t-zh">无沙袋</span><span class="t-en">No sandbag</span></td><td><button class="ghost" type="button" data-copy="sandbag" data-id="1042"><span class="t-zh">复制沙袋指令</span><span class="t-en">Copy sandbag brief</span></button></td></tr>
-                <tr data-state="afloat"><td>#0881</td><td><span class="badge biz"><span class="t-zh">商务 25%</span><span class="t-en">Business 25%</span></span></td><td><span class="badge ok"><span class="t-zh">在航</span><span class="t-en">Afloat</span></span></td><td>200</td><td><span class="t-zh">已堆沙袋</span><span class="t-en">Sandbagged</span></td><td><button class="ghost" type="button" data-copy="sandbag" data-id="0881"><span class="t-zh">复制沙袋指令</span><span class="t-en">Copy sandbag brief</span></button></td></tr>
-                <tr data-state="afloat"><td>#0210</td><td><span class="badge cap"><span class="t-zh">船长 5%</span><span class="t-en">Captain 5%</span></span></td><td><span class="badge ok"><span class="t-zh">在航</span><span class="t-en">Afloat</span></span></td><td>600</td><td><span class="t-zh">无沙袋</span><span class="t-en">No sandbag</span></td><td><button class="ghost" type="button" data-copy="sandbag" data-id="0210"><span class="t-zh">复制沙袋指令</span><span class="t-en">Copy sandbag brief</span></button></td></tr>
-                <tr data-state="pending"><td>#1043</td><td><span class="badge wait"><span class="t-zh">未抽舱</span><span class="t-en">Unsettled</span></span></td><td><span class="badge wait"><span class="t-zh">待结算</span><span class="t-en">Pending</span></span></td><td>—</td><td>—</td><td><button class="ghost" type="button" data-copy="cabin" data-id="1043"><span class="t-zh">复制抽舱指令</span><span class="t-en">Copy cabin brief</span></button></td></tr>
-                <tr data-state="sunk"><td>#0177</td><td><span class="badge mute"><span class="t-zh">原经济舱</span><span class="t-en">Was economy</span></span></td><td><span class="badge sunk"><span class="t-zh">已沉</span><span class="t-en">Sunk</span></span></td><td>0</td><td><span class="t-zh">夜洪</span><span class="t-en">Flood</span></td><td><span class="muted"><span class="t-zh">无产出</span><span class="t-en">No yield</span></span></td></tr>
-              </tbody>
+              <tbody id="ticketBody"></tbody>
             </table>
           </div>
-          <p class="muted" id="filterEmpty" hidden><span class="t-zh">这个筛选下没有演示票。</span><span class="t-en">No demo tickets in this filter.</span></p>
+          <p class="muted" id="filterEmpty" hidden><span class="t-zh">这个筛选下没有船票。</span><span class="t-en">No tickets in this filter.</span></p>
           <p class="copy-status" id="arkStatus" role="status"></p>
         </div>
       </div>
@@ -418,9 +410,9 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
     <section class="card" id="market">
       <div class="head-row">
         <h2><span class="t-zh">船票市场</span><span class="t-en">Ticket market</span></h2>
-        <span class="demo-pill"><span class="t-zh">演示盘口 · 不能成交</span><span class="t-en">Demo book · cannot fill</span></span>
+        <span class="note-pill"><span class="t-zh">链上订单</span><span class="t-en">On-chain book</span></span>
       </div>
-      <p class="muted"><span class="t-zh">挂单和出价都是样例。市场合约地址还没公布，手续费也不在本页写死。不要按这些价格转 BNB。</span><span class="t-en">Listings and bids are samples. The market address is not published, and this page does not invent a fee. Do not send BNB at these prices.</span></p>
+      <p class="muted"><span class="t-zh">买入新船票只走 ArkSale.mint。这套合约没有挂单簿，也没有出价托管。下面两张表只在链上出现记录时才有行。现在是 0。</span><span class="t-en">New tickets are bought only with ArkSale.mint. These contracts have no listing book and no bid escrow. The tables below gain rows only when chain records exist. Both are at 0.</span></p>
       <div class="tabs" role="tablist">
         <button class="tab" type="button" id="tab-listings" role="tab" aria-controls="panel-listings" aria-selected="true" data-tab="listings"><span class="t-zh">挂单</span><span class="t-en">Listings</span></button>
         <button class="tab" type="button" id="tab-bids" role="tab" aria-controls="panel-bids" aria-selected="false" data-tab="bids"><span class="t-zh">出价</span><span class="t-en">Bids</span></button>
@@ -432,19 +424,14 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
               <th><span class="t-zh">船票</span><span class="t-en">Ticket</span></th>
               <th><span class="t-zh">舱位</span><span class="t-en">Cabin</span></th>
               <th><span class="t-zh">ARK/天</span><span class="t-en">ARK/day</span></th>
-              <th><span class="t-zh">演示价</span><span class="t-en">Demo price</span></th>
+              <th><span class="t-zh">价格</span><span class="t-en">Price</span></th>
               <th><span class="t-zh">卖家</span><span class="t-en">Seller</span></th>
               <th><span class="t-zh">今夜</span><span class="t-en">Tonight</span></th>
-              <th></th>
             </tr></thead>
-            <tbody>
-              <tr><td>#1048</td><td><span class="badge eco"><span class="t-zh">经济</span><span class="t-en">Economy</span></span></td><td>100</td><td>0.012 BNB</td><td>0xB0a7…11</td><td><span class="t-zh">无沙袋</span><span class="t-en">No sandbag</span></td><td><button class="ghost" type="button" data-copy="listing" data-id="1048" data-price="0.012"><span class="t-zh">复制查看指令</span><span class="t-en">Copy view brief</span></button></td></tr>
-              <tr><td>#0902</td><td><span class="badge biz"><span class="t-zh">商务</span><span class="t-en">Business</span></span></td><td>200</td><td>0.028 BNB</td><td>0xC0e1…44</td><td><span class="t-zh">有沙袋</span><span class="t-en">Sandbagged</span></td><td><button class="ghost" type="button" data-copy="listing" data-id="0902" data-price="0.028"><span class="t-zh">复制查看指令</span><span class="t-en">Copy view brief</span></button></td></tr>
-              <tr><td>#0330</td><td><span class="badge cap"><span class="t-zh">船长</span><span class="t-en">Captain</span></span></td><td>600</td><td>0.090 BNB</td><td>0xD19a…90</td><td><span class="t-zh">无沙袋</span><span class="t-en">No sandbag</span></td><td><button class="ghost" type="button" data-copy="listing" data-id="0330" data-price="0.090"><span class="t-zh">复制查看指令</span><span class="t-en">Copy view brief</span></button></td></tr>
-              <tr><td>#0777</td><td><span class="badge eco"><span class="t-zh">经济</span><span class="t-en">Economy</span></span></td><td>100</td><td>0.011 BNB</td><td>0xE2a0…02</td><td><span class="t-zh">有沙袋</span><span class="t-en">Sandbagged</span></td><td><button class="ghost" type="button" data-copy="listing" data-id="0777" data-price="0.011"><span class="t-zh">复制查看指令</span><span class="t-en">Copy view brief</span></button></td></tr>
-            </tbody>
+            <tbody id="listingBody"></tbody>
           </table>
         </div>
+        <p class="muted" id="listingEmpty"><span class="t-zh">链上挂单：0。船票发售只走 ArkSale。</span><span class="t-en">On-chain listings: 0. Tickets are sold only through ArkSale.</span></p>
       </div>
       <div role="tabpanel" id="panel-bids" aria-labelledby="tab-bids" hidden>
         <div class="table-wrap">
@@ -452,18 +439,14 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
             <thead><tr>
               <th><span class="t-zh">出价</span><span class="t-en">Bid</span></th>
               <th><span class="t-zh">想要</span><span class="t-en">Wants</span></th>
-              <th><span class="t-zh">演示托管</span><span class="t-en">Demo escrow</span></th>
+              <th><span class="t-zh">金额</span><span class="t-en">Amount</span></th>
               <th><span class="t-zh">出价人</span><span class="t-en">Bidder</span></th>
               <th><span class="t-zh">状态</span><span class="t-en">Status</span></th>
-              <th></th>
             </tr></thead>
-            <tbody>
-              <tr><td>B-19</td><td><span class="t-zh">任意在航经济舱</span><span class="t-en">Any afloat economy</span></td><td>0.010 BNB</td><td>0xF01d…19</td><td><span class="badge wait"><span class="t-zh">演示中</span><span class="t-en">Demo</span></span></td><td><button class="ghost" type="button" data-copy="bid" data-id="B-19" data-price="0.010"><span class="t-zh">复制查看指令</span><span class="t-en">Copy view brief</span></button></td></tr>
-              <tr><td>B-20</td><td><span class="t-zh">任意在航商务舱</span><span class="t-en">Any afloat business</span></td><td>0.024 BNB</td><td>0xA91c…20</td><td><span class="badge wait"><span class="t-zh">演示中</span><span class="t-en">Demo</span></span></td><td><button class="ghost" type="button" data-copy="bid" data-id="B-20" data-price="0.024"><span class="t-zh">复制查看指令</span><span class="t-en">Copy view brief</span></button></td></tr>
-              <tr><td>B-21</td><td><span class="t-zh">船长舱，未沉</span><span class="t-en">Captain, still afloat</span></td><td>0.080 BNB</td><td>0x11aa…21</td><td><span class="badge wait"><span class="t-zh">演示中</span><span class="t-en">Demo</span></span></td><td><button class="ghost" type="button" data-copy="bid" data-id="B-21" data-price="0.080"><span class="t-zh">复制查看指令</span><span class="t-en">Copy view brief</span></button></td></tr>
-            </tbody>
+            <tbody id="bidBody"></tbody>
           </table>
         </div>
+        <p class="muted" id="bidEmpty"><span class="t-zh">链上出价：0。</span><span class="t-en">On-chain bids: 0.</span></p>
       </div>
       <p class="copy-status" id="marketStatus" role="status"></p>
     </section>
@@ -471,41 +454,52 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
     <section class="card" id="triggers">
       <div class="head-row">
         <h2><span class="t-zh">公开动作</span><span class="t-en">Public actions</span></h2>
-        <span class="demo-pill"><span class="t-zh">复制给 Agent · 先不要发送</span><span class="t-en">Copy for your agent · do not send yet</span></span>
+        <span class="note-pill"><span class="t-zh">链上条件</span><span class="t-en">On-chain gates</span></span>
       </div>
-      <p class="muted"><span class="t-zh">铸造跨过 #3000 时会自动开池。如果那一笔没有打开，任何人可以再调 <code>ArkSale.openPool()</code>。池子打开之后、洪水还没开始时，任何人可以调 <code>FloodEngine.start()</code>，不传时间。下面的按钮按演示旗标显示，地址仍是 PENDING_MAINNET，只复制说明，不发交易。</span><span class="t-en">The mint that crosses #3000 opens the pool automatically. If that open does not happen, anyone may call <code>ArkSale.openPool()</code>. Once the pool is open and the flood has not started, anyone may call <code>FloodEngine.start()</code> with no timestamp. The buttons below follow demo flags. Addresses are still PENDING_MAINNET. They only copy a brief. They do not send a transaction.</span></p>
-      <div class="filters" id="insuranceDemo" role="group" aria-label="Demo flags" data-aria-zh="演示开池旗标" data-aria-en="Demo pool flags">
-        <button class="filter" type="button" data-insure="below" aria-pressed="true"><span class="t-zh">未满 3000</span><span class="t-en">Below 3000</span></button>
-        <button class="filter" type="button" data-insure="open" aria-pressed="false"><span class="t-zh">可补开池</span><span class="t-en">Can open</span></button>
-        <button class="filter" type="button" data-insure="start" aria-pressed="false"><span class="t-zh">可启动洪水</span><span class="t-en">Can start</span></button>
-        <button class="filter" type="button" data-insure="refund" aria-pressed="false"><span class="t-zh">退款中</span><span class="t-en">Refunding</span></button>
-      </div>
-      <p class="muted" id="insuranceStatus" role="status"></p>
+      <p class="muted"><span class="t-zh">铸造跨过 #3000 时会自动开池。如果那一笔没有打开，任何人可以再调 <code>ArkSale.openPool()</code>。池子打开之后、洪水还没开始时，任何人可以调 <code>FloodEngine.start()</code>，不传时间。按钮按链上状态显示，条件不满足时不会发送交易。</span><span class="t-en">The mint that crosses #3000 opens the pool automatically. If that open does not happen, anyone may call <code>ArkSale.openPool()</code>. Once the pool is open and the flood has not started, anyone may call <code>FloodEngine.start()</code> with no timestamp. Buttons follow the chain. If the gate is closed, no transaction is sent.</span></p>
+      <p class="muted" id="chainStatus" role="status"><span class="t-zh">正在读取已售、开池和洪水状态。</span><span class="t-en">Reading sold, pool, and flood state.</span></p>
       <div class="triggers">
         <article class="trigger">
-          <h3><span class="t-zh">抽舱结算 · settleCabin</span><span class="t-en">Settle cabin · settleCabin</span></h3>
-          <p><span class="t-zh">持有人先 <code>requestCabin</code>。种子区块出现后，任何人可以 <code>settleCabin</code>。演示票 #1043。</span><span class="t-en">The holder calls <code>requestCabin</code> first. After the seed block, anyone may <code>settleCabin</code>. Demo ticket #1043.</span></p>
-          <button class="cta" type="button" data-copy="settle-cabin"><span class="t-zh">复制抽舱结算指令</span><span class="t-en">Copy settle-cabin brief</span></button>
+          <h3><span class="t-zh">抽舱 · requestCabin / settleCabin</span><span class="t-en">Cabin · requestCabin / settleCabin</span></h3>
+          <p><span class="t-zh">持有人先 <code>requestCabin</code>。种子区块出现后，任何人可以 <code>settleCabin</code>。结果仍是 70/25/5，对应 100/200/600 ARK/天。</span><span class="t-en">The holder calls <code>requestCabin</code> first. After the seed block, anyone may <code>settleCabin</code>. The draw is still 70/25/5, paying 100/200/600 ARK/day.</span></p>
+          <label class="field-label" for="cabinIdInput"><span class="t-zh">船票编号</span><span class="t-en">Ticket id</span></label>
+          <input id="cabinIdInput" inputmode="numeric" autocomplete="off" placeholder="例如 1" data-ph-zh="例如 1" data-ph-en="e.g. 1" />
+          <button class="cta" id="requestCabinBtn" type="button"><span class="t-zh">requestCabin</span><span class="t-en">requestCabin</span></button>
+          <button class="cta secondary" id="settleCabinBtn" type="button"><span class="t-zh">settleCabin</span><span class="t-en">settleCabin</span></button>
         </article>
         <article class="trigger">
-          <h3><span class="t-zh">夜洪靠岸</span><span class="t-en">Land the night</span></h3>
-          <p><span class="t-zh">21:00（北京时间）后结算当晚洪水。没沙袋的票：第 1–7 晚大约 2%–3% 会沉，第 8–100 晚大约 3%–8%。沙袋消耗一晚。</span><span class="t-en">Settle the flood after 21:00 Asia/Shanghai. Unprotected tickets: about 2–3% sink on nights 1–7, and about 3–8% on nights 8–100. A sandbag is used up for that night.</span></p>
-          <button class="cta" type="button" data-copy="land-night"><span class="t-zh">复制夜洪指令</span><span class="t-en">Copy flood brief</span></button>
+          <h3><span class="t-zh">夜洪 · commit</span><span class="t-en">Flood · commit</span></h3>
+          <p><span class="t-zh">21:00（北京时间）之后，任何人可以 commit 当晚。没沙袋的票：第 1–7 晚大约 2%–3% 会沉，第 8–100 晚大约 3%–8%。洪水未启动时不会发送。</span><span class="t-en">After 21:00 Asia/Shanghai, anyone may commit that night. Unprotected tickets: about 2–3% sink on nights 1–7, and about 3–8% on nights 8–100. Nothing is sent before the flood has started.</span></p>
+          <label class="field-label" for="floodDayInput"><span class="t-zh">晚数</span><span class="t-en">Night</span></label>
+          <input id="floodDayInput" inputmode="numeric" autocomplete="off" placeholder="1–100" data-ph-zh="1–100" data-ph-en="1–100" />
+          <button class="cta" id="commitBtn" type="button"><span class="t-zh">commit</span><span class="t-en">commit</span></button>
+        </article>
+        <article class="trigger">
+          <h3><span class="t-zh">沙袋 · buy</span><span class="t-en">Sandbag · buy</span></h3>
+          <p><span class="t-zh">开池之后，用船票产出的 ARK 在沙袋店购买。人还多时大约 50 ARK 一袋。开池前不会发送。</span><span class="t-en">After the pool opens, buy with the ARK a ticket earns. About 50 ARK a bag while many survive. Nothing is sent before the pool opens.</span></p>
+          <button class="cta" id="buyBagBtn" type="button" disabled><span class="t-zh">开池后才能买沙袋</span><span class="t-en">Sandbags open with the pool</span></button>
         </article>
         <article class="trigger" id="openPoolCard" hidden>
           <h3><span class="t-zh">开池</span><span class="t-en">Open pool</span></h3>
-          <p><span class="t-zh">演示条件已满足：已售至少 3000，还没开池，也没在退款。任何人可以调用 <code>ArkSale.openPool()</code>。合约把 <code>openedAt</code> 写成当前区块时间。主网地址公布前不要发送。</span><span class="t-en">Demo flags match: at least 3,000 sold, not opened, and not refunding. Anyone may call <code>ArkSale.openPool()</code>. The contract sets <code>openedAt</code> to the current block time. Do not send before the mainnet address replaces PENDING_MAINNET.</span></p>
-          <button class="cta" id="openPoolBtn" type="button" data-copy="open-pool"><span class="t-zh">开池</span><span class="t-en">Open pool</span></button>
+          <p><span class="t-zh">链上条件已满足：已售至少 3000，还没开池，也没在退款。调用 <code>ArkSale.openPool()</code>。合约把 <code>openedAt</code> 写成当前区块时间。</span><span class="t-en">The chain matches: at least 3,000 sold, not opened, and not refunding. This calls <code>ArkSale.openPool()</code>. The contract sets <code>openedAt</code> to the current block time.</span></p>
+          <button class="cta" id="openPoolBtn" type="button"><span class="t-zh">openPool</span><span class="t-en">openPool</span></button>
         </article>
         <article class="trigger" id="startFloodCard" hidden>
           <h3><span class="t-zh">启动洪水</span><span class="t-en">Start flood</span></h3>
-          <p><span class="t-zh">演示条件已满足：池子已开，洪水还没 <code>start()</code>。调用 <code>FloodEngine.start()</code>，不要传时间。合约只读 <code>sale.openedAt</code>。</span><span class="t-en">Demo flags match: the pool is open and the flood has not started. Call <code>FloodEngine.start()</code> with no arguments. The contract reads <code>sale.openedAt</code> and will not take a fake timestamp.</span></p>
-          <button class="cta" id="startFloodBtn" type="button" data-copy="start-flood"><span class="t-zh">启动洪水</span><span class="t-en">Start flood</span></button>
+          <p><span class="t-zh">链上条件已满足：池子已开，洪水还没 <code>start()</code>。调用 <code>FloodEngine.start()</code>，不要传时间。合约只读 <code>sale.openedAt</code>。</span><span class="t-en">The chain matches: the pool is open and the flood has not started. This calls <code>FloodEngine.start()</code> with no arguments. The contract reads <code>sale.openedAt</code>.</span></p>
+          <button class="cta" id="startFloodBtn" type="button"><span class="t-zh">start</span><span class="t-en">start</span></button>
+        </article>
+        <article class="trigger" id="refundCard" hidden>
+          <h3><span class="t-zh">开启退款</span><span class="t-en">Enable refunds</span></h3>
+          <p><span class="t-zh">开售后 7 天仍未开池时，任何人可以调用 <code>enableRefunds()</code>。然后由付款人 <code>refund(tokenId)</code>。</span><span class="t-en">If the pool is still closed 7 days after the sale starts, anyone may call <code>enableRefunds()</code>. The payer then calls <code>refund(tokenId)</code>.</span></p>
+          <button class="cta" id="enableRefundBtn" type="button"><span class="t-zh">enableRefunds</span><span class="t-en">enableRefunds</span></button>
         </article>
         <article class="trigger">
           <h3><span class="t-zh">第 100 晚领取</span><span class="t-en">Day-100 claim</span></h3>
-          <p><span class="t-zh">满 100 晚后，还在船上的地址分合约奖池。沉船不领。精确函数主网后再写进指令。</span><span class="t-en">After night 100, addresses still aboard split the pot. Sunk tickets do not. The exact function is added when mainnet publishes it.</span></p>
-          <button class="cta" type="button" data-copy="claim-pot"><span class="t-zh">复制领奖说明</span><span class="t-en">Copy day-100 brief</span></button>
+          <p><span class="t-zh">满 100 晚并 land 之后，还在船上的船票调用 <code>ArkPot.claimShare(tokenId)</code>。奖池还没靠岸时不会发送。</span><span class="t-en">After night 100 and land, a ticket still aboard calls <code>ArkPot.claimShare(tokenId)</code>. Nothing is sent before the pot has landed.</span></p>
+          <label class="field-label" for="claimIdInput"><span class="t-zh">船票编号</span><span class="t-en">Ticket id</span></label>
+          <input id="claimIdInput" inputmode="numeric" autocomplete="off" placeholder="船票编号" data-ph-zh="船票编号" data-ph-en="Ticket id" />
+          <button class="cta" id="claimShareBtn" type="button"><span class="t-zh">claimShare</span><span class="t-en">claimShare</span></button>
         </article>
       </div>
       <p class="copy-status" id="triggerStatus" role="status"></p>
@@ -514,16 +508,10 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
     <section class="card" id="activity">
       <div class="head-row">
         <h2><span class="t-zh">最近动态</span><span class="t-en">Recent activity</span></h2>
-        <span class="demo-pill"><span class="t-zh">样例流水 · 非链上</span><span class="t-en">Sample feed · not on-chain</span></span>
+        <span class="note-pill"><span class="t-zh">链上事件</span><span class="t-en">On-chain events</span></span>
       </div>
-      <ol class="feed">
-        <li><time><span class="t-zh">2 分钟前</span><span class="t-en">2 min ago</span></time><div><b><span class="t-zh">铸造</span><span class="t-en">Mint</span></b> · <span class="t-zh">演示钱包铸出 #1043，舱位未定。</span><span class="t-en">Demo wallet minted #1043. Cabin still unset.</span></div></li>
-        <li><time><span class="t-zh">18 分钟前</span><span class="t-en">18 min ago</span></time><div><b><span class="t-zh">抽舱</span><span class="t-en">Cabin</span></b> · <span class="t-zh">#0210 settleCabin → 船长舱，600 ARK/天。</span><span class="t-en">#0210 settleCabin → Captain, 600 ARK/day.</span></div></li>
-        <li><time><span class="t-zh">1 小时前</span><span class="t-en">1 hour ago</span></time><div><b><span class="t-zh">沙袋</span><span class="t-en">Sandbag</span></b> · <span class="t-zh">#0881 收到赠送的沙袋，保演示夜。</span><span class="t-en">#0881 received a gifted sandbag for the demo night.</span></div></li>
-        <li><time><span class="t-zh">昨夜</span><span class="t-en">Last night</span></time><div><b><span class="t-zh">夜洪</span><span class="t-en">Flood</span></b> · <span class="t-zh">#0177 无沙袋，演示中沉没，日产改为 0。</span><span class="t-en">#0177 had no sandbag, sank in the demo, and now earns 0.</span></div></li>
-        <li><time><span class="t-zh">昨夜</span><span class="t-en">Last night</span></time><div><b><span class="t-zh">挂单</span><span class="t-en">Listing</span></b> · <span class="t-zh">#0902 商务舱出现在演示盘口，0.028 BNB，不能成交。</span><span class="t-en">Business #0902 appeared on the demo book at 0.028 BNB. It cannot fill.</span></div></li>
-        <li><time><span class="t-zh">更早</span><span class="t-en">Earlier</span></time><div><b><span class="t-zh">开池</span><span class="t-en">Pool</span></b> · <span class="t-zh">仍差 3,000 张。Sale 继续托管，退款窗口还没开始计时。</span><span class="t-en">Still 3,000 tickets short. The sale keeps the escrow. The refund clock has not started.</span></div></li>
-      </ol>
+      <ol class="feed" id="feedList"></ol>
+      <p class="muted" id="feedEmpty"><span class="t-zh">正在读取链上事件。</span><span class="t-en">Reading on-chain events.</span></p>
     </section>
 
     <div class="wave-rule" aria-hidden="true"><svg viewBox="0 0 1440 36" preserveAspectRatio="none"><path fill="rgba(255,255,255,0.75)" d="M0 18 Q 160 2 320 18 T 640 18 T 960 18 T 1280 18 T 1600 18 V36 H0 Z"/></svg></div>
@@ -531,7 +519,7 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
     <section class="card" id="rules">
       <p class="section-kicker"><span class="t-zh">规则</span><span class="t-en">Rules</span></p>
       <h2><span class="t-zh">规则 R1–R5</span><span class="t-en">Rules R1–R5</span></h2>
-      <p class="muted"><span class="t-zh">花钱之前先展开。数字和页面其他位置一致；没写死的函数名不会在这里假装已经部署。</span><span class="t-en">Open these before you spend. The numbers match the rest of the page. Function names that are not fixed are not pretended to be deployed.</span></p>
+      <p class="muted"><span class="t-zh">花钱之前先展开。数字和页面其他位置一致，函数名与已部署合约一致。</span><span class="t-en">Open these before you spend. The numbers match the rest of the page, and the function names match the deployed contracts.</span></p>
       <details class="rule" open>
         <summary><span class="r-badge">R1</span> <span class="t-zh">门槛与铸造</span><span class="t-en">Gate and mint</span></summary>
         <div class="body">
@@ -621,17 +609,17 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
           <ul class="t-zh">
             <li>一天的分界是北京时间 21:00，也就是 UTC 13:00。过了第 N 天的这个点，任何人都可以先 commit，再 settle 当晚的洪水。</li>
             <li>这一晚要等当天的 settle 完成，才算过完。没结算之前，还停在这一晚。</li>
-            <li>开池并调用 start() 之后，currentDayIndex() 才是当前晚数，从 1 到 100。开池之前没有这个计数，页面上的「第 0 晚」只是演示。</li>
+            <li>开池并调用 start() 之后，currentDayIndex() 才是当前晚数，从 1 到 100。开池之前没有这个计数。「我的方舟」显示链上读到的晚数。</li>
             <li>dayState(n).settled 表示第 n 晚是否已经结算。票如果沉了，就是离船；还在航的票仍在船上。</li>
-            <li>主网上线后，「我的方舟」会显示当前晚数。主网之前这里读不到链上晚数。</li>
+            <li>「我的方舟」显示链上的当前晚数。洪水还没 start() 时，没有第 1–100 的计数。</li>
           </ul>
           <p class="t-en">A night is not over just because your clock passes 21:00. It counts as done when that day’s flood settle finishes.</p>
           <ul class="t-en">
             <li>The day boundary is 21:00 Asia/Shanghai, which is 13:00 UTC. After that time on day N, anyone can commit and then settle that night’s flood.</li>
             <li>The night counts as done only when that day’s settle finishes. Until then, you are still on that night.</li>
-            <li>After the pool opens and start() is called, currentDayIndex() is the current night, from 1 to 100. Before the pool opens there is no night counter. “Night 0” on this page is demo only.</li>
+            <li>After the pool opens and start() is called, currentDayIndex() is the current night, from 1 to 100. Before the pool opens there is no night counter. My Ark shows the night read from the chain.</li>
             <li>dayState(n).settled shows whether night n is finished. A sunk ticket is out. An afloat ticket is still aboard.</li>
-            <li>After mainnet, My Ark will show the current night. Before mainnet, this site cannot read the on-chain night.</li>
+            <li>My Ark shows the current on-chain night. Before start(), there is no night number from 1 to 100.</li>
           </ul>
         </div>
       </details>
@@ -652,14 +640,14 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
       </details>
       <details class="faq-item">
         <summary><span class="t-zh">现在能连钱包、扫货或者领奖吗？</span><span class="t-en">Can I connect a wallet, buy a listing, or claim now?</span></summary>
-        <div class="body"><p class="t-zh">不能。连接钱包的按钮保持关闭。市场、舱单和动态都是演示。页脚地址还是 PENDING_MAINNET 时，不要转 BNB。</p><p class="t-en">No. Wallet connect stays disabled. The market, ticket list, and feed are demo data. Do not send BNB while the footer still says PENDING_MAINNET.</p></div>
+        <div class="body"><p class="t-zh">可以连接钱包，并读取舱单、报价和洪水状态。ArkSale 的 startTime 还是 0 时，铸造正式未开售，页面不会发送 mint。发售开始后，铸造才会调用 ArkSale.mint。没有二级挂单合约，挂单和出价只显示链上记录。</p><p class="t-en">Yes. You can connect a wallet and read tickets, quotes, and flood state. While ArkSale startTime is still 0, minting is not open and this page will not send mint. After the sale starts, mint calls ArkSale.mint. There is no secondary order book, so listings and bids show on-chain records only.</p></div>
       </details>
     </section>
 
     <section class="risk" id="risk">
       <h2><span class="t-zh">风险</span><span class="t-en">Risk</span></h2>
-      <p class="t-zh">付费本金和 ARK 都可能归零。洪水会让没有沙袋的船票沉没，奖池没有保底价格。玩法可能受你所在地法规限制。这是主网上线前的说明页，不是投资建议。页脚地址仍显示 PENDING_MAINNET 时，不要转入任何 BNB。</p>
-      <p class="t-en">Capital and ARK can go to zero. Unprotected tickets can sink, and the pot has no promised price. Flood and pot rules may be restricted where you live. This is a pre-mainnet explanation, not financial advice. Do not send BNB while the footer addresses still read PENDING_MAINNET.</p>
+      <p class="t-zh">付费本金和 ARK 都可能归零。洪水会让没有沙袋的船票沉没，奖池没有保底价格。玩法可能受你所在地法规限制。这不是投资建议。铸造正式未开售时，不要为了 mint 转入 BNB。</p>
+      <p class="t-en">Capital and ARK can go to zero. Unprotected tickets can sink, and the pot has no promised price. Flood and pot rules may be restricted where you live. This is not financial advice. Do not send BNB for mint while the sale is not started.</p>
     </section>
   </main>
 
@@ -669,7 +657,7 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
         <img src="assets/logo.png" alt="" />
         <div>
           <h2><span class="t-zh">ARK100｜方舟100天</span><span class="t-en">ARK100 · Hundred Days</span></h2>
-          <p class="muted" style="margin:2px 0 0"><span class="t-zh">日出木舟 · 静态页面 · 主网未部署</span><span class="t-en">Sunrise ark · static page · not on mainnet</span></p>
+          <p class="muted" style="margin:2px 0 0"><span class="t-zh">日出木舟 · BSC 主网 · chainId 56</span><span class="t-en">Sunrise ark · BSC mainnet · chainId 56</span></p>
         </div>
       </div>
       <div class="footer-grid">
@@ -680,451 +668,41 @@ Cabin is not chosen here. Later: requestCabin, then settleCabin.</pre>
             <li><a href="#rules"><span class="t-zh">规则 R1–R5</span><span class="t-en">Rules R1–R5</span></a></li>
             <li><a href="#cabins"><span class="t-zh">舱位概率</span><span class="t-en">Cabin odds</span></a></li>
             <li><a href="#risk"><span class="t-zh">风险披露</span><span class="t-en">Risk</span></a></li>
-            <li><a href="#mint"><span class="t-zh">铸造指令</span><span class="t-en">Mint instruction</span></a></li>
+            <li><a href="#mint"><span class="t-zh">铸造</span><span class="t-en">Mint</span></a></li>
           </ul>
         </div>
         <div>
-          <h3><span class="t-zh">社交占位</span><span class="t-en">Social placeholders</span></h3>
+          <h3><span class="t-zh">链接</span><span class="t-en">Links</span></h3>
           <ul class="socials">
             <li><a href="https://x.com/ARK100Game" rel="noopener noreferrer">X · @ARK100Game</a></li>
-            <li><span class="social is-placeholder">Telegram · PENDING</span></li>
-            <li><span class="social is-placeholder">BscScan · <span class="t-zh">部署后公布</span><span class="t-en">after deploy</span></span></li>
+            <li><a href="https://bscscan.com/address/0x5f92105341Cbc09462A0a10973664a322505BF32" rel="noopener noreferrer">BscScan · ArkSale</a></li>
+            <li><a href="https://sourcify.dev/#/lookup/0x5f92105341Cbc09462A0a10973664a322505BF32" rel="noopener noreferrer">Sourcify · ArkSale</a></li>
           </ul>
         </div>
         <div>
           <h3><span class="t-zh">品牌</span><span class="t-en">Brand</span></h3>
           <p class="muted"><span class="t-zh">白天、浅海蓝、金色太阳、暖木方舟。船票是舱位，不是生物。</span><span class="t-en">Daytime, light-blue sea, golden sun, warm wood ark. A ticket is a cabin, not a creature.</span></p>
-          <p class="muted"><span class="t-zh">本页不托管私钥，不代发交易。发布目录是 <code>./</code>。</span><span class="t-en">This page does not hold keys or send transactions. Publish path is <code>./</code>.</span></p>
+          <p class="muted"><span class="t-zh">本页不保管私钥。铸造由你的钱包签名。发布目录是 <code>./</code>。</span><span class="t-en">This page does not hold keys. Mint is signed by your wallet. Publish path is <code>./</code>.</span></p>
         </div>
       </div>
       <ul class="ca-list">
-        <li><span><span class="t-zh">铸造</span><span class="t-en">Sale</span></span><span class="ca pending-tag" id="ca-sale">PENDING_MAINNET</span></li>
-        <li><span>TicketNFT</span><span class="ca pending-tag" id="ca-nft">PENDING_MAINNET</span></li>
-        <li><span>ARK</span><span class="ca pending-tag" id="ca-ark">PENDING_MAINNET</span></li>
-        <li><span><span class="t-zh">洪水</span><span class="t-en">Flood</span></span><span class="ca pending-tag" id="ca-flood">PENDING_MAINNET</span></li>
-        <li><span><span class="t-zh">沙袋店</span><span class="t-en">SandbagShop</span></span><span class="ca pending-tag" id="ca-sandbag">PENDING_MAINNET</span></li>
-        <li><span><span class="t-zh">奖池</span><span class="t-en">Pot</span></span><span class="ca pending-tag" id="ca-pot">PENDING_MAINNET</span></li>
-        <li><span><span class="t-zh">注册表</span><span class="t-en">Registry</span></span><span class="ca" id="ca-reg">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span></li>
-        <li><span><span class="t-zh">团队</span><span class="t-en">Team</span></span><span class="ca" id="ca-team">0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74</span></li>
+        <li><span><span class="t-zh">铸造</span><span class="t-en">Sale</span></span><span><span class="ca">0x5f92105341Cbc09462A0a10973664a322505BF32</span><span class="ca-links"><a href="https://bscscan.com/address/0x5f92105341Cbc09462A0a10973664a322505BF32#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0x5f92105341Cbc09462A0a10973664a322505BF32" rel="noopener noreferrer">Sourcify</a></span></span></li>
+        <li><span>TicketNFT</span><span><span class="ca">0x815202403e51C6525452dB09FC7c40dD2762D87e</span><span class="ca-links"><a href="https://bscscan.com/address/0x815202403e51C6525452dB09FC7c40dD2762D87e#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0x815202403e51C6525452dB09FC7c40dD2762D87e" rel="noopener noreferrer">Sourcify</a></span></span></li>
+        <li><span>ARK</span><span><span class="ca">0xBCbA6cFc97d2c0A4Dcf22295D92EF5227B5db712</span><span class="ca-links"><a href="https://bscscan.com/address/0xBCbA6cFc97d2c0A4Dcf22295D92EF5227B5db712#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0xBCbA6cFc97d2c0A4Dcf22295D92EF5227B5db712" rel="noopener noreferrer">Sourcify</a></span></span></li>
+        <li><span><span class="t-zh">洪水</span><span class="t-en">Flood</span></span><span><span class="ca">0xf15C1130fA9A5D0BAD783558379E39664aD79200</span><span class="ca-links"><a href="https://bscscan.com/address/0xf15C1130fA9A5D0BAD783558379E39664aD79200#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0xf15C1130fA9A5D0BAD783558379E39664aD79200" rel="noopener noreferrer">Sourcify</a></span></span></li>
+        <li><span><span class="t-zh">沙袋店</span><span class="t-en">Sandbag</span></span><span><span class="ca">0xcFC60dfb112Ab6BF19bE16d1d114990264aFF3bF</span><span class="ca-links"><a href="https://bscscan.com/address/0xcFC60dfb112Ab6BF19bE16d1d114990264aFF3bF#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0xcFC60dfb112Ab6BF19bE16d1d114990264aFF3bF" rel="noopener noreferrer">Sourcify</a></span></span></li>
+        <li><span><span class="t-zh">奖池</span><span class="t-en">Pot</span></span><span><span class="ca">0xf34aEBBc83Ce872f5692d9e7ae906A8e30f924Fa</span><span class="ca-links"><a href="https://bscscan.com/address/0xf34aEBBc83Ce872f5692d9e7ae906A8e30f924Fa#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0xf34aEBBc83Ce872f5692d9e7ae906A8e30f924Fa" rel="noopener noreferrer">Sourcify</a></span></span></li>
+        <li><span><span class="t-zh">校验</span><span class="t-en">Verifier</span></span><span><span class="ca">0xf14F5cF3fCB976082Df08dA1609D1698C39Ff2e2</span><span class="ca-links"><a href="https://bscscan.com/address/0xf14F5cF3fCB976082Df08dA1609D1698C39Ff2e2#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0xf14F5cF3fCB976082Df08dA1609D1698C39Ff2e2" rel="noopener noreferrer">Sourcify</a></span></span></li>
+        <li><span><span class="t-zh">注册表</span><span class="t-en">Registry</span></span><span><span class="ca">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span><span class="ca-links"><a href="https://bscscan.com/address/0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F" rel="noopener noreferrer">Sourcify</a></span></span></li>
+        <li><span><span class="t-zh">团队</span><span class="t-en">Team</span></span><span><span class="ca">0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74</span><span class="ca-links"><a href="https://bscscan.com/address/0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74" rel="noopener noreferrer">BscScan</a></span></span></li>
+        <li><span><span class="t-zh">路由</span><span class="t-en">Router</span></span><span><span class="ca">0x10ED43C718714eb63d5aA57B78B54704E256024E</span><span class="ca-links"><a href="https://bscscan.com/address/0x10ED43C718714eb63d5aA57B78B54704E256024E#code" rel="noopener noreferrer">BscScan</a></span></span></li>
+        <li><span>BNB/USD</span><span><span class="ca">0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE</span><span class="ca-links"><a href="https://bscscan.com/address/0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE#code" rel="noopener noreferrer">BscScan</a></span></span></li>
       </ul>
-      <p class="fine"><span class="t-zh">风险提醒：本金与代币都可能归零；未防护船票会沉；奖池无价格承诺；当地法规可能限制洪水与分池玩法。连接钱包、挂单、出价、舱单和动态都是主网前的占位。舱位概率是 TicketNFT 的 70/25/5 与 100/200/600。不要向 PENDING_MAINNET 转账。</span><span class="t-en">Risk: capital and tokens can go to zero. Unprotected tickets can sink. The pot has no promised price. Local rules may restrict the flood and the split. Wallet connect, listings, bids, the dashboard, and the feed are pre-mainnet placeholders. Cabin odds are the TicketNFT rates (70/25/5, 100/200/600). Do not send value to PENDING_MAINNET.</span></p>
+      <p class="fine"><span class="t-zh">风险提醒：本金与代币都可能归零；未防护船票会沉；奖池无价格承诺；当地法规可能限制洪水与分池玩法。舱位概率是 TicketNFT 的 70/25/5 与 100/200/600。铸造正式未开售时，不要为了 mint 转入 BNB。</span><span class="t-en">Risk: capital and tokens can go to zero. Unprotected tickets can sink. The pot has no promised price. Local rules may restrict the flood and the split. Cabin odds are the TicketNFT rates (70/25/5, 100/200/600). Do not send BNB for mint while the sale is not started.</span></p>
     </div>
   </footer>
 
-  <script>
-    (function () {
-      var SUPPLY = 10000;
-      var OPEN_AT = 3000;
-      var CONFIG = {
-        sold: 0,
-        sale: "PENDING_MAINNET",
-        nft: "PENDING_MAINNET",
-        ark: "PENDING_MAINNET",
-        pot: "PENDING_MAINNET",
-        flood: "PENDING_MAINNET",
-        sandbag: "PENDING_MAINNET",
-        registry: "0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F",
-        team: "0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74"
-      };
-      var sold = Math.max(0, Math.min(SUPPLY, CONFIG.sold | 0));
-      var qty = 1;
-      var lang = document.documentElement.dataset.lang === "en" ? "en" : "zh";
-      var lookupMode = "demo";
-      var lookupAddr = "";
-      var insuranceMode = "below";
-
-      function zh() { return lang !== "en"; }
-
-      function tierPrice(n) {
-        if (n < 2500) return 2;
-        if (n < 5000) return 3;
-        if (n < 7500) return 4;
-        return 5;
-      }
-      function format(n) {
-        return n.toLocaleString("en-US");
-      }
-      var price = tierPrice(sold);
-
-      function mintText(q) {
-        if (zh()) {
-          return [
-            "ARK100 铸造指令（交给 Agent）",
-            "链：BNB Smart Chain（chainId 56）",
-            "状态：主网未上线。页脚地址仍是 PENDING_MAINNET 时不要发送 BNB。",
-            "",
-            "门槛：必须持有币安 Agent ID。",
-            "注册表：" + CONFIG.registry,
-            "检查 balanceOf(wallet) > 0 且 handleOf(wallet) 非空。",
-            "没有 Agent ID 或 handle 为空，合约会拒绝铸造。",
-            "",
-            "数量：" + q,
-            "上限：每址 10 张。",
-            "页面估算用的标价档：$" + price + "（不含 5 分钟回落）。",
-            "",
-            "1. 读取 ArkSale.quoteMint(" + q + ") → (bnbDue, usdTotal)。",
-            "   ArkSale: " + CONFIG.sale,
-            "2. 把 bnbDue 和 usdTotal 给用户看，等明确确认后再发。",
-            "3. 发送 ArkSale.mint(" + q + ")，value = bnbDue。",
-            "   多付不超过 2%（value ≤ bnbDue × 1.02）会在同一笔交易退回。",
-            "",
-            "TicketNFT: " + CONFIG.nft,
-            "ARK: " + CONFIG.ark,
-            "奖池: " + CONFIG.pot,
-            "团队（不可改）：" + CONFIG.team,
-            "没有免费票，没有 ARK 预挖。团队按玩家规则购买，每址最多 10。",
-            "",
-            "这次调用不选择舱位。",
-            "铸造之后：requestCabin(ticketId)，未来区块出现后再 settleCabin。",
-            "TicketNFT：经济舱 70% = 100 ARK/天，商务舱 25% = 200，船长舱 5% = 600。",
-            "沉船日产为 0。"
-          ].join("\n");
-        }
-        return [
-          "ARK100 Agent mint instruction",
-          "Chain: BNB Smart Chain (chainId 56)",
-          "Status: PRE-MAINNET. Do not send BNB while the footer CAs read PENDING_MAINNET.",
-          "",
-          "Gate: Binance Agent ID required.",
-          "Registry: " + CONFIG.registry,
-          "Check balanceOf(wallet) > 0 AND handleOf(wallet) is non-empty.",
-          "",
-          "Qty: " + q,
-          "Cap: 10 tickets per address.",
-          "List tier used for the on-page estimate: $" + price + " (ignores the 5-minute decay).",
-          "",
-          "1. Read ArkSale.quoteMint(" + q + ") → (bnbDue, usdTotal).",
-          "   ArkSale: " + CONFIG.sale,
-          "2. Show bnbDue and usdTotal. Wait for an explicit yes.",
-          "3. Send ArkSale.mint(" + q + ") with value = bnbDue.",
-          "   Overpay up to 2% (value ≤ bnbDue × 1.02) is refunded in the same transaction.",
-          "",
-          "TicketNFT: " + CONFIG.nft,
-          "ARK: " + CONFIG.ark,
-          "Pot: " + CONFIG.pot,
-          "Team (immutable): " + CONFIG.team,
-          "No free tickets. No ARK premine. Team buys like players, max 10.",
-          "",
-          "Cabin is NOT chosen in this call.",
-          "After mint: requestCabin(ticketId), then settleCabin once the future block exists.",
-          "TicketNFT odds: Economy 70% = 100 ARK/day, Business 25% = 200, Captain 5% = 600.",
-          "Sunk tickets produce 0."
-        ].join("\n");
-      }
-
-      function brief(kind, extra) {
-        var head = zh()
-          ? "ARK100 给 Agent 的说明 · 主网前 · 不要广播\n"
-          : "ARK100 agent brief · PRE-MAINNET · do not broadcast\n";
-        if (kind === "cabin" || kind === "settle-cabin") {
-          return head + (zh()
-            ? "TicketNFT: " + CONFIG.nft + "\n演示票号：" + (extra || "1043") + "\n1. 持有人调用 requestCabin(ticketId)。\n2. 种子区块出现后，任何人可以 settleCabin(ticketId)。\n结果是经济舱 70% / 100 ARK 每天，商务舱 25% / 200，或船长舱 5% / 600。\n这次调用不能提前指定舱位。"
-            : "TicketNFT: " + CONFIG.nft + "\nDemo ticketId: " + (extra || "1043") + "\n1. Holder calls requestCabin(ticketId).\n2. After the seed block, anyone may call settleCabin(ticketId).\nResult is Economy 70% / 100 ARK day, Business 25% / 200, or Captain 5% / 600.\nThis does not choose the cabin in advance.");
-        }
-        if (kind === "sandbag") {
-          return head + (zh()
-            ? "任务：给船票 #" + extra + " 买一张沙袋。\n开池后用船票每天产出的 ARK，在沙袋店烧掉 ARK 购买。\n存活还多时大约 50 ARK/袋，幸存者越少越贵。\n买到后 apply 护自己的票，或 gift 送给别人的票。\n一袋只保一晚。没沙袋的票：第 1–7 晚约 2%–3% 可能沉，第 8–100 晚约 3%–8%，沉了日产变 0。\n没有免费无限沙袋。T-1 若送首晚沙袋，是运营 buy+gift，不是合约特权。\nSandbagShop: " + CONFIG.sandbag + "\nARK: " + CONFIG.ark + "\n地址仍是 PENDING_MAINNET 时不要发送。\n精确函数名随主网 ABI 公布。现在不要按假选择器发交易。"
-            : "Task: buy one sandbag for ticket #" + extra + ".\nAfter the pool opens, burn ARK the ticket earns each day at the sandbag shop.\nAbout 50 ARK per bag while many tickets survive; the price rises as fewer remain.\nThen apply it to your own ticket, or gift it to someone else's.\nOne bag covers one night only. With no sandbag, about 2-3% sink on nights 1-7 and about 3-8% on nights 8-100, and then a sunk ticket earns 0.\nThere is no free unlimited supply. A T-1 first-night bag, if any, is an operational buy+gift, not a contract privilege.\nSandbagShop: " + CONFIG.sandbag + "\nARK: " + CONFIG.ark + "\nDo not send while the address still reads PENDING_MAINNET.\nExact function name publishes with the mainnet ABI. Do not send a made-up selector.");
-        }
-        if (kind === "listing") {
-          return head + (zh()
-            ? "只是演示挂单。不要发送 BNB。\n船票 #" + extra.id + " 在演示盘口显示为 " + extra.price + " BNB。\n市场合约：PENDING_MAINNET。本页没有公布手续费。"
-            : "Demo listing only. Do not send BNB.\nTicket #" + extra.id + " is shown at " + extra.price + " BNB in the mock book.\nMarket contract: PENDING_MAINNET. Fee is not published on this page.");
-        }
-        if (kind === "bid") {
-          return head + (zh()
-            ? "只是演示出价。不要托管 BNB。\n出价 " + extra.id + " 在演示盘口显示为 " + extra.price + " BNB。\n市场合约：PENDING_MAINNET。"
-            : "Demo bid only. Do not escrow BNB.\nBid " + extra.id + " shows " + extra.price + " BNB in the mock book.\nMarket contract: PENDING_MAINNET.");
-        }
-        if (kind === "land-night") {
-          return head + (zh()
-            ? "任务：在北京时间 21:00（UTC 13:00）之后，先 commit 再 settle 当晚洪水。\n当天 settle 完成，这一晚才算过完。currentDayIndex() 在开池并 start() 之后才是第 1–100 晚。\n没有沙袋的票：第 1–7 晚大约 2%–3% 会沉，第 8–100 晚大约 3%–8%。一张沙袋覆盖一夜。\n沉船离船，日产变为 0。还在航的票仍在船上。\n精确函数名随主网 ABI 公布。现在不要按假选择器发交易。"
-            : "Task: after 21:00 Asia/Shanghai (13:00 UTC), commit and then settle tonight's flood.\nThe night counts as done only when that settle finishes. currentDayIndex() is night 1-100 only after the pool opens and start() is called.\nUnprotected tickets: about 2-3% sink on nights 1-7, and about 3-8% on nights 8-100. A sandbag covers one night.\nA sunk ticket is out and earns 0. An afloat ticket is still aboard.\nExact function name publishes with the mainnet ABI. Do not send a made-up selector.");
-        }
-        if (kind === "open-pool") {
-          return head + (zh()
-            ? "任务：ArkSale.openPool()，不要传参数。\n条件：refunding == false，opened == false，sold >= 3000。\n这是自动开池没发生时的公开补开。同一条 _openPool()：65% BNB + 1,500,000 ARK 加池，LP 进 0xdead。openedAt = block.timestamp，不能自填时间。\nArkSale: " + CONFIG.sale + "\nFloodEngine: " + CONFIG.flood + "\n地址仍是 PENDING_MAINNET 时不要发送。"
-            : "Task: ArkSale.openPool() with no arguments.\nRequires refunding == false, opened == false, and sold >= 3000.\nPublic insurance if the mint that crossed #3000 did not auto-open. Same _openPool() path: 65% of the BNB plus 1,500,000 ARK into the LP, LP to 0xdead. openedAt = block.timestamp. Do not pass a timestamp.\nArkSale: " + CONFIG.sale + "\nFloodEngine: " + CONFIG.flood + "\nDo not send while the addresses still read PENDING_MAINNET.");
-        }
-        if (kind === "start-flood") {
-          return head + (zh()
-            ? "任务：FloodEngine.start()，不要传参数。\n条件：sale.opened() 为真，sale.openedAt() 不为 0，而且洪水还没 start。\n合约只读 sale.openedAt，拒绝调用者自带时间戳。池子没开会 revert pool not open。\nFloodEngine: " + CONFIG.flood + "\nArkSale: " + CONFIG.sale + "\n地址仍是 PENDING_MAINNET 时不要发送。"
-            : "Task: FloodEngine.start() with no arguments.\nRequires sale.opened() and a non-zero sale.openedAt(), and the flood must not already be started.\nThe contract reads sale.openedAt. It does not accept a caller timestamp. If the pool is closed it reverts with pool not open.\nFloodEngine: " + CONFIG.flood + "\nArkSale: " + CONFIG.sale + "\nDo not send while the addresses still read PENDING_MAINNET.");
-        }
-        if (kind === "claim-pot") {
-          return head + (zh()
-            ? "任务：第 100 晚的奖池。\n还在船上的人平分合约奖池。沉船不参与。\n奖池：" + CONFIG.pot + "\n精确领取函数部署时公布。不要按这条模板发交易。"
-            : "Task: day-100 pot.\nSurvivors still aboard split the on-chain pot. Sunk tickets do not.\nPot: " + CONFIG.pot + "\nExact claim signature publishes at deploy. Do not send a transaction from this template.");
-        }
-        return mintText(qty);
-      }
-
-      var meter = document.getElementById("meter");
-      var water = document.getElementById("water");
-      var floater = document.getElementById("floater");
-      var cmd = document.getElementById("cmd");
-      var pct = (sold / SUPPLY) * 100;
-      document.getElementById("sold").textContent = format(sold);
-      document.getElementById("price").textContent = String(price);
-      water.style.height = pct + "%";
-      water.classList.toggle("is-empty", pct <= 0);
-      floater.style.bottom = pct <= 0 ? "10px" : ("calc(" + Math.min(pct, 78) + "% - 18px)");
-      meter.setAttribute("aria-valuenow", String(sold));
-      var remain = Math.max(OPEN_AT - sold, 0);
-
-      function renderTideCopy() {
-        var gauge = document.getElementById("gaugeReadout");
-        var remainLine = document.getElementById("remainLine");
-        if (sold === 0) gauge.textContent = zh() ? "水位 0 · 龙骨" : "Level 0 · keel";
-        else gauge.textContent = zh() ? ("水位 " + format(sold)) : ("Level " + format(sold));
-        meter.setAttribute("aria-valuetext", zh()
-          ? (sold + " / 10000 已售。开池线 #3000。")
-          : (sold + " of 10000 sold. Pool opens at 3000."));
-        if (remain === 0) {
-          remainLine.textContent = zh() ? "水位已过 #3000 开池线。" : "The waterline has passed #3000.";
-        } else {
-          remainLine.textContent = zh()
-            ? ("距开池还差 " + format(remain) + " 张。$3 档含 #3000，开池落在这一档里面。")
-            : (format(remain) + " tickets still to the open line. #3000 sits inside the $3 tier.");
-        }
-      }
-      document.querySelectorAll(".rung").forEach(function (rung) {
-        rung.classList.toggle("is-now", Number(rung.getAttribute("data-tier")) === price);
-      });
-
-      function renderQuote() {
-        document.getElementById("qQty").textContent = String(qty);
-        document.getElementById("qPrice").textContent = String(price);
-        document.getElementById("qUsd").textContent = String(qty * price);
-        cmd.textContent = mintText(qty);
-        document.querySelectorAll(".qty").forEach(function (btn) {
-          btn.setAttribute("aria-pressed", Number(btn.getAttribute("data-qty")) === qty ? "true" : "false");
-        });
-      }
-      renderQuote();
-
-      async function copyText(text) {
-        try {
-          await navigator.clipboard.writeText(text);
-          return true;
-        } catch (err) {
-          var area = document.createElement("textarea");
-          area.value = text;
-          area.setAttribute("readonly", "");
-          area.style.position = "fixed";
-          area.style.left = "-9999px";
-          document.body.appendChild(area);
-          area.select();
-          var ok = false;
-          try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
-          document.body.removeChild(area);
-          return ok;
-        }
-      }
-
-      function statusFor(node) {
-        var section = node.closest("section");
-        if (!section) return null;
-        if (section.id === "mint") return document.getElementById("mintStatus");
-        if (section.id === "ark") return document.getElementById("arkStatus");
-        if (section.id === "market") return document.getElementById("marketStatus");
-        if (section.id === "triggers") return document.getElementById("triggerStatus");
-        return section.querySelector(".copy-status");
-      }
-
-      document.addEventListener("click", function (event) {
-        var qtyBtn = event.target.closest("[data-qty]");
-        if (qtyBtn) {
-          qty = Number(qtyBtn.getAttribute("data-qty"));
-          renderQuote();
-          return;
-        }
-        var tab = event.target.closest("[data-tab]");
-        if (tab) {
-          var name = tab.getAttribute("data-tab");
-          document.querySelectorAll("[data-tab]").forEach(function (btn) {
-            var on = btn === tab;
-            btn.setAttribute("aria-selected", on ? "true" : "false");
-          });
-          document.getElementById("panel-listings").hidden = name !== "listings";
-          document.getElementById("panel-bids").hidden = name !== "bids";
-          return;
-        }
-        var insure = event.target.closest("[data-insure]");
-        if (insure) {
-          insuranceMode = insure.getAttribute("data-insure");
-          renderInsurance();
-          return;
-        }
-        var filter = event.target.closest("[data-filter]");
-        if (filter) {
-          var mode = filter.getAttribute("data-filter");
-          document.querySelectorAll("#ark [data-filter]").forEach(function (btn) {
-            btn.setAttribute("aria-pressed", btn === filter ? "true" : "false");
-          });
-          var visible = 0;
-          document.querySelectorAll("#ticketTable tbody tr").forEach(function (row) {
-            var show = mode === "all" || row.getAttribute("data-state") === mode;
-            row.hidden = !show;
-            if (show) visible += 1;
-          });
-          document.getElementById("filterEmpty").hidden = visible !== 0;
-          return;
-        }
-        var copyBtn = event.target.closest("[data-copy]");
-        if (!copyBtn) return;
-        var kind = copyBtn.getAttribute("data-copy");
-        var text;
-        if (kind === "listing" || kind === "bid") {
-          text = brief(kind, { id: copyBtn.getAttribute("data-id"), price: copyBtn.getAttribute("data-price") });
-        } else if (kind === "sandbag" || kind === "cabin") {
-          text = brief(kind, copyBtn.getAttribute("data-id"));
-        } else {
-          text = brief(kind);
-        }
-        var slot = statusFor(copyBtn);
-        copyText(text).then(function (ok) {
-          if (!slot) return;
-          slot.dataset.toast = ok ? "ok" : "fail";
-          slot.textContent = ok
-            ? (zh() ? "已复制" : "Copied")
-            : (zh() ? "无法写入剪贴板，指令仍留在页面上" : "Clipboard blocked. The instruction is still on the page.");
-        });
-      });
-
-      function renderLookup() {
-        var note = document.getElementById("lookupNote");
-        if (lookupMode === "blank") {
-          note.textContent = zh()
-            ? "主网未部署。下方仍是演示钱包 0xA11C…E100，不是链上读取。"
-            : "Mainnet is not deployed. The demo wallet 0xA11C…E100 below is not a chain read.";
-          return;
-        }
-        if (lookupMode === "miss") {
-          note.textContent = zh()
-            ? ("还不能读取 " + lookupAddr + "。地址仍是 PENDING_MAINNET，下方继续显示演示舱单。")
-            : ("Cannot read " + lookupAddr + " yet. Addresses are still PENDING_MAINNET, so the demo tickets stay below.");
-          return;
-        }
-        note.textContent = zh()
-          ? "当前展示演示钱包 0xA11C…E100。"
-          : "Showing demo wallet 0xA11C…E100.";
-      }
-
-      function syncChrome() {
-        document.title = zh() ? "ARK100｜方舟100天" : "ARK100 · Hundred Days";
-        document.querySelectorAll("[data-alt-zh]").forEach(function (el) {
-          el.alt = zh() ? el.getAttribute("data-alt-zh") : el.getAttribute("data-alt-en");
-        });
-        document.querySelectorAll("[data-ph-zh]").forEach(function (el) {
-          el.placeholder = zh() ? el.getAttribute("data-ph-zh") : el.getAttribute("data-ph-en");
-        });
-        document.querySelectorAll("[data-aria-zh]").forEach(function (el) {
-          el.setAttribute("aria-label", zh() ? el.getAttribute("data-aria-zh") : el.getAttribute("data-aria-en"));
-        });
-        var toggle = document.getElementById("langToggle");
-        if (toggle) toggle.setAttribute("aria-label", zh() ? "语言" : "Language");
-        var nav = document.getElementById("siteNav");
-        if (nav) nav.setAttribute("aria-label", zh() ? "页面分区" : "Sections");
-        document.getElementById("langZh").setAttribute("aria-pressed", zh() ? "true" : "false");
-        document.getElementById("langEn").setAttribute("aria-pressed", lang === "en" ? "true" : "false");
-        document.querySelectorAll("[data-toast]").forEach(function (slot) {
-          var ok = slot.getAttribute("data-toast") !== "fail";
-          slot.textContent = ok
-            ? (zh() ? "已复制" : "Copied")
-            : (zh() ? "无法写入剪贴板，指令仍留在页面上" : "Clipboard blocked. The instruction is still on the page.");
-        });
-      }
-
-      function setLang(next, persist) {
-        lang = next === "en" ? "en" : "zh";
-        document.documentElement.dataset.lang = lang;
-        document.documentElement.lang = zh() ? "zh-CN" : "en";
-        if (persist) {
-          try { localStorage.setItem("ark100-lang", lang); } catch (e) {}
-        }
-        renderTideCopy();
-        renderQuote();
-        renderLookup();
-        renderInsurance();
-        syncChrome();
-      }
-
-      function insuranceFlags() {
-        if (insuranceMode === "open") return { sold: 3000, opened: false, refunding: false, started: false };
-        if (insuranceMode === "start") return { sold: 3000, opened: true, refunding: false, started: false };
-        if (insuranceMode === "refund") return { sold: 3000, opened: false, refunding: true, started: false };
-        return { sold: CONFIG.sold, opened: false, refunding: false, started: false };
-      }
-
-      function renderInsurance() {
-        var flags = insuranceFlags();
-        var canOpen = flags.sold >= OPEN_AT && !flags.opened && !flags.refunding;
-        var canStart = flags.opened && !flags.started;
-        document.getElementById("openPoolCard").hidden = !canOpen;
-        document.getElementById("startFloodCard").hidden = !canStart;
-        document.querySelectorAll("#insuranceDemo [data-insure]").forEach(function (btn) {
-          btn.setAttribute("aria-pressed", btn.getAttribute("data-insure") === insuranceMode ? "true" : "false");
-        });
-        var status = document.getElementById("insuranceStatus");
-        var floodEl = document.getElementById("ca-flood");
-        if (floodEl) floodEl.textContent = CONFIG.flood;
-        var sandbagEl = document.getElementById("ca-sandbag");
-        if (sandbagEl) sandbagEl.textContent = CONFIG.sandbag;
-        if (canOpen) {
-          status.textContent = zh()
-            ? "演示旗标：已售 " + format(flags.sold) + "，未开池，未退款。开池按钮可见。这不是链上已售。"
-            : "Demo flags: " + format(flags.sold) + " sold, not opened, not refunding. The open-pool button is visible. This is not on-chain sold count.";
-        } else if (canStart) {
-          status.textContent = zh()
-            ? "演示旗标：池子已开，洪水未启动。启动洪水按钮可见。start() 不接收时间。"
-            : "Demo flags: pool opened, flood not started. The start-flood button is visible. start() takes no timestamp.";
-        } else if (flags.refunding) {
-          status.textContent = zh()
-            ? "演示旗标：正在退款。openPool() 会失败，所以按钮藏起。"
-            : "Demo flags: refunding. openPool() would revert, so the button stays hidden.";
-        } else {
-          status.textContent = zh()
-            ? "演示旗标：已售 " + format(flags.sold) + "，未到 3000。开池和启动洪水都先藏起。"
-            : "Demo flags: " + format(flags.sold) + " sold, still under 3,000. Open pool and start flood stay hidden.";
-        }
-      }
-
-      document.getElementById("lookup").addEventListener("submit", function (event) {
-        event.preventDefault();
-        var value = document.getElementById("walletInput").value.trim();
-        if (!value) {
-          lookupMode = "blank";
-          lookupAddr = "";
-        } else {
-          lookupMode = "miss";
-          lookupAddr = value;
-        }
-        renderLookup();
-      });
-
-      document.querySelectorAll("[data-set-lang]").forEach(function (btn) {
-        btn.addEventListener("click", function () {
-          setLang(btn.getAttribute("data-set-lang"), true);
-        });
-      });
-      setLang(lang, false);
-
-      var sea = document.querySelector(".sea");
-      var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      if (!reduce && sea) {
-        var ticking = false;
-        window.addEventListener("scroll", function () {
-          if (ticking) return;
-          ticking = true;
-          window.requestAnimationFrame(function () {
-            var y = Math.min(window.scrollY, 800);
-            sea.style.setProperty("--shift", (y * 0.08) + "px");
-            ticking = false;
-          });
-        }, { passive: true });
-      }
-    })();
-  </script>
+  <script src="js/chain.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
