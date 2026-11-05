@@ -38,7 +38,18 @@ import {TicketBidMarket} from "../src/TicketBidMarket.sol";
 ///   router         0x10ED43C718714eb63d5aA57B78B54704E256024E   (PancakeSwap V2)
 ///
 /// The live markets (0xC24b…, 0x3fF6…, 0xbC58…) stay pointed at the old TicketNFT. They are not upgraded.
-/// Point js/chain.js at the new addresses after a real broadcast. Selectors the site already calls are unchanged.
+/// Point js/chain.js at the new addresses after a real broadcast.
+///
+/// Selectors the site / ops scripts must use after this redeploy (constructors and wire order are unchanged):
+///   FloodEngine.settleBatch(uint256 day, uint256 maxCount)  0xad28484a
+///       Repeat until dayState(day).settled. maxCount is capped on-chain at MAX_BATCH (400).
+///   FloodEngine.landfall()                                  0x111bfda0
+///       No survivor id list. Call after night 100 is fully settled.
+///   ArkPot.land()                                           0x8c980129
+///       Flood only. Reads TicketNFT.survivorCount().
+///   TicketBidMarket.activeBidIds(uint256 offset, uint256 limit)  0x6d8ffe99
+///       Page size 1..100. activeBidIds() remains for small books.
+///   TicketBidMarket.MIN_UNIT_PRICE()                        0xb4532247  (0.001 BNB)
 ///
 /// Order matters: every `deployer` check is `msg.sender`, so this script must be the sender for every deploy
 /// and every one-shot setter. `pot.setTicketNft` is called by `sale.wire`, not by the deployer directly.

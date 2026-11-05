@@ -12,6 +12,15 @@ interface ITicketOwner {
     function markYield(uint256 tokenId) external;
 }
 
+interface IFloodCommit {
+    function sale() external view returns (address);
+    function commitBlockOf(uint256 dayIndex) external view returns (uint64);
+}
+
+interface ISaleOpenedShop {
+    function opened() external view returns (bool);
+}
+
 /// @title SandbagShop — burn ARK for 1-night flood protection; giftable.
 contract SandbagShop {
     uint256 public constant BASE_PRICE = 50 ether; // 50 ARK at full survivors
@@ -55,26 +64,32 @@ contract SandbagShop {
     }
 
     /// @notice Apply one bag to protect `tokenId` for `dayIndex` (must own ticket).
+    /// @dev Only after the pool is open, and only before that night's flood is committed.
     function applyBag(uint256 tokenId, uint256 dayIndex) external {
         require(tickets.ownerOf(tokenId) == msg.sender, "not owner");
         require(tickets.isAlive(tokenId), "dead");
-        require(bags[msg.sender] > 0, "no bag");
-        require(!protectedUntil[tokenId][dayIndex], "already");
-        bags[msg.sender] -= 1;
-        protectedUntil[tokenId][dayIndex] = true;
-        tickets.markYield(tokenId);
+        _useBag(tokenId, dayIndex);
         emit Applied(msg.sender, tokenId, dayIndex);
     }
 
     /// @notice Gift protection onto someone else's ticket for a day.
+    /// @dev Same gates as `applyBag`. A gift before the pool opens cannot mark the ticket and
+    ///      block its refund.
     function gift(uint256 tokenId, uint256 dayIndex) external {
         require(tickets.isAlive(tokenId), "dead");
+        _useBag(tokenId, dayIndex);
+        emit Gifted(msg.sender, tickets.ownerOf(tokenId), tokenId, dayIndex);
+    }
+
+    function _useBag(uint256 tokenId, uint256 dayIndex) internal {
+        require(dayIndex >= 1 && dayIndex <= 100, "day");
+        require(ISaleOpenedShop(IFloodCommit(floodEngine).sale()).opened(), "not open");
+        require(IFloodCommit(floodEngine).commitBlockOf(dayIndex) == 0, "committed");
         require(bags[msg.sender] > 0, "no bag");
         require(!protectedUntil[tokenId][dayIndex], "already");
         bags[msg.sender] -= 1;
         protectedUntil[tokenId][dayIndex] = true;
         tickets.markYield(tokenId);
-        emit Gifted(msg.sender, tickets.ownerOf(tokenId), tokenId, dayIndex);
     }
 
     /// @notice FloodEngine consumes protection flag for the night.

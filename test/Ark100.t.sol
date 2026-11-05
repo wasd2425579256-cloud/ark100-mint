@@ -227,29 +227,40 @@ contract Ark100Test is Test {
         vm.prank(alice);
         sale.mint{value: due}(1);
 
-        // give alice ARK via ticket production: settle cabin then warp
         vm.prank(alice);
         tickets.requestCabin(1);
         vm.roll(block.number + 6);
         tickets.settleCabin(1);
         assertTrue(tickets.cabinOf(1) >= 1 && tickets.cabinOf(1) <= 3);
+        assertEq(tickets.survivorCount(), 1);
 
+        // Yield and sandbags both wait until the pool is open.
+        vm.prank(alice);
+        vm.expectRevert(bytes("not open"));
+        tickets.claim(1);
+        vm.prank(address(tickets));
+        ark.mint(alice, 1_000_000 ether);
+        vm.prank(alice);
+        ark.approve(address(shop), type(uint256).max);
+        vm.prank(alice);
+        shop.buy(1);
+        vm.prank(alice);
+        vm.expectRevert(bytes("not open"));
+        shop.applyBag(1, 1);
+
+        _forceSold(sale.OPEN_AT());
+        sale.openPool();
         vm.warp(block.timestamp + 10 days);
         vm.prank(alice);
         tickets.claim(1);
         assertGt(ark.balanceOf(alice), 0);
-
-        // With 1 alive, sandbag price = BASE*REF/1 = 500_000 ARK — top up via production minter.
-        vm.prank(address(tickets));
-        ark.mint(alice, 1_000_000 ether);
+        assertTrue(tickets.yieldClaimed(1));
 
         uint256 bal = ark.balanceOf(alice);
         uint256 px = shop.price();
         vm.prank(alice);
-        ark.approve(address(shop), px);
-        vm.prank(alice);
         shop.buy(1);
-        assertEq(shop.bags(alice), 1);
+        assertEq(shop.bags(alice), 2);
         assertEq(ark.balanceOf(alice), bal - px);
 
         vm.prank(alice);
@@ -292,41 +303,43 @@ contract Ark100Test is Test {
         flood.commit(1);
         vm.roll(block.number + 6);
 
-        uint256[] memory candidates = new uint256[](100);
-        for (uint256 i; i < 100; ++i) {
-            candidates[i] = i + 1;
-        }
         uint256 aliveBefore = tickets.aliveCount();
-        flood.settle(1, candidates);
+        assertEq(tickets.survivorCount(), aliveBefore);
+        // One small batch must not finalize the night.
+        flood.settleBatch(1, 10);
+        (, bool early,,) = flood.dayState(1);
+        assertFalse(early);
+        _settleDay(1);
         uint256 aliveAfter = tickets.aliveCount();
-        assertLt(aliveAfter, aliveBefore);
-        // night 1 is the soft week: 2..3% of ~100 => sink 2..3
-        assertGe(aliveBefore - aliveAfter, 2);
-        assertLe(aliveBefore - aliveAfter, 3);
-        (,, uint8 water1,) = flood.dayState(1);
+        (,, uint8 water1, uint32 sunk1) = flood.dayState(1);
         assertGe(water1, 2);
         assertLe(water1, 3);
+        // Every alive ticket was exposed. Ceil, so the night cannot round down to zero.
+        assertEq(sunk1, uint32((aliveBefore * water1 + 99) / 100));
+        assertEq(aliveBefore - aliveAfter, sunk1);
+        assertEq(tickets.survivorCount(), aliveAfter);
 
-        // A partial / empty candidate list must not settle the night with zero sinks.
+        // A later night still sinks with no caller-supplied id list.
         uint256 aliveNight1 = aliveAfter;
         vm.warp(block.timestamp + 1 days);
         flood.commit(2);
         vm.roll(block.number + 6);
-        flood.settle(2, new uint256[](0));
-        assertLt(tickets.aliveCount(), aliveNight1);
+        _settleDay(2);
+        (,, uint8 water2, uint32 sunk2) = flood.dayState(2);
+        assertEq(sunk2, uint32((aliveNight1 * water2 + 99) / 100));
+        assertEq(aliveNight1 - tickets.aliveCount(), sunk2);
 
         // nights 8–100 stay on the 3..8% band
         vm.warp(block.timestamp + 7 days);
         flood.commit(8);
         vm.roll(block.number + 6);
         uint256 aliveMid = tickets.aliveCount();
-        flood.settle(8, candidates);
-        uint256 sunk8 = aliveMid - tickets.aliveCount();
-        assertGe(sunk8, (aliveMid * 3) / 100);
-        assertLe(sunk8, (aliveMid * 8) / 100);
-        (,, uint8 water8,) = flood.dayState(8);
+        _settleDay(8);
+        (,, uint8 water8, uint32 sunk8) = flood.dayState(8);
         assertGe(water8, 3);
         assertLe(water8, 8);
+        assertEq(sunk8, uint32((aliveMid * water8 + 99) / 100));
+        assertEq(tickets.survivorCount(), tickets.aliveCount());
     }
 
     // ---- openPool insurance ----
@@ -685,32 +698,26 @@ contract Ark100Test is Test {
         assertEq(sale.pendingLiqBNB(), 0);
     }
 
-    function test_pot_rejectsPartialOrDuplicate_andPaysDust() public {
+    function test_pot_usesSurvivorCounter_andPaysDust() public {
         (uint256 due,) = sale.quoteMint(2);
         vm.prank(alice);
         sale.mint{value: due}(2);
-        _settleAll(2);
-
-        uint256[] memory one = new uint256[](1);
-        one[0] = 1;
+        assertEq(tickets.survivorCount(), 0);
         vm.prank(address(flood));
         vm.expectRevert(bytes("survivors"));
-        pot.land(one);
+        pot.land();
 
-        uint256[] memory dup = new uint256[](2);
-        dup[0] = 1;
-        dup[1] = 1;
-        vm.prank(address(flood));
-        vm.expectRevert(bytes("dup"));
-        pot.land(dup);
+        _settleAll(2);
+        assertEq(tickets.survivorCount(), 2);
 
         vm.deal(address(pot), 11);
-        uint256[] memory both = new uint256[](2);
-        both[0] = 2;
-        both[1] = 1;
         vm.prank(address(flood));
-        pot.land(both);
+        pot.land();
+        assertEq(pot.survivorCount(), 2);
         assertEq(pot.sharePerTicket(), 5);
+        vm.prank(address(flood));
+        vm.expectRevert(bytes("landed"));
+        pot.land();
 
         uint256 aBefore = alice.balance;
         vm.prank(alice);
@@ -790,7 +797,7 @@ contract Ark100Test is Test {
         assertEq(alice.balance, bal + owed1);
     }
 
-    function test_refund_revertsOnceYieldIsClaimedOrBagApplied() public {
+    function test_refund_claimAndBagBlockedBeforeOpen() public {
         (uint256 due,) = sale.quoteMint(2);
         vm.prank(alice);
         sale.mint{value: due}(2);
@@ -798,34 +805,34 @@ contract Ark100Test is Test {
         tickets.requestCabin(1);
         vm.roll(block.number + 6);
         tickets.settleCabin(1);
-        vm.warp(block.timestamp + 1 days);
+
         vm.prank(alice);
+        vm.expectRevert(bytes("not open"));
         tickets.claim(1);
-        assertTrue(tickets.yieldClaimed(1));
-        assertGt(ark.balanceOf(alice), 0);
 
         vm.prank(address(tickets));
-        ark.mint(alice, 1_000_000 ether);
-        uint256 px = shop.price();
-        vm.startPrank(alice);
-        ark.approve(address(shop), px);
+        ark.mint(bob, 1_000_000 ether);
+        vm.startPrank(bob);
+        ark.approve(address(shop), type(uint256).max);
         shop.buy(1);
-        shop.applyBag(2, 1);
+        vm.expectRevert(bytes("not open"));
+        shop.gift(1, 1);
         vm.stopPrank();
-        assertTrue(tickets.yieldClaimed(2));
+        vm.prank(alice);
+        vm.expectRevert(bytes("not open"));
+        shop.applyBag(1, 1);
+        assertFalse(tickets.yieldClaimed(1));
+        assertFalse(tickets.yieldClaimed(2));
 
         vm.warp(sale.startTime() + sale.REFUND_WINDOW());
-        uint256 soldBefore = sale.sold();
-        uint256 escrow = sale.outstandingRefunds();
-        vm.prank(alice);
-        vm.expectRevert(bytes("yield claimed"));
+        uint256 bal = alice.balance;
+        uint256 owed = sale.paidBnb(1) + sale.paidBnb(2);
+        vm.startPrank(alice);
         sale.refund(1);
-        vm.prank(alice);
-        vm.expectRevert(bytes("yield claimed"));
         sale.refund(2);
-        assertEq(sale.sold(), soldBefore);
-        assertEq(sale.outstandingRefunds(), escrow);
-        assertGt(sale.paidBnb(1), 0);
+        vm.stopPrank();
+        assertEq(alice.balance, bal + owed);
+        assertEq(sale.sold(), 0);
     }
 
     function test_refund_holderNotPayer_quotaStaysUsed() public {
@@ -920,7 +927,7 @@ contract Ark100Test is Test {
         vm.warp(block.timestamp + 2 days);
         flood.commit(1);
         vm.roll(block.number + 6);
-        flood.settle(1, new uint256[](0));
+        _settleDay(1);
         assertEq(tickets.aliveCount(), 0);
         assertEq(tickets.mintedBy(alice), 1);
     }
@@ -1094,6 +1101,15 @@ contract Ark100Test is Test {
         vm.prank(bob);
         (bool ok,) = address(sale).call{value: amount}("");
         assertTrue(ok);
+    }
+
+    function _settleDay(uint256 day) internal {
+        for (uint256 i; i < 10_000; ++i) {
+            (, bool settled,,) = flood.dayState(day);
+            if (settled) return;
+            flood.settleBatch(day, 500);
+        }
+        revert("not settled");
     }
 
     function _settleAll(uint256 n) internal {

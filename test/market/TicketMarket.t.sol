@@ -458,6 +458,10 @@ contract TicketBidTest is Test {
         vm.prank(bob);
         vm.expectRevert(_err("value"));
         bids.postBid{value: 1 ether}(0, 0, 1 ether, 2, 1 hours);
+        vm.prank(bob);
+        vm.expectRevert(_err("price"));
+        bids.postBid{value: 1}(0, 0, 1, 1, 1 hours);
+        assertEq(bids.MIN_UNIT_PRICE(), 0.001 ether);
 
         vm.prank(bob);
         uint256 id = bids.postBid{value: 3 ether}(0, 0, 1 ether, 3, 30 days);
@@ -547,6 +551,14 @@ contract TicketBidTest is Test {
         bids.postBid{value: 1 ether}(0, 0, 1 ether, 1, 1 hours);
         bids.postBid{value: 2 ether}(1, 1, 1 ether, 2, 2 hours);
         vm.stopPrank();
+        uint256[] memory page = bids.activeBidIds(1, 1);
+        assertEq(page.length, 1);
+        assertEq(page[0], 2);
+        assertEq(bids.activeBidIds(0, 100).length, 2);
+        assertEq(bids.activeBidIds(5, 1).length, 0);
+        vm.expectRevert(_err("limit"));
+        bids.activeBidIds(0, 101);
+
         vm.warp(block.timestamp + 1 hours);
         vm.prank(alice);
         vm.expectRevert(_err("expired"));

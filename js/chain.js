@@ -58,6 +58,8 @@
     dayState: "0x68b9fa97",
     start: "0xbe9a6555",
     commit: "0xf4f98ad5",
+    settleBatch: "0xad28484a",
+    landfall: "0x111bfda0",
     totalMinted: "0xa2309ff8",
     aliveCount: "0x0145a938",
     balanceOf: "0x70a08231",
@@ -101,6 +103,7 @@
     refundExpired: "0x1402b17a",
     bidOf: "0x649ccc14",
     activeBidIds: "0x9985df97",
+    activeBidIdsPage: "0x6d8ffe99",
     approve: "0x095ea7b3",
     allowance: "0xdd62ed3e",
     getApproved: "0x081812fc",
@@ -655,10 +658,27 @@
     return { deployed: true, feeBps: feeBps, rows: rows.filter(Boolean), truncated: truncated };
   }
 
+  async function readActiveBidIds(market) {
+    var pageSize = 40;
+    var offset = 0;
+    var all = [];
+    var guard = 0;
+    while (guard < 50) {
+      var raw = await ethCall(market, SEL.activeBidIdsPage + hexUint(offset) + hexUint(pageSize));
+      var ids = decodeUintArray(raw);
+      for (var i = 0; i < ids.length; i++) all.push(ids[i]);
+      if (ids.length < pageSize) break;
+      offset += pageSize;
+      guard++;
+    }
+    all.truncated = guard >= 50;
+    return all;
+  }
+
   async function readBidBook(market) {
     if (isZeroAddr(market)) return { deployed: false, feeBps: 250n, rows: [], truncated: false };
     var feeBps = await callUint(market, SEL.marketFeeBps);
-    var ids = decodeUintArray(await ethCall(market, SEL.activeBidIds));
+    var ids = await readActiveBidIds(market);
     var truncated = !!ids.truncated;
     var rows = await mapPool(ids, 6, async function (id) {
       var raw = await ethCall(market, SEL.bidOf + hexUint(id));
@@ -881,6 +901,19 @@
     return sendTx(ADDR.flood, SEL.commit + hexUint(day), 0);
   }
 
+  async function sendSettleBatch(day, maxCount, board) {
+    if (!board || !board.floodStarted) throw fail("flood-not-started");
+    var n = BigInt(maxCount || 400);
+    if (n < 1n) n = 1n;
+    if (n > 400n) n = 400n;
+    return sendTx(ADDR.flood, SEL.settleBatch + hexUint(day) + hexUint(n), 0);
+  }
+
+  async function sendLandfall(board) {
+    if (!board || !board.floodStarted) throw fail("flood-not-started");
+    return sendTx(ADDR.flood, SEL.landfall, 0);
+  }
+
   async function sendBuyBag(count, board) {
     if (!board || !board.opened) throw fail("pool-not-open");
     return sendTx(ADDR.shop, SEL.buy + hexUint(count || 1), 0);
@@ -943,6 +976,8 @@
     sendClaim: sendClaim,
     sendClaimShare: sendClaimShare,
     sendCommit: sendCommit,
+    sendSettleBatch: sendSettleBatch,
+    sendLandfall: sendLandfall,
     sendBuyBag: sendBuyBag,
     sendApplyBag: sendApplyBag,
     sendApproveNft: sendApproveNft,

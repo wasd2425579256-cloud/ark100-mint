@@ -6,14 +6,14 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 interface ITicketView {
     function isSurvivor(uint256 tokenId) external view returns (bool);
     function ownerOf(uint256 tokenId) external view returns (address);
-    function totalMinted() external view returns (uint256);
+    function survivorCount() external view returns (uint256);
 }
 
 /// @title ArkPot — locked prize pot shared by day-100 survivors.
 /// @dev No owner withdraw/rescue. Only receive + claimShare after landfall.
-///      `land` does not trust a partial caller list: the survivor count is scanned from the NFT,
-///      every id must be a unique survivor, and the list length must equal that scan. Rounding dust
-///      (and any BNB that arrives after land) is paid to the last claim so it does not sit forever.
+///      `land` does not scan tickets and does not take an id list. TicketNFT keeps the survivor
+///      counter (settled cabin, not sunk). A claim checks that id itself. Rounding dust (and any
+///      BNB that arrives after land) is paid to the last claim so it does not sit forever.
 contract ArkPot is ReentrancyGuard {
     address public immutable deployer;
     address public sale;
@@ -63,26 +63,14 @@ contract ArkPot is ReentrancyGuard {
         emit BnbReceived(msg.sender, msg.value);
     }
 
-    function land(uint256[] calldata survivorIds) external nonReentrant {
+    /// @notice FloodEngine only, after night 100 is fully settled. O(1): the NFT holds the count.
+    function land() external nonReentrant {
         require(msg.sender == floodEngine, "not flood");
         require(!landed, "landed");
         require(address(ticketNft) != address(0), "no nft");
 
-        uint256 minted = ticketNft.totalMinted();
-        uint256 n;
-        for (uint256 id = 1; id <= minted; ++id) {
-            if (ticketNft.isSurvivor(id)) n++;
-        }
-        require(n > 0 && survivorIds.length == n, "survivors");
-
-        // id => seen bit. One-time write; not cleared.
-        for (uint256 i; i < n; ++i) {
-            uint256 id = survivorIds[i];
-            require(id >= 1 && id <= minted, "id");
-            require(ticketNft.isSurvivor(id), "not survivor");
-            require(!_seen(id), "dup");
-            _mark(id);
-        }
+        uint256 n = ticketNft.survivorCount();
+        require(n > 0, "survivors");
 
         landed = true;
         landfallTimestamp = block.timestamp;
@@ -104,19 +92,5 @@ contract ArkPot is ReentrancyGuard {
         (bool ok,) = owner_.call{value: amount}("");
         require(ok, "pay fail");
         emit ShareClaimed(tokenId, owner_, amount);
-    }
-
-    mapping(uint256 => uint256) private _bits;
-
-    function _seen(uint256 id) internal view returns (bool) {
-        uint256 word = id >> 8;
-        uint256 bit = 1 << (id & 255);
-        return (_bits[word] & bit) != 0;
-    }
-
-    function _mark(uint256 id) internal {
-        uint256 word = id >> 8;
-        uint256 bit = 1 << (id & 255);
-        _bits[word] |= bit;
     }
 }

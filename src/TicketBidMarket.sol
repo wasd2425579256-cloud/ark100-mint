@@ -13,6 +13,8 @@ contract TicketBidMarket is ReentrancyGuard, TicketFence {
     uint256 public constant MARKET_FEE_BPS = MarketFee.BPS;
     uint256 public constant MIN_DURATION = 1 hours;
     uint256 public constant MAX_DURATION = 30 days;
+    /// @notice Dust bids would bloat `activeBidIds`. 0.001 BNB is the smallest unit price.
+    uint256 public constant MIN_UNIT_PRICE = 0.001 ether;
     uint8 public constant KIND_ANY = 0;
     uint8 public constant KIND_CABIN = 1;
     uint8 public constant KIND_TOKEN = 2;
@@ -89,13 +91,24 @@ contract TicketBidMarket is ReentrancyGuard, TicketFence {
         return _active;
     }
 
+    /// @notice Page of active bid ids. `limit` is at most 100 so a full book cannot be one eth_call.
+    function activeBidIds(uint256 offset, uint256 limit) external view returns (uint256[] memory page) {
+        require(limit > 0 && limit <= 100, "limit");
+        uint256 n = _active.length;
+        if (offset >= n) return new uint256[](0);
+        uint256 end = offset + limit;
+        if (end > n) end = n;
+        page = new uint256[](end - offset);
+        for (uint256 i; i < page.length; ++i) page[i] = _active[offset + i];
+    }
+
     function postBid(uint8 kind, uint256 param, uint256 unitPrice, uint256 qty, uint256 duration)
         external
         payable
         nonReentrant
         returns (uint256 bidId)
     {
-        require(unitPrice > 0 && qty > 0, "price");
+        require(unitPrice >= MIN_UNIT_PRICE && qty > 0, "price");
         require(duration >= MIN_DURATION && duration <= MAX_DURATION, "duration");
         if (kind == KIND_ANY) require(param == 0, "kind");
         else if (kind == KIND_CABIN) require(param <= 3, "kind");

@@ -12,6 +12,14 @@ interface IArkShopView {
     function sandbagShop() external view returns (address);
 }
 
+interface IFloodGate {
+    function requestsClosed() external view returns (bool);
+}
+
+interface ISaleOpened {
+    function opened() external view returns (bool);
+}
+
 /// @title TicketNFT — Gen0 ark tickets (ERC721).
 /// @notice Cabins assigned via future-block settle. Sunk tickets produce 0.
 /// No Ownable. Sale address set once by deployer.
@@ -35,6 +43,9 @@ contract TicketNFT is ERC721, ReentrancyGuard {
 
     uint256 public totalMinted;
     uint256 public aliveCount;
+    /// @notice Tickets with a settled cabin (economy, business, or captain) that have not sunk.
+    ///         Pending cabins are alive but are not survivors. ArkPot reads this in `land`.
+    uint256 public survivorCount;
 
     struct Ticket {
         uint8 cabin; // 0 pending, 1-3 live, 4 sunk
@@ -113,6 +124,7 @@ contract TicketNFT is ERC721, ReentrancyGuard {
     function sink(uint256 tokenId) external onlyFlood {
         Ticket storage t = tickets[tokenId];
         require(t.cabin != CABIN_SUNK && t.mintedAt != 0, "bad");
+        if (_isSurvivorCabin(t.cabin)) survivorCount -= 1;
         // settle pending accrued as zero going forward; cabin becomes sunk
         t.cabin = CABIN_SUNK;
         t.lastClaim = uint64(block.timestamp);
@@ -126,6 +138,7 @@ contract TicketNFT is ERC721, ReentrancyGuard {
         Ticket storage t = tickets[tokenId];
         require(t.mintedAt != 0 && t.cabin != CABIN_SUNK, "bad");
         address holder = ownerOf(tokenId);
+        if (_isSurvivorCabin(t.cabin)) survivorCount -= 1;
         t.cabin = CABIN_SUNK;
         t.cabinCommitBlock = 0;
         t.lastClaim = uint64(block.timestamp);
@@ -149,36 +162,36 @@ contract TicketNFT is ERC721, ReentrancyGuard {
         Ticket storage t = tickets[tokenId];
         require(t.cabin == CABIN_PENDING, "not pending");
         require(t.cabinCommitBlock == 0, "requested");
+        // Once night 100 can start, a new draw would land after the floods that pending tickets
+        // already had to face. In-flight requests can still be settled.
+        if (floodEngine != address(0)) require(!IFloodGate(floodEngine).requestsClosed(), "flood closed");
         t.cabinCommitBlock = uint64(block.number + CABIN_DELAY);
         emit CabinRequested(tokenId, t.cabinCommitBlock);
     }
 
+    /// @notice Anyone may settle. A live commit uses the future-block roll. An expired commit
+    ///         (more than 256 blocks later) is economy, the worst class, and cannot be retried.
     function settleCabin(uint256 tokenId) external {
         Ticket storage t = tickets[tokenId];
         require(t.cabin == CABIN_PENDING, "not pending");
         require(t.cabinCommitBlock != 0, "no request");
         require(block.number > t.cabinCommitBlock, "too early");
-        require(block.number <= t.cabinCommitBlock + 256, "expired");
-        bytes32 h = blockhash(t.cabinCommitBlock);
-        require(h != bytes32(0), "no hash");
-        uint256 roll = uint256(keccak256(abi.encodePacked(h, tokenId, address(this)))) % 100;
         uint8 cabin;
-        if (roll < 70) cabin = CABIN_ECONOMY;
-        else if (roll < 95) cabin = CABIN_BUSINESS;
-        else cabin = CABIN_CAPTAIN;
+        if (block.number > t.cabinCommitBlock + 256) {
+            cabin = CABIN_ECONOMY;
+        } else {
+            bytes32 h = blockhash(t.cabinCommitBlock);
+            require(h != bytes32(0), "no hash");
+            uint256 roll = uint256(keccak256(abi.encodePacked(h, tokenId, address(this)))) % 100;
+            if (roll < 70) cabin = CABIN_ECONOMY;
+            else if (roll < 95) cabin = CABIN_BUSINESS;
+            else cabin = CABIN_CAPTAIN;
+        }
         t.cabin = cabin;
         t.cabinCommitBlock = 0;
         t.lastClaim = uint64(block.timestamp);
+        survivorCount += 1;
         emit CabinSettled(tokenId, cabin);
-    }
-
-    /// @notice If cabin commit expired, clear so owner can re-request.
-    function retryCabin(uint256 tokenId) external {
-        require(ownerOf(tokenId) == msg.sender, "not owner");
-        Ticket storage t = tickets[tokenId];
-        require(t.cabin == CABIN_PENDING && t.cabinCommitBlock != 0, "bad");
-        require(block.number > t.cabinCommitBlock + 256, "not expired");
-        t.cabinCommitBlock = 0;
     }
 
     function pendingArk(uint256 tokenId) public view returns (uint256) {
@@ -190,6 +203,7 @@ contract TicketNFT is ERC721, ReentrancyGuard {
     }
 
     function claim(uint256 tokenId) external nonReentrant {
+        require(ISaleOpened(sale).opened(), "not open");
         require(ownerOf(tokenId) == msg.sender, "not owner");
         Ticket storage t = tickets[tokenId];
         require(t.cabin >= CABIN_ECONOMY && t.cabin <= CABIN_CAPTAIN, "no cabin");
@@ -206,6 +220,16 @@ contract TicketNFT is ERC721, ReentrancyGuard {
         require(tickets[tokenId].mintedAt != 0, "bad");
         require(msg.sender == IArkShopView(address(arkToken)).sandbagShop(), "not reward");
         yieldClaimed[tokenId] = true;
+    }
+
+    function floodSnap(uint256 tokenId) external view returns (bool alive, uint8 cabin) {
+        Ticket storage t = tickets[tokenId];
+        cabin = t.cabin;
+        alive = t.mintedAt != 0 && cabin != CABIN_SUNK;
+    }
+
+    function _isSurvivorCabin(uint8 cabin) internal pure returns (bool) {
+        return cabin >= CABIN_ECONOMY && cabin <= CABIN_CAPTAIN;
     }
 
     function _rate(uint8 cabin) internal pure returns (uint256) {
