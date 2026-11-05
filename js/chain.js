@@ -305,7 +305,7 @@
     var canOpen = sold >= 3000n && !opened && !refunding;
     var canStart = opened && !floodStarted;
     var refundWindow = 7n * 24n * 60n * 60n;
-    var canEnableRefunds = !opened && !refunding && startTime !== 0n && now >= startTime + refundWindow;
+    var canEnableRefunds = !opened && !refunding && sold < 3000n && startTime !== 0n && now >= startTime + refundWindow;
     return {
       block: BigInt(head.blockHex),
       now: now,
@@ -483,13 +483,17 @@
     var startTime = row[2];
     var sold = row[3];
     var refundWindow = 7n * 24n * 60n * 60n;
-    var canEnableRefunds = !opened && !refunding && startTime !== 0n && now >= startTime + refundWindow;
+    var opensAt = startTime === 0n ? 0n : startTime + refundWindow;
+    var refundsClosed = opened || sold >= 3000n;
+    var canEnableRefunds = !refundsClosed && !refunding && startTime !== 0n && now >= opensAt;
     return {
       now: now,
       opened: opened,
       refunding: refunding,
       startTime: startTime,
       sold: sold,
+      opensAt: opensAt,
+      refundsClosed: refundsClosed,
       canEnableRefunds: canEnableRefunds
     };
   }
@@ -844,8 +848,17 @@
     return sendTx(ADDR.legacySale, SEL.enableRefunds, 0);
   }
 
+  async function sendEnableNewRefunds(board) {
+    if (!board || !board.canEnableRefunds || board.startTime === 0n) throw fail("refund-not-ready");
+    return sendTx(ADDR.sale, SEL.enableRefunds, 0);
+  }
+
   function sendRefund(id) {
     return sendTx(ADDR.legacySale, SEL.refund + hexUint(id), 0);
+  }
+
+  function sendRefundNew(id) {
+    return sendTx(ADDR.sale, SEL.refund + hexUint(id), 0);
   }
 
   async function sendRequestCabin(id) {
@@ -925,7 +938,9 @@
     sendOpenPool: sendOpenPool,
     sendStartFlood: sendStartFlood,
     sendEnableRefunds: sendEnableRefunds,
+    sendEnableNewRefunds: sendEnableNewRefunds,
     sendRefund: sendRefund,
+    sendRefundNew: sendRefundNew,
     sendRequestCabin: sendRequestCabin,
     sendSettleCabin: sendSettleCabin,
     sendClaim: sendClaim,

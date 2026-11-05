@@ -4,6 +4,8 @@
   var qty = 1;
   var board = null;
   var legacyRefund = null;
+  var legacyAnchorMs = 0;
+  var legacyRechecked = false;
   var quote = null;
   var ticketFilter = "all";
   var ticketRows = [];
@@ -211,7 +213,7 @@
     var refundCard = $("refundCard");
     if (openCard) openCard.hidden = !board.canOpen;
     if (startCard) startCard.hidden = !board.canStart;
-    if (refundCard) refundCard.hidden = !(legacyRefund && legacyRefund.canEnableRefunds);
+    if (refundCard) refundCard.hidden = !board.canEnableRefunds;
     var dayInput = $("floodDayInput");
     if (dayInput && board.dayIndex && !dayInput.value) dayInput.value = board.dayIndex.toString();
     var parts = [];
@@ -244,6 +246,116 @@
     }
   }
 
+  function pad2(n) {
+    n = Number(n);
+    return (n < 10 ? "0" : "") + n;
+  }
+
+  function zoneParts(ts, offsetHours) {
+    var shifted = Number(ts) + offsetHours * 3600;
+    var d = new Date(shifted * 1000);
+    return {
+      y: d.getUTCFullYear(),
+      m: d.getUTCMonth() + 1,
+      day: d.getUTCDate(),
+      h: d.getUTCHours(),
+      min: d.getUTCMinutes()
+    };
+  }
+
+  function zoneStamp(p) {
+    return p.y + "-" + pad2(p.m) + "-" + pad2(p.day) + " " + pad2(p.h) + ":" + pad2(p.min);
+  }
+
+  function shortStamp(p) {
+    return p.m + "/" + p.day + " " + pad2(p.h) + ":" + pad2(p.min);
+  }
+
+  function legacyNowSec() {
+    if (!legacyRefund || !legacyAnchorMs) return BigInt(Math.floor(Date.now() / 1000));
+    var elapsed = BigInt(Math.max(0, Math.floor((Date.now() - legacyAnchorMs) / 1000)));
+    return legacyRefund.now + elapsed;
+  }
+
+  function countdownText(secs) {
+    var s = Number(secs);
+    if (s < 0) s = 0;
+    var days = Math.floor(s / 86400);
+    var clock = pad2(Math.floor((s % 86400) / 3600)) + ":" + pad2(Math.floor((s % 3600) / 60)) + ":" + pad2(s % 60);
+    if (zh()) return days > 0 ? ("还剩 " + days + " 天 " + clock) : ("还剩 " + clock);
+    return days > 0 ? (days + "d " + clock + " left") : (clock + " left");
+  }
+
+  function paintOldClock() {
+    var clock = $("oldRefundClock");
+    if (!clock || !legacyRefund || legacyRefund.refundsClosed || legacyRefund.refunding) return;
+    if (legacyRefund.canEnableRefunds) {
+      say(clock, "窗口已打开。", "The window is open.");
+      return;
+    }
+    var left = legacyRefund.opensAt - legacyNowSec();
+    if (left < 0n) left = 0n;
+    var text = countdownText(left);
+    say(clock, text, text);
+  }
+
+  function renderOldRefund() {
+    var stats = $("oldRefundStats");
+    var when = $("oldRefundWhen");
+    var btn = $("oldEnableRefundBtn");
+    var status = $("oldRefundStatus");
+    if (!stats || !btn) return;
+    if (!legacyRefund) {
+      say(stats, "旧发售暂时读不到。新发售潮位不受影响。", "The old sale could not be read. The new sale tide is unchanged.");
+      say(when, "退款窗口时间还没有读到。", "The refund window time is not in yet.");
+      say($("oldRefundClock"), "倒计时暂停。", "Countdown paused.");
+      btn.hidden = false;
+      btn.disabled = true;
+      btn.setAttribute("aria-disabled", "true");
+      setBi(btn, "11/11 18:36（北京）后开放", "Opens Nov 11, 18:36 Beijing");
+      return;
+    }
+    var sold = C.formatInt(legacyRefund.sold);
+    say(stats,
+      "旧发售已售 " + sold + " 张。池子" + (legacyRefund.opened ? "已打开" : "未打开") + "。退款" + (legacyRefund.refunding ? "已开启" : "未开启") + "。这张数不计入新发售潮位。",
+      "Old sale: " + sold + " sold. Pool " + (legacyRefund.opened ? "open" : "closed") + ". Refunds " + (legacyRefund.refunding ? "on" : "off") + ". This count is not the new sale tide.");
+    if (legacyRefund.refundsClosed) {
+      say(when, "旧发售已开池，或已售达到 3000 张。退款不能再开启。", "The old sale opened, or it reached 3,000 sold. Refunds can no longer be turned on.");
+      say($("oldRefundClock"), "倒计时已结束。", "The countdown is over.");
+      btn.hidden = true;
+      btn.disabled = true;
+      btn.setAttribute("aria-disabled", "true");
+      if (status) say(status, "旧票不能再退。", "Old tickets can no longer be refunded.");
+      return;
+    }
+    var bj = zoneParts(legacyRefund.opensAt, 8);
+    var tk = zoneParts(legacyRefund.opensAt, 9);
+    say(when,
+      "退款窗口：" + zoneStamp(bj) + "（北京） · " + zoneStamp(tk) + "（东京）。",
+      "Refund window: " + zoneStamp(bj) + " Beijing · " + zoneStamp(tk) + " Tokyo.");
+    if (legacyRefund.refunding) {
+      say($("oldRefundClock"), "退款已经开启。", "Refunds are on.");
+      btn.hidden = true;
+      btn.disabled = true;
+      btn.setAttribute("aria-disabled", "true");
+      if (status) {
+        status.innerHTML = "<span class=\"t-zh\">旧发售退款已开启。到<a href=\"#ark\">我的方舟</a>，用当时付款的钱包按旧票点「领退款」。</span><span class=\"t-en\">Refunds are on for the old tickets. In <a href=\"#ark\">My Ark</a>, claim each one from the wallet that paid.</span>";
+      }
+      return;
+    }
+    btn.hidden = false;
+    paintOldClock();
+    if (legacyRefund.canEnableRefunds) {
+      btn.disabled = false;
+      btn.removeAttribute("aria-disabled");
+      setBi(btn, "开启退款", "enableRefunds");
+      return;
+    }
+    btn.disabled = true;
+    btn.setAttribute("aria-disabled", "true");
+    setBi(btn, shortStamp(bj) + "（北京）后开放", "Opens " + shortStamp(bj) + " Beijing");
+  }
+
   function cabinBadge(row) {
     if (row.sunk) return { cls: "mute", zh: "已沉", en: "Sunk" };
     if (row.unsettled) return { cls: "wait", zh: "未抽舱", en: "Unsettled" };
@@ -257,29 +369,50 @@
     return !!a && !!b && String(a).toLowerCase() === String(b).toLowerCase();
   }
 
+  function payerClaim(payer) {
+    if (account && sameAddr(account, payer)) return "ok";
+    if (!account && C.isAddr(lookedUp) && sameAddr(lookedUp, payer)) return "ok";
+    if (account && C.isAddr(lookedUp) && sameAddr(lookedUp, payer) && !sameAddr(account, payer)) return "switch";
+    if (!account) return "connect";
+    return "only";
+  }
+
+  function payerNote(kind) {
+    if (kind === "switch") return ["请换付款钱包再领", "Switch to the paying wallet to claim"];
+    if (kind === "connect") return ["连接付款钱包后可领", "Connect the paying wallet to claim"];
+    return ["只有付款人能领", "Only the payer can claim"];
+  }
+
   function refundOffer(row) {
-    if (!row.legacy) return null;
-    if (!legacyRefund || !legacyRefund.refunding) {
-      return { kind: "mute", zh: "旧船票，退款尚未开启", en: "Old ticket. Refunds are not on yet." };
+    if (row.legacy) {
+      if (legacyRefund && legacyRefund.refundsClosed) {
+        return { kind: "mute", zh: "旧发售已开池，不能退款", en: "The old sale opened. Refunds are no longer possible." };
+      }
+      if (row.paidBnb == null || row.payerKnown === false) {
+        return { kind: "mute", zh: "退款信息暂时读不到", en: "Refund details could not be read" };
+      }
+      var paid = BigInt(row.paidBnb);
+      if (paid === 0n) return { kind: "mute", zh: "已领回", en: "Already claimed" };
+      var ready = !!(legacyRefund && legacyRefund.refunding);
+      if (!ready) return { kind: "button", disabled: true, paid: paid, sale: "legacy" };
+      if (payerClaim(row.payer || "") === "ok") return { kind: "button", disabled: false, paid: paid, sale: "legacy" };
+      var note = payerNote(payerClaim(row.payer || ""));
+      return { kind: "button", disabled: true, paid: paid, sale: "legacy", zh: note[0], en: note[1] };
     }
+    if (!board || !board.refunding || board.opened || board.startTime === 0n || board.sold >= 3000n) return null;
     if (row.paidBnb == null || row.payerKnown === false) {
       return { kind: "mute", zh: "退款信息暂时读不到", en: "Refund details could not be read" };
     }
-    var paid = BigInt(row.paidBnb);
-    if (paid === 0n) return { kind: "mute", zh: "已领回", en: "Already claimed" };
-    var payer = row.payer || "";
-    if (account && sameAddr(account, payer)) return { kind: "button", paid: paid };
-    if (!account && C.isAddr(lookedUp) && sameAddr(lookedUp, payer)) return { kind: "button", paid: paid };
-    if (account && C.isAddr(lookedUp) && sameAddr(lookedUp, payer) && !sameAddr(account, payer)) {
-      return { kind: "mute", zh: "请换付款钱包再领", en: "Switch to the paying wallet to claim" };
+    var paidNew = BigInt(row.paidBnb);
+    if (paidNew === 0n) return null;
+    if (payerClaim(row.payer || "") !== "ok") {
+      var blocked = payerNote(payerClaim(row.payer || ""));
+      return { kind: "mute", zh: blocked[0], en: blocked[1] };
     }
-    if (!account) return { kind: "mute", zh: "连接付款钱包后可领", en: "Connect the paying wallet to claim" };
-    return { kind: "mute", zh: "只有付款人能领", en: "Only the payer can claim" };
+    return { kind: "button", disabled: false, paid: paidNew, sale: "new" };
   }
 
   function renderTickets() {
-    var hint = $("refundHint");
-    if (hint) hint.hidden = !(legacyRefund && legacyRefund.refunding);
     var body = $("ticketBody");
     if (!body) return;
     body.innerHTML = "";
@@ -319,11 +452,20 @@
       if (offer && offer.kind === "button") {
         var wrap = document.createElement("div");
         wrap.className = "row-acts";
-        wrap.appendChild(actionButton("claim-refund", row.id, "领退款", "Claim refund", "refund"));
+        var claim = actionButton("claim-refund", row.id, "领退款", "Claim refund", "refund");
+        claim.setAttribute("data-sale", offer.sale || (row.legacy ? "legacy" : "new"));
+        if (offer.disabled) {
+          claim.disabled = true;
+          claim.setAttribute("aria-disabled", "true");
+        }
+        wrap.appendChild(claim);
         wrap.appendChild(textSpan(bnbText(offer.paid), bnbText(offer.paid)));
+        if (offer.zh) wrap.appendChild(textSpan(offer.zh, offer.en));
         cell.appendChild(wrap);
       } else if (offer) {
         cell.appendChild(textSpan(offer.zh, offer.en));
+      } else if (row.legacy) {
+        cell.appendChild(textSpan("—", "—"));
       } else if (state === "pending") cell.appendChild(actionButton("request-cabin", row.id, "抽舱", "Draw cabin"));
       else if (state === "afloat") cell.appendChild(actionButton("apply-bag", row.id, "沙袋护住", "Apply sandbag"));
       else cell.appendChild(textSpan("无产出", "No yield"));
@@ -343,6 +485,21 @@
     if (empty) {
       empty.hidden = !(lookedUp && visible === 0);
       setBi(empty, "这个筛选下没有船票。", "No tickets in this filter.");
+    }
+    var hint = $("refundHint");
+    if (hint) {
+      if (legacyRefund && legacyRefund.refundsClosed) {
+        hint.hidden = false;
+        setBi(hint, "旧发售已经开池，或者已售到了 3000 张。这些旧票不能再退。", "The old sale opened, or it reached 3,000 sold. Those old tickets can no longer be refunded.");
+      } else if (legacyRefund && legacyRefund.refunding) {
+        hint.hidden = false;
+        setBi(hint, "旧发售退款已开启。用当时付款的钱包查看旧船票，再按票点「领退款」。已经领过的票不显示按钮。", "Refunds are on for the old sale. Look up tickets with the wallet that paid, then press Claim refund. A ticket already claimed shows no button.");
+      } else if (legacyN > 0) {
+        hint.hidden = false;
+        setBi(hint, "旧票的「领退款」先停着，等旧发售退款开启后才能点。已经领过的票不显示按钮。", "Claim refund on an old ticket stays off until that sale’s refunds are on. A ticket already claimed shows no button.");
+      } else {
+        hint.hidden = true;
+      }
     }
   }
 
@@ -985,9 +1142,12 @@
     board = await C.readBoard();
     try {
       legacyRefund = await C.readLegacyRefund();
+      legacyAnchorMs = Date.now();
+      legacyRechecked = !!(legacyRefund && (legacyRefund.canEnableRefunds || legacyRefund.refunding || legacyRefund.refundsClosed));
     } catch (e) {
       legacyRefund = null;
     }
+    renderOldRefund();
     renderTide();
     renderSale();
     renderNight();
@@ -1137,6 +1297,7 @@
     renderQuote();
     renderNight();
     renderActions();
+    renderOldRefund();
     renderTickets();
     renderMarket();
     syncChrome();
@@ -1284,8 +1445,24 @@
     return C.sendStartFlood(board);
   });
   wireSend("enableRefundBtn", "triggerStatus", function () {
-    say($("triggerStatus"), "正在发送开启退款。", "Sending enableRefunds.");
-    return C.sendEnableRefunds(board);
+    if (!board || !board.canEnableRefunds || board.startTime === 0n) {
+      var early = new Error("refund-not-ready");
+      early.code = "refund-not-ready";
+      throw early;
+    }
+    say($("triggerStatus"), "正在发送新发售的开启退款。", "Sending enableRefunds on the new sale.");
+    return C.sendEnableNewRefunds(board);
+  });
+  wireSend("oldEnableRefundBtn", "oldRefundStatus", function () {
+    var btn = $("oldEnableRefundBtn");
+    if (!btn || btn.disabled || btn.hidden) return;
+    if (!legacyRefund || !legacyRefund.canEnableRefunds || legacyRefund.refundsClosed) {
+      var blocked = new Error("refund-not-ready");
+      blocked.code = "refund-not-ready";
+      throw blocked;
+    }
+    say($("oldRefundStatus"), "正在为旧发售开启退款。", "Sending enableRefunds on the old sale.");
+    return C.sendEnableRefunds();
   });
   wireSend("claimShareBtn", "triggerStatus", function () {
     var id = idFrom("claimIdInput");
@@ -1311,12 +1488,23 @@
       say($("arkStatus"), "正在发送交易。", "Sending the transaction.");
       run = function () { return C.sendApplyBag(id, board && board.dayIndex, board); };
     } else if (act === "claim-refund") {
-      if (!legacyRefund || !legacyRefund.refunding) {
-        say($("arkStatus"), explain("refund-closed"), explain("refund-closed"));
-        return;
+      if (btn.disabled) return;
+      var sale = btn.getAttribute("data-sale") || "legacy";
+      if (sale === "new") {
+        if (!board || !board.refunding || board.opened || board.startTime === 0n || board.sold >= 3000n) {
+          say($("arkStatus"), explain("refund-closed"), explain("refund-closed"));
+          return;
+        }
+        say($("arkStatus"), "正在发送领退款。", "Sending the refund claim.");
+        run = function () { return C.sendRefundNew(id); };
+      } else {
+        if (!legacyRefund || legacyRefund.refundsClosed || !legacyRefund.refunding) {
+          say($("arkStatus"), explain("refund-closed"), explain("refund-closed"));
+          return;
+        }
+        say($("arkStatus"), "正在发送领退款。", "Sending the refund claim.");
+        run = function () { return C.sendRefund(id); };
       }
-      say($("arkStatus"), "正在发送领退款。", "Sending the refund claim.");
-      run = function () { return C.sendRefund(id); };
     } else if (act === "buy-listing" || act === "cancel-listing" || act === "clean-listing" || act === "fill-bid" || act === "cancel-bid" || act === "refund-bid") {
       var book = btn.getAttribute("data-book") || payBook;
       var bidId = btn.getAttribute("data-bid") || id;
@@ -1373,8 +1561,26 @@
     setBi($("mintBtn"), "铸造已暂停，等待开售", "Minting paused until the sale starts");
     $("mintBtn").disabled = true;
     $("mintBtn").classList.add("is-paused");
+    C.readLegacyRefund().then(function (snap) {
+      legacyRefund = snap;
+      legacyAnchorMs = Date.now();
+      renderOldRefund();
+    }).catch(function () { renderOldRefund(); });
     loadMarket().catch(function () {});
   });
+  setInterval(function () {
+    paintOldClock();
+    if (!legacyRefund || legacyRefund.refundsClosed || legacyRefund.refunding || legacyRefund.canEnableRefunds) return;
+    if (!legacyRefund.opensAt || legacyNowSec() < legacyRefund.opensAt || legacyRechecked) return;
+    legacyRechecked = true;
+    C.readLegacyRefund().then(function (snap) {
+      legacyRefund = snap;
+      legacyAnchorMs = Date.now();
+      renderOldRefund();
+      if (board) renderActions();
+      renderTickets();
+    }).catch(function () {});
+  }, 1000);
   loadFeed();
 
   var sea = document.querySelector(".sea");
