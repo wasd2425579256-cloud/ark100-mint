@@ -9,6 +9,7 @@ interface ITicketOwner {
     function ownerOf(uint256 tokenId) external view returns (address);
     function aliveCount() external view returns (uint256);
     function isAlive(uint256 tokenId) external view returns (bool);
+    function markYield(uint256 tokenId) external;
 }
 
 /// @title SandbagShop — burn ARK for 1-night flood protection; giftable.
@@ -61,6 +62,7 @@ contract SandbagShop {
         require(!protectedUntil[tokenId][dayIndex], "already");
         bags[msg.sender] -= 1;
         protectedUntil[tokenId][dayIndex] = true;
+        tickets.markYield(tokenId);
         emit Applied(msg.sender, tokenId, dayIndex);
     }
 
@@ -71,6 +73,7 @@ contract SandbagShop {
         require(!protectedUntil[tokenId][dayIndex], "already");
         bags[msg.sender] -= 1;
         protectedUntil[tokenId][dayIndex] = true;
+        tickets.markYield(tokenId);
         emit Gifted(msg.sender, tickets.ownerOf(tokenId), tokenId, dayIndex);
     }
 

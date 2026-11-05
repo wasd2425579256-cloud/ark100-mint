@@ -8,6 +8,10 @@ interface IArkMinter {
     function mint(address to, uint256 amount) external;
 }
 
+interface IArkShopView {
+    function sandbagShop() external view returns (address);
+}
+
 /// @title TicketNFT — Gen0 ark tickets (ERC721).
 /// @notice Cabins assigned via future-block settle. Sunk tickets produce 0.
 /// No Ownable. Sale address set once by deployer.
@@ -42,6 +46,8 @@ contract TicketNFT is ERC721, ReentrancyGuard {
 
     mapping(uint256 => Ticket) public tickets;
     mapping(address => uint256) public mintedBy; // slots used
+    /// @notice True after this ticket was paid cabin yield, or had a sandbag applied.
+    mapping(uint256 => bool) public yieldClaimed;
 
     event SaleSet(address sale);
     event FloodEngineSet(address flood);
@@ -50,6 +56,7 @@ contract TicketNFT is ERC721, ReentrancyGuard {
     event CabinRequested(uint256 indexed tokenId, uint64 commitBlock);
     event CabinSettled(uint256 indexed tokenId, uint8 cabin);
     event Sunk(uint256 indexed tokenId, address indexed owner);
+    event TicketRetired(uint256 indexed tokenId, address indexed holder);
     event Claimed(uint256 indexed tokenId, address indexed to, uint256 amount);
 
     modifier onlySale() {
@@ -114,6 +121,19 @@ contract TicketNFT is ERC721, ReentrancyGuard {
         emit Sunk(tokenId, ownerOf(tokenId));
     }
 
+    /// @notice Sale refund. Burns the ticket and marks it sunk. Does not return `mintedBy` quota.
+    function retire(uint256 tokenId) external onlySale {
+        Ticket storage t = tickets[tokenId];
+        require(t.mintedAt != 0 && t.cabin != CABIN_SUNK, "bad");
+        address holder = ownerOf(tokenId);
+        t.cabin = CABIN_SUNK;
+        t.cabinCommitBlock = 0;
+        t.lastClaim = uint64(block.timestamp);
+        if (aliveCount > 0) aliveCount -= 1;
+        _burn(tokenId);
+        emit TicketRetired(tokenId, holder);
+    }
+
     function isSurvivor(uint256 tokenId) external view returns (bool) {
         Ticket storage t = tickets[tokenId];
         return t.mintedAt != 0 && t.cabin != CABIN_SUNK && t.cabin != CABIN_PENDING;
@@ -176,8 +196,16 @@ contract TicketNFT is ERC721, ReentrancyGuard {
         uint256 amount = pendingArk(tokenId);
         require(amount > 0, "zero");
         t.lastClaim = uint64(block.timestamp);
+        yieldClaimed[tokenId] = true;
         arkToken.mint(msg.sender, amount);
         emit Claimed(tokenId, msg.sender, amount);
+    }
+
+    /// @notice SandbagShop marks a ticket that received a bag. Pot and flood pay only after open.
+    function markYield(uint256 tokenId) external {
+        require(tickets[tokenId].mintedAt != 0, "bad");
+        require(msg.sender == IArkShopView(address(arkToken)).sandbagShop(), "not reward");
+        yieldClaimed[tokenId] = true;
     }
 
     function _rate(uint8 cabin) internal pure returns (uint256) {
