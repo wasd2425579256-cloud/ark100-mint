@@ -1,25 +1,25 @@
 /* ARK100 BSC mainnet reads and wallet sends. chainId 56. */
 (function (global) {
   var CHAIN_ID = 56;
-  var LOG_FROM = 131600000;
+  var LOG_FROM = 131743398;
   var ADDR = {
-    nft: "0xBf997725e53f504d6CA6EE3566Fca90C7526a951",
-    ark: "0x53fAfd8027781e69E92C456C5944c5b994e3DA34",
-    sale: "0xf2087F9D8bb992Ff29d303cDdB4c9Af2879A0074",
-    flood: "0x18AA2EF5ab3ac4293b7E4ab565E92D9beA92ec59",
-    shop: "0xDd1704d26eA1361c4341E63143888CF476C8E540",
-    pot: "0x001dD47d262a1D6af1d9195821956Fef6B3A516F",
+    nft: "0xDF2aF96477aBe8E5Eaa9Cf79650D58917e6c3490",
+    ark: "0x97F7025f2999bF9468Ae74bDeBB688105976bE33",
+    sale: "0x64a67c2D48898D414DbD63F56deAbD0988C2Af65",
+    flood: "0xE426bCf166Fe48626DD6114B049375b6ff9B9825",
+    shop: "0x7d3953B2130DE00A54195335Ac3D6863fb21B498",
+    pot: "0x99aF1fF0056D195a907590529d53D11C7913Ddc0",
     // TicketMarketBNB / TicketMarketARK / TicketBidMarket on the fixed BSC suite.
     // feeRecipient is the constructor arg 0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74.
-    marketBnb: "0xc628e42319377D7624010ca012FEC1733E39C4ea",
-    marketArk: "0x651c688883086a21f5Df32141e5267d9A74c8c96",
-    marketBid: "0xe1e72aCa98f511CAC3FCcc1876EE1d40f7b55Ad2",
+    marketBnb: "0x5E42aA493317ba4E7582638c6b36C1A5f1836dB0",
+    marketArk: "0xCc355eF294af0B077666944b2D0271C40D17D17d",
+    marketBid: "0x1788Dda94DB19e0Da9467B421DCD9539Be4220c9",
     // Previous suite. Refunds of the tickets already sold stay on these contracts.
     // enableRefunds only if !opened && startTime + 7 days. Do not mint against them.
     legacySale: "0x5f92105341Cbc09462A0a10973664a322505BF32",
     legacyNft: "0x815202403e51C6525452dB09FC7c40dD2762D87e",
     // Predicted PancakeSwap V2 ARK/WBNB pair. The pair contract is created when the pool opens.
-    launchPair: "0xefa01D5Be6DcFB108C0c0Be54df6d89D2aAf0fbe",
+    launchPair: "0x5FA6c91C846FF96ABdd694F85F123Cf49aA90662",
     verifier: "0xf14F5cF3fCB976082Df08dA1609D1698C39Ff2e2",
     registry: "0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F",
     router: "0x10ED43C718714eb63d5aA57B78B54704E256024E",
