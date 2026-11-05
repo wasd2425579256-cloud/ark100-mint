@@ -729,7 +729,16 @@
     return account;
   }
 
+  function isSaleMint(to, data) {
+    if (!to || data == null) return false;
+    if (String(to).toLowerCase() !== ADDR.sale.toLowerCase()) return false;
+    var body = String(data).toLowerCase();
+    if (body.slice(0, 2) !== "0x") body = "0x" + body;
+    return body.indexOf(SEL.mint.toLowerCase()) === 0;
+  }
+
   async function sendTx(to, data, value) {
+    if (isSaleMint(to, data)) throw fail("mint-paused");
     var eth = provider();
     if (!eth) throw fail("no-wallet");
     await ensureChain();
@@ -758,12 +767,8 @@
     return null;
   }
 
-  async function sendMint(count, board) {
-    if (!board || !board.saleStarted) throw fail("sale-not-started");
-    if (!board.mintOpen) throw fail(board.refunding ? "refunding" : "mint-closed");
-    var q = await quoteMint(count);
-    var hash = await sendTx(ADDR.sale, SEL.mint + hexUint(count), q.bnbDue);
-    return { hash: hash, quote: q };
+  async function sendMint() {
+    throw fail("mint-paused");
   }
 
   async function sendOpenPool(board) {
@@ -833,6 +838,7 @@
 
   global.ArkChain = {
     CHAIN_ID: CHAIN_ID,
+    MINT_PAUSED: true,
     ADDR: ADDR,
     CABIN_RATE: CABIN_RATE,
     formatUnits: formatUnits,

@@ -13,10 +13,10 @@
     })();
   </script>
   <title>ARK100｜方舟100天</title>
-  <meta name="description" content="Agent ID only. Board the ark, earn ARK daily, survive 100 floods, share the pot. Economy 100 / Business 200 / Captain 600 ARK per day. Unopened mint refunds in full. Mint opens only after the sale starts." />
+  <meta name="description" content="铸造已暂停，合约升级中。开池前已售船票可全额退款，窗口大约 11 月 11 日北京时间 18:36 开启。Minting is paused. Tickets sold so far are fully refundable." />
   <meta name="theme-color" content="#b7e3ff" />
   <meta property="og:title" content="ARK100｜方舟100天" />
-  <meta property="og:description" content="只有 Agent 能上船 · 经济舱 100 · 商务舱 200 · 船长舱 600 ARK/天 · 未开池全额退" />
+  <meta property="og:description" content="铸造已暂停，合约升级中。开池前的船票可全额退款。Minting is paused while the sale contract is upgraded." />
   <meta property="og:image" content="assets/banner.png" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" href="assets/favicon.png" />
@@ -70,9 +70,19 @@
   </script>
   <div class="statusline">
     <span>BNB Smart Chain · chainId 56</span>
-    <span id="statusSale"><span class="t-zh">正在读取发售状态</span><span class="t-en">Reading sale state</span></span>
+    <span id="statusSale"><span class="t-zh">铸造已暂停</span><span class="t-en">Minting paused</span></span>
     <span id="statusRead"><span class="t-zh">链上读取</span><span class="t-en">On-chain</span></span>
   </div>
+
+  <aside class="pause-banner" id="pauseNotice" aria-labelledby="pauseTitle">
+    <div class="pause-banner-inner">
+      <p class="pause-kicker"><span class="t-zh">公告</span><span class="t-en">Notice</span></p>
+      <h2 id="pauseTitle"><span class="t-zh">铸造已暂停，合约升级中</span><span class="t-en">Minting is paused for a contract upgrade</span></h2>
+      <p><span class="t-zh">我们发现，当前发售合约里，开池之后购票所付的 BNB 不会进入流动性池。本站已暂停铸造，正在部署修复后的合约。</span><span class="t-en">In the current sale contract, BNB paid for tickets after the pool opens would not go into the liquidity pool. Minting on this site is paused while a fixed contract is deployed.</span></p>
+      <p><span class="t-zh">目前已售出的船票都在开池之前，可以全额退回当时支付的 BNB。退款窗口大约在 11 月 11 日北京时间 18:36 开启。到时可以在<a href="#triggers">公开动作</a>开启退款，再到<a href="#ark">我的方舟</a>用当时付款的钱包，按船票领取。重新开放铸造的时间，我们会另行公布。</span><span class="t-en">Tickets already sold were bought before the pool opened and can be refunded in full. The window opens around Nov 11, 18:36 Beijing time. Turn refunds on under <a href="#triggers">Public actions</a>, then claim each ticket in <a href="#ark">My Ark</a> from the wallet that paid. The relaunch will be announced separately.</span></p>
+      <p class="pause-warn"><span class="t-zh">请不要直接调用旧的发售合约铸造。</span><span class="t-en">Do not mint by calling the old sale contract directly.</span></p>
+    </div>
+  </aside>
 
   <div class="stage" id="top">
     <div class="glow" aria-hidden="true"></div>
@@ -140,14 +150,14 @@
         </div>
         <div class="refund-strip">
           <strong><span class="t-zh">7 天</span><span class="t-en">7 days</span></strong>
-          <p><span class="t-zh">开售后满 7 天仍未开池，任何人可先开启一次退款。然后每位买家用当时付款的钱包，按船票自己领回已付的 BNB。开池前这些 BNB 都留在发售合约里。</span><span class="t-en">If the pool is still closed 7 days after the sale starts, anyone may turn refunds on once. Each buyer then claims their own ticket from the wallet that paid, and gets that BNB back. Until the pool opens, that BNB stays in the sale contract.</span></p>
+          <p><span class="t-zh">开售后满 7 天仍未开池，任何人可先开启一次退款。然后每位买家用当时付款的钱包，按船票自己领回已付的 BNB。开池前这些 BNB 都留在发售合约里。这次已售船票都在开池之前。退款窗口大约在 11 月 11 日北京时间 18:36 开启，领取在「我的方舟」。</span><span class="t-en">If the pool is still closed 7 days after the sale starts, anyone may turn refunds on once. Each buyer then claims their own ticket from the wallet that paid, and gets that BNB back. Until the pool opens, that BNB stays in the sale contract. Tickets sold so far are all from before the pool opened. The window opens around Nov 11, 18:36 Beijing time, and claims are in My Ark.</span></p>
         </div>
       </section>
 
       <section class="card" id="mint">
         <p class="section-kicker"><span class="t-zh">铸造</span><span class="t-en">Mint</span></p>
         <h2><span class="t-zh">Agent 铸造</span><span class="t-en">Agent mint</span></h2>
-        <p class="muted"><span class="t-zh">连接 BSC 钱包后可以读取 Agent ID 和报价。开售时间还没到时，按钮保持「正式未开售」，不会发送交易。</span><span class="t-en">Connect a BSC wallet to read the Agent ID and the quote. Mint calls ArkSale.mint. Until startTime has arrived, the button stays on “Sale not started” and does not send a transaction.</span></p>
+        <p class="muted"><span class="t-zh">网站已暂停铸造，下面的按钮不会发送交易。连接 BSC 钱包仍可读取 Agent ID 和报价。已购船票的退款在「我的方舟」。</span><span class="t-en">Minting on this site is paused, and the button below does not send a transaction. A connected BSC wallet can still read the Agent ID and the quote. Refunds for tickets already bought are in My Ark.</span></p>
         <div class="mint-layout">
           <div>
             <div class="ladder" id="ladder">
@@ -163,13 +173,14 @@
               <li><i class="swatch pot"></i><span class="t-zh">15% 奖池</span><span class="t-en">15% pot</span></li>
               <li><i class="swatch lp"></i><span class="t-zh">65% BNB + 1,500,000 ARK 加池 · 流动性进销毁地址</span><span class="t-en">65% BNB + 1,500,000 ARK into LP · LP → dead</span></li>
             </ul>
+            <p class="muted"><span class="t-zh">上面是合约文本里的分配。当前这份发售合约在开池之后，后来购票的 BNB 并不会进入流动性池，所以本站已暂停铸造。</span><span class="t-en">The split above is what the contract text describes. In the current sale contract, BNB from tickets bought after the pool opens would not go into the liquidity pool, so minting on this site is paused.</span></p>
             <p class="muted" id="tokenLine"><span class="t-zh">代币名 <b>ARK100</b>，符号 <b>ARK</b>。硬顶 <b>20 亿</b>（2,000,000,000），只由船票产出和开池种子铸造，没有预挖。官方池是 PancakeSwap 的 <b>ARK/WBNB</b>：65% 开池 BNB + 150 万 ARK，LP 进 0xdead。</span><span class="t-en">Token name <b>ARK100</b>, symbol <b>ARK</b>. Hard cap <b>2,000,000,000</b>, minted only by ticket yield and the pool seed—no premine. Official pool is PancakeSwap <b>ARK/WBNB</b>: 65% of open BNB plus 1.5 million ARK, LP to 0xdead.</span></p>
           </div>
           <div class="slip">
             <div class="slip-head">
               <div>
-                <p class="eyebrow"><span class="t-zh">登船条</span><span class="t-en">Boarding slip</span></p>
-                <h3><span class="t-zh">交给 Agent</span><span class="t-en">Hand to your agent</span></h3>
+                <p class="eyebrow"><span class="t-zh">暂停</span><span class="t-en">Paused</span></p>
+                <h3><span class="t-zh">先不要铸造</span><span class="t-en">Do not mint yet</span></h3>
               </div>
               <div class="seal" id="saleSeal"><span class="t-zh">读取中</span><span class="t-en">Reading</span></div>
             </div>
@@ -179,7 +190,7 @@
               <button class="qty" type="button" data-qty="5" aria-pressed="false">5</button>
               <button class="qty" type="button" data-qty="10" aria-pressed="false">10</button>
             </div>
-            <p class="muted" style="margin:8px 0 0"><span class="t-zh">快捷数量，不是另一套上限。链上仍是每址最多 10 张。</span><span class="t-en">Presets, not a second cap. The chain limit is still 10 tickets per address.</span></p>
+            <p class="muted" style="margin:8px 0 0"><span class="t-zh">快捷数量只改报价，不会发送铸造。链上仍是每址最多 10 张。</span><span class="t-en">These presets only change the quote. They do not send a mint. The chain limit is still 10 tickets per address.</span></p>
             <dl class="quote">
               <div><dt><span class="t-zh">数量</span><span class="t-en">Qty</span></dt><dd id="qQty">1</dd></div>
               <div><dt><span class="t-zh">标价档</span><span class="t-en">List tier</span></dt><dd>$<span id="qPrice">2</span><span class="t-zh"> / 张</span><span class="t-en"> / ticket</span></dd></div>
@@ -189,22 +200,23 @@
             </dl>
             <p class="wallet-chip" id="walletChip"></p>
             <p class="copy-status" id="agentLine" role="status"><span class="t-zh">连接后会读取 Agent ID。</span><span class="t-en">Connect to read the Agent ID.</span></p>
-            <button class="cta" id="mintBtn" type="button" disabled>
-              <span class="t-zh">正式未开售</span>
-              <span class="t-en">Sale not started</span>
+            <button class="cta is-paused" id="mintBtn" type="button" disabled aria-disabled="true">
+              <span class="t-zh">铸造已暂停，合约升级中</span>
+              <span class="t-en">Minting paused, contract upgrade in progress</span>
             </button>
             <button class="cta secondary" id="connectBtn" type="button">
               <span class="t-zh">连接钱包</span>
               <span class="t-en">Connect wallet</span>
             </button>
             <button class="ghost copy-wide" id="copyMint" type="button" data-copy="mint">
-              <span class="t-zh">复制铸造说明</span>
-              <span class="t-en">Copy mint brief</span>
+              <span class="t-zh">复制暂停说明</span>
+              <span class="t-en">Copy the pause notice</span>
             </button>
             <p class="copy-status" id="mintStatus" role="status"></p>
-            <pre class="cmd" id="cmd">ARK100 铸造说明
-链：BNB Smart Chain（chainId 56）
-正在读取发售状态…</pre>
+            <pre class="cmd" id="cmd">铸造已暂停，合约升级中。
+本站不会发送铸造。请不要直接调用旧的发售合约铸造。
+已售船票都在开池之前，可以全额退款。退款窗口大约在 11 月 11 日北京时间 18:36 开启。
+先在「公开动作」开启退款，再到「我的方舟」用付款钱包按票领取。</pre>
           </div>
         </div>
       </section>
@@ -601,8 +613,8 @@
       <details class="rule" open>
         <summary><span class="r-badge">R1</span> <span class="t-zh">门槛与铸造</span><span class="t-en">Gate and mint</span></summary>
         <div class="body">
-          <p class="t-zh">只有持有 .ai Agent ID、且名字不是空的钱包可以铸造。注册表 <span class="ca">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span> 上要能查到这只钱包持有 Agent ID，并且名字不是空的。每址最多 10 张。一共 10,000 张，每 2,500 张一档：$2、$3、$4、$5。连续 5 分钟无人铸造，价格降一档，最低 $2。没有免费票，没有 ARK 预挖。团队钱包开铸后按同样上限购买。挂单、购买和求购不需要 Agent ID。</p>
-          <p class="t-en">Only a wallet with a .ai Agent ID and a non-empty handle can mint. The registry <span class="ca">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span> checks balanceOf and handleOf. Max 10 tickets per address. Supply is 10,000, in tiers of 2,500: $2, $3, $4, $5. Five quiet minutes drop one tier, floor $2. No free tickets and no ARK premine. After launch the team wallet buys under the same cap. Listing, buying, and bidding do not require an Agent ID.</p>
+          <p class="t-zh">网站已暂停铸造，请不要按这些规则去调用旧合约。合约上的门槛是：只有持有 .ai Agent ID、且名字不是空的钱包可以铸造。注册表 <span class="ca">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span> 上要能查到这只钱包持有 Agent ID，并且名字不是空的。每址最多 10 张。一共 10,000 张，每 2,500 张一档：$2、$3、$4、$5。连续 5 分钟无人铸造，价格降一档，最低 $2。没有免费票，没有 ARK 预挖。团队钱包开铸后按同样上限购买。挂单、购买和求购不需要 Agent ID。</p>
+          <p class="t-en">Minting on this site is paused. Do not use these rules to call the old contract. On the contract, only a wallet with a .ai Agent ID and a non-empty handle can mint. The registry <span class="ca">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span> checks balanceOf and handleOf. Max 10 tickets per address. Supply is 10,000, in tiers of 2,500: $2, $3, $4, $5. Five quiet minutes drop one tier, floor $2. No free tickets and no ARK premine. After launch the team wallet buys under the same cap. Listing, buying, and bidding do not require an Agent ID.</p>
         </div>
       </details>
       <details class="rule">
@@ -629,8 +641,8 @@
       <details class="rule">
         <summary><span class="r-badge">R5</span> <span class="t-zh">开池、税与退款</span><span class="t-en">Pool, tax, refund</span></summary>
         <div class="body">
-          <p class="t-zh">售到 #3000 才开池。开池前铸造款 100% 留在发售合约。代币名 ARK100，符号 ARK。硬顶 20 亿（2,000,000,000），只由船票产出和开池种子铸造，没有预挖。开池时 20% 给写死的团队钱包，15% 进奖池，65% 的 BNB 与 1,500,000 ARK 在 PancakeSwap 的 ARK/WBNB 池加池，流动性代币转入 0xdead。交易税写死 2%：销毁 0.5%，奖池 0.5%，团队 1%，不可调。合约没有管理员，不可升级。开售后满 7 天仍未到 #3000，任何人可先开启一次退款，再由每位买家用付款钱包按票领回 BNB。</p>
-          <p class="t-en">The pool opens at ticket #3000. Until then mint proceeds stay in the sale contract. Token name ARK100, symbol ARK. Hard cap 2,000,000,000, minted only by ticket yield and the pool seed, no premine. At open: 20% to the fixed team wallet, 15% to the pot, 65% of the BNB plus 1,500,000 ARK into the PancakeSwap ARK/WBNB pool, LP to 0xdead. Trade tax is a fixed 2%: 0.5% burn, 0.5% pot, 1% team. No owner and not upgradeable. If #3000 is still unreached 7 days after the sale starts, anyone may turn refunds on once. Each buyer then claims their own ticket from the wallet that paid.</p>
+          <p class="t-zh">网站已暂停铸造。当前发售合约在开池之后，后来购票的 BNB 不会进入流动性池。下面是合约文本里的规则：售到 #3000 才开池。开池前铸造款 100% 留在发售合约。代币名 ARK100，符号 ARK。硬顶 20 亿（2,000,000,000），只由船票产出和开池种子铸造，没有预挖。开池时 20% 给写死的团队钱包，15% 进奖池，65% 的 BNB 与 1,500,000 ARK 在 PancakeSwap 的 ARK/WBNB 池加池，流动性代币转入 0xdead。交易税写死 2%：销毁 0.5%，奖池 0.5%，团队 1%，不可调。合约没有管理员，不可升级。开售后满 7 天仍未到 #3000，任何人可先开启一次退款，再由每位买家用付款钱包按票领回 BNB。</p>
+          <p class="t-en">Minting on this site is paused. In the current sale contract, BNB from tickets bought after the pool opens would not go into the liquidity pool. The contract text says: the pool opens at ticket #3000. Until then mint proceeds stay in the sale contract. Token name ARK100, symbol ARK. Hard cap 2,000,000,000, minted only by ticket yield and the pool seed, no premine. At open: 20% to the fixed team wallet, 15% to the pot, 65% of the BNB plus 1,500,000 ARK into the PancakeSwap ARK/WBNB pool, LP to 0xdead. Trade tax is a fixed 2%: 0.5% burn, 0.5% pot, 1% team. No owner and not upgradeable. If #3000 is still unreached 7 days after the sale starts, anyone may turn refunds on once. Each buyer then claims their own ticket from the wallet that paid.</p>
         </div>
       </details>
     </section>
@@ -745,14 +757,14 @@
       </details>
       <details class="faq-item">
         <summary><span class="t-zh">现在能连钱包、扫货或者领奖吗？</span><span class="t-en">Can I connect a wallet, buy a listing, or claim now?</span></summary>
-        <div class="body"><p class="t-zh">可以连接钱包，并读取舱单、报价、洪水和二级市场。开售时间还没到的时候，铸造正式未开售，页面不会发送铸造。发售开始后才会真正铸造。二级市场已经在 BSC 上：BNB 挂单、ARK 挂单和 BNB 求购，成交抽 2.5%。买卖和求购不需要 Agent ID。某一本簿的地址如果被清成 0，页面会写「市场合约待部署」，那一本表保持空白。</p><p class="t-en">Yes. You can connect a wallet and read tickets, quotes, the flood, and the secondary market. While ArkSale startTime is still 0, minting is not open and this page will not send mint. After the sale starts, mint calls ArkSale.mint. The secondary market is live on BSC: a BNB book, an ARK book, and BNB quantity bids, with a 2.5% fee on each fill. Buying, listing, and bidding do not need an Agent ID. If one of those addresses is cleared back to zero, that book says the market contract is not deployed and its table stays empty.</p></div>
+        <div class="body"><p class="t-zh">可以连接钱包，并读取舱单、报价、洪水和二级市场。网站已暂停铸造，按钮不会发送铸造。请不要直接调用旧的发售合约铸造。已售船票可在退款窗口开启后，于「我的方舟」领取。二级市场已经在 BSC 上：BNB 挂单、ARK 挂单和 BNB 求购，成交抽 2.5%。买卖和求购不需要 Agent ID。某一本簿的地址如果被清成 0，页面会写「市场合约待部署」，那一本表保持空白。</p><p class="t-en">Yes. You can connect a wallet and read tickets, quotes, the flood, and the secondary market. Minting on this site is paused, and the button does not send a mint. Do not mint by calling the old sale contract directly. Tickets already bought can be claimed in My Ark after the refund window opens. The secondary market is live on BSC: a BNB book, an ARK book, and BNB quantity bids, with a 2.5% fee on each fill. Buying, listing, and bidding do not need an Agent ID. If one of those addresses is cleared back to zero, that book says the market contract is not deployed and its table stays empty.</p></div>
       </details>
     </section>
 
     <section class="risk" id="risk">
       <h2><span class="t-zh">风险</span><span class="t-en">Risk</span></h2>
-      <p class="t-zh">付费本金和 ARK 都可能归零。洪水会让没有沙袋的船票沉没，奖池没有保底价格。玩法可能受你所在地法规限制。这不是投资建议。铸造正式未开售时，不要为了铸造转入 BNB。</p>
-      <p class="t-en">Capital and ARK can go to zero. Unprotected tickets can sink, and the pot has no promised price. Flood and pot rules may be restricted where you live. This is not financial advice. Do not send BNB for mint while the sale is not started.</p>
+      <p class="t-zh">付费本金和 ARK 都可能归零。洪水会让没有沙袋的船票沉没，奖池没有保底价格。玩法可能受你所在地法规限制。这不是投资建议。网站已暂停铸造。请不要直接调用旧的发售合约铸造，也不要为了铸造转入 BNB。</p>
+      <p class="t-en">Capital and ARK can go to zero. Unprotected tickets can sink, and the pot has no promised price. Flood and pot rules may be restricted where you live. This is not financial advice. Minting on this site is paused. Do not call the old sale contract to mint, and do not send BNB for a mint.</p>
     </section>
   </main>
 
@@ -787,7 +799,7 @@
         <div>
           <h3><span class="t-zh">品牌</span><span class="t-en">Brand</span></h3>
           <p class="muted"><span class="t-zh">白天、浅海蓝、金色太阳、暖木方舟。船票是舱位，不是生物。</span><span class="t-en">Daytime, light-blue sea, golden sun, warm wood ark. A ticket is a cabin, not a creature.</span></p>
-          <p class="muted"><span class="t-zh">本页不保管私钥。铸造由你的钱包签名。</span><span class="t-en">This page does not hold keys. Mint is signed by your wallet. Publish path is <code>./</code>.</span></p>
+          <p class="muted"><span class="t-zh">本页不保管私钥。铸造已暂停，本站不会代发铸造交易。</span><span class="t-en">This page does not hold keys. Minting is paused, and this site does not send a mint. Publish path is <code>./</code>.</span></p>
         </div>
       </div>
       <ul class="ca-list">
@@ -805,7 +817,7 @@
         <li><span><span class="t-zh">路由</span><span class="t-en">Router</span></span><span><span class="ca">0x10ED43C718714eb63d5aA57B78B54704E256024E</span><span class="ca-links"><a href="https://bscscan.com/address/0x10ED43C718714eb63d5aA57B78B54704E256024E#code" rel="noopener noreferrer">BscScan</a></span></span></li>
         <li><span>BNB/USD</span><span><span class="ca">0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE</span><span class="ca-links"><a href="https://bscscan.com/address/0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE#code" rel="noopener noreferrer">BscScan</a></span></span></li>
       </ul>
-      <p class="fine"><span class="t-zh">风险提醒：本金与代币都可能归零；未防护船票会沉；奖池无价格承诺；当地法规可能限制洪水与分池玩法。舱位概率是 70/25/5，日产是 100/200/600。铸造正式未开售时，不要为了铸造转入 BNB。</span><span class="t-en">Risk: capital and tokens can go to zero. Unprotected tickets can sink. The pot has no promised price. Local rules may restrict the flood and the split. Cabin odds are the TicketNFT rates (70/25/5, 100/200/600). Do not send BNB for mint while the sale is not started.</span></p>
+      <p class="fine"><span class="t-zh">风险提醒：本金与代币都可能归零；未防护船票会沉；奖池无价格承诺；当地法规可能限制洪水与分池玩法。舱位概率是 70/25/5，日产是 100/200/600。网站已暂停铸造。请不要直接调用旧的发售合约铸造。</span><span class="t-en">Risk: capital and tokens can go to zero. Unprotected tickets can sink. The pot has no promised price. Local rules may restrict the flood and the split. Cabin odds are the TicketNFT rates (70/25/5, 100/200/600). Minting on this site is paused. Do not call the old sale contract to mint.</span></p>
     </div>
   </footer>
 

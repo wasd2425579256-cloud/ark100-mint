@@ -2,7 +2,7 @@
 
 Static site for ARK100 on BNB Smart Chain (chainId 56). Publish path `./`, build command `echo ok`. `index.html` is served at `/`.
 
-The page reads ArkSale, TicketNFT, ARK, FloodEngine, SandbagShop, and ArkPot. A connected wallet can send `ArkSale.mint` only after `startTime` is set and the current block is at or after that time. Until then the mint control stays on 正式未开售 / Sale not started and does not send a transaction.
+The page reads ArkSale, TicketNFT, ARK, FloodEngine, SandbagShop, and ArkPot. Minting is paused on the site: the mint control stays on 铸造已暂停，合约升级中 / Minting paused, contract upgrade in progress, and no code path sends `ArkSale.mint`. In the current sale contract, BNB paid for tickets after the pool opens would not go into the liquidity pool. A fixed contract will be deployed separately. Tickets already sold are from before the pool opened and are fully refundable around 2026-11-11 18:36 Asia/Shanghai. Anyone may call `enableRefunds` once that window opens, then each payer claims with `refund(tokenId)` from My Ark. Do not mint by calling the old sale contract directly.
 
 Secondary trading is live on BSC: `TicketMarketBNB`, `TicketMarketARK`, and `TicketBidMarket`. Addresses are in `js/chain.js`. A zero address would leave that book blank with 市场合约待部署; these three are set.
 
