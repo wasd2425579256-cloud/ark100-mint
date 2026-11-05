@@ -3,6 +3,7 @@
   var lang = document.documentElement.dataset.lang === "en" ? "en" : "zh";
   var qty = 1;
   var board = null;
+  var legacyRefund = null;
   var quote = null;
   var ticketFilter = "all";
   var ticketRows = [];
@@ -84,26 +85,24 @@
     if (zh()) {
       return [
         "ARK100 暂停说明",
-        "铸造已暂停，合约升级中。本站不会发送铸造。",
+        "修复后的合约已经部署。铸造仍暂停，要等新发售写入 startTime。本站不会发送铸造。",
         "",
-        "当前发售合约里，开池之后购票所付的 BNB 不会进入流动性池。正在部署修复后的合约。",
-        "",
-        "只要开池前没有卖满 3000 张，现有船票都能在退款窗口打开后（约 11/11 18:36 北京时间）全额退款。",
+        "已经买到的旧船票，只有在旧发售开池前没有卖满 3000 张时，才能在退款窗口打开后全额退款。",
+        "退款窗口大约是 2026-11-11 18:36（北京时间）。",
         "旧合约卖满 3000 张会自动开池，开池后就不能退款。请不要绕过官网直接调用旧合约铸造。",
-        "窗口打开后，先在本站「公开动作」开启退款，再到「我的方舟」，用当时付款的钱包按船票领取。",
-        "重新开放铸造的时间，我们会另行公布。"
+        "窗口打开后，先在本站「公开动作」为旧发售开启退款，再到「我的方舟」，用当时付款的钱包按船票领取。",
+        "新发售的开售时间，我们会另行公布。"
       ].join("\n");
     }
     return [
       "ARK100 pause notice",
-      "Minting is paused while the sale contract is upgraded. This site will not send a mint.",
+      "The fixed suite is deployed. Minting stays paused until the new sale’s startTime is set. This site will not send a mint.",
       "",
-      "In the current sale contract, BNB paid for tickets after the pool opens would not go into the liquidity pool. A fixed contract is being deployed.",
-      "",
-      "If sales stay under 3,000 before the pool opens, tickets already sold can be refunded in full once the refund window opens (around Nov 11, 18:36 Beijing time).",
+      "Tickets already bought on the old sale can be refunded in full only if that sale stays under 3,000 before its pool opens.",
+      "The refund window is around 2026-11-11 18:36 Asia/Shanghai.",
       "If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not bypass this site and mint by calling the old contract directly.",
-      "After the window opens, turn refunds on under Public actions, then claim each ticket in My Ark from the wallet that paid.",
-      "The relaunch will be announced separately."
+      "After the window opens, turn refunds on for the old sale under Public actions, then claim each ticket in My Ark from the wallet that paid.",
+      "When the new sale’s start time is set, it will be announced separately."
     ].join("\n");
   }
 
@@ -163,7 +162,7 @@
     mintBtn.disabled = true;
     mintBtn.setAttribute("aria-disabled", "true");
     mintBtn.classList.add("is-paused");
-    setBi(mintBtn, "铸造已暂停，合约升级中", "Minting paused, contract upgrade in progress");
+    setBi(mintBtn, "铸造已暂停，等待开售", "Minting paused until the sale starts");
   }
 
   function plainArk(value, fallback) {
@@ -212,7 +211,7 @@
     var refundCard = $("refundCard");
     if (openCard) openCard.hidden = !board.canOpen;
     if (startCard) startCard.hidden = !board.canStart;
-    if (refundCard) refundCard.hidden = !board.canEnableRefunds;
+    if (refundCard) refundCard.hidden = !(legacyRefund && legacyRefund.canEnableRefunds);
     var dayInput = $("floodDayInput");
     if (dayInput && board.dayIndex && !dayInput.value) dayInput.value = board.dayIndex.toString();
     var parts = [];
@@ -227,7 +226,17 @@
         ? "到「我的方舟」，用当时付款的钱包按票领取。"
         : "In My Ark, claim each ticket from the wallet that paid.");
     }
-    say($("chainStatus"), parts.join(" "));
+    if (legacyRefund && legacyRefund.refunding) {
+      parts.push(zh()
+        ? "旧船票退款已开启。到「我的方舟」，用当时付款的钱包按票领取。"
+        : "Refunds are on for old tickets. In My Ark, claim each one from the wallet that paid.");
+    } else if (legacyRefund && legacyRefund.canEnableRefunds) {
+      parts.push(zh()
+        ? "旧发售已到退款窗口。可在公开动作为旧船票开启退款。"
+        : "The old sale refund window is open. Turn refunds on for those tickets under Public actions.");
+    }
+    var line = parts.join(" ");
+    say($("chainStatus"), line, line);
     var buy = $("buyBagBtn");
     if (buy) {
       buy.disabled = !board.opened;
@@ -249,7 +258,10 @@
   }
 
   function refundOffer(row) {
-    if (!board || !board.refunding) return null;
+    if (!row.legacy) return null;
+    if (!legacyRefund || !legacyRefund.refunding) {
+      return { kind: "mute", zh: "旧船票，退款尚未开启", en: "Old ticket. Refunds are not on yet." };
+    }
     if (row.paidBnb == null || row.payerKnown === false) {
       return { kind: "mute", zh: "退款信息暂时读不到", en: "Refund details could not be read" };
     }
@@ -267,18 +279,21 @@
 
   function renderTickets() {
     var hint = $("refundHint");
-    if (hint) hint.hidden = !(board && board.refunding);
+    if (hint) hint.hidden = !(legacyRefund && legacyRefund.refunding);
     var body = $("ticketBody");
     if (!body) return;
     body.innerHTML = "";
     var visible = 0;
-    var afloat = 0, pending = 0, sunk = 0, bags = 0, daily = 0;
+    var afloat = 0, pending = 0, sunk = 0, bags = 0, daily = 0, legacyN = 0;
     ticketRows.forEach(function (row) {
       var state = row.sunk ? "sunk" : (row.unsettled ? "pending" : "afloat");
-      if (state === "afloat") { afloat++; if (row.rate) daily += row.rate; }
-      if (state === "pending") pending++;
-      if (state === "sunk") sunk++;
-      if (row.sandbag) bags++;
+      if (row.legacy) legacyN++;
+      else {
+        if (state === "afloat") { afloat++; if (row.rate) daily += row.rate; }
+        if (state === "pending") pending++;
+        if (state === "sunk") sunk++;
+        if (row.sandbag) bags++;
+      }
       if (ticketFilter !== "all" && ticketFilter !== state) return;
       visible++;
       var tr = document.createElement("tr");
@@ -287,11 +302,13 @@
       var statusZh = state === "afloat" ? "在航" : (state === "pending" ? "待抽舱" : "已沉");
       var statusEn = state === "afloat" ? "Afloat" : (state === "pending" ? "Pending" : "Sunk");
       var statusCls = state === "afloat" ? "ok" : (state === "sunk" ? "sunk" : "wait");
-      var bagZh = row.sandbag ? "已堆沙袋" : (board && board.floodStarted ? "无沙袋" : "—");
-      var bagEn = row.sandbag ? "Sandbagged" : (board && board.floodStarted ? "No sandbag" : "—");
+      var bagZh = row.legacy ? "—" : (row.sandbag ? "已堆沙袋" : (board && board.floodStarted ? "无沙袋" : "—"));
+      var bagEn = row.legacy ? "—" : (row.sandbag ? "Sandbagged" : (board && board.floodStarted ? "No sandbag" : "—"));
       var rate = row.rate == null ? "—" : String(row.rate);
+      var idCell = "#" + row.id.toString();
+      if (row.legacy) idCell += " <span class=\"badge mute\"><span class=\"t-zh\">旧票</span><span class=\"t-en\">Old</span></span>";
       tr.innerHTML =
-        "<td>#" + row.id.toString() + "</td>" +
+        "<td>" + idCell + "</td>" +
         "<td><span class=\"badge " + badge.cls + "\"><span class=\"t-zh\">" + badge.zh + "</span><span class=\"t-en\">" + badge.en + "</span></span></td>" +
         "<td><span class=\"badge " + statusCls + "\"><span class=\"t-zh\">" + statusZh + "</span><span class=\"t-en\">" + statusEn + "</span></span></td>" +
         "<td>" + rate + "</td>" +
@@ -316,9 +333,12 @@
     $("statPending").textContent = String(pending);
     $("statSunk").textContent = String(sunk);
     $("statBags").textContent = String(bags);
+    var legacyDaily = legacyN
+      ? (zh() ? (" 另有旧船票 " + legacyN + " 张，不计入这份日产，退款走旧发售。") : (" " + legacyN + " old-sale ticket(s) are listed separately and are not in this total."))
+      : "";
     say($("dailyLine"),
-      lookedUp ? ("在航且已抽舱的日产合计 " + daily + " ARK。未抽舱还没有日产，已沉为 0。") : "连接钱包或输入地址后，这里显示链上日产。",
-      lookedUp ? ("Afloat settled daily total " + daily + " ARK. Unsettled tickets have no rate yet. Sunk tickets earn 0.") : "Connect a wallet or paste an address to read on-chain daily ARK.");
+      lookedUp ? ("在航且已抽舱的日产合计 " + daily + " ARK。未抽舱还没有日产，已沉为 0。" + legacyDaily) : "连接钱包或输入地址后，这里显示链上日产。",
+      lookedUp ? ("Afloat settled daily total " + daily + " ARK. Unsettled tickets have no rate yet. Sunk tickets earn 0." + legacyDaily) : "Connect a wallet or paste an address to read on-chain daily ARK.");
     var empty = $("filterEmpty");
     if (empty) {
       empty.hidden = !(lookedUp && visible === 0);
@@ -902,7 +922,7 @@
 
   function explain(code, detail) {
     var map = {
-      "mint-paused": ["铸造已暂停，合约升级中。没有发送交易。旧合约卖满 3000 张会自动开池，开池后就不能退款，请不要绕过官网直接铸造。", "Minting is paused while the contract is upgraded. No transaction was sent. If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not bypass this site and mint on the old contract."],
+      "mint-paused": ["铸造已暂停，要等新发售设定 startTime。没有发送交易。旧合约卖满 3000 张会自动开池，开池后就不能退款，请不要绕过官网直接铸造。", "Minting is paused until the new sale’s startTime is set. No transaction was sent. If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not bypass this site and mint on the old contract."],
       "sale-not-started": ["正式未开售，没有发送交易。", "Sale not started. No transaction was sent."],
       "refunding": ["退款已开启，铸造已停止，没有发送交易。", "Refunds are on, so mint is closed. No transaction was sent."],
       "mint-closed": ["当前不能铸造，没有发送交易。", "Mint is closed. No transaction was sent."],
@@ -963,6 +983,11 @@
 
   async function refresh() {
     board = await C.readBoard();
+    try {
+      legacyRefund = await C.readLegacyRefund();
+    } catch (e) {
+      legacyRefund = null;
+    }
     renderTide();
     renderSale();
     renderNight();
@@ -1022,9 +1047,13 @@
       if (!one) {
         say(note, "链上没有船票 #" + raw + "。", "There is no ticket #" + raw + ".");
       } else {
-        if (board && board.dayIndex) one.sandbag = await C.sandbagFor(one.id, board.dayIndex);
+        if (board && board.dayIndex && !one.legacy) one.sandbag = await C.sandbagFor(one.id, board.dayIndex);
         ticketRows = [one];
-        say(note, "船票 #" + raw + " 的持有人是 " + one.owner + "。", "Ticket #" + raw + " is held by " + one.owner + ".");
+        if (one.legacy) {
+          say(note, "船票 #" + raw + " 是旧发售船票，持有人是 " + one.owner + "。退款走旧发售合约。", "Ticket #" + raw + " is an old-sale ticket, held by " + one.owner + ". Refunds use the old sale.");
+        } else {
+          say(note, "船票 #" + raw + " 的持有人是 " + one.owner + "。", "Ticket #" + raw + " is held by " + one.owner + ".");
+        }
       }
       renderTickets();
       return;
@@ -1034,20 +1063,26 @@
       return;
     }
     say(note, "正在读取 " + C.shortAddr(raw) + " 的船票。", "Reading tickets for " + C.shortAddr(raw) + ".");
-    var found = await C.ticketsOf(raw, { includePayer: !!(board && board.refunding) });
+    var found = await C.ticketsOf(raw, { includePayer: true });
     lookedUp = raw;
     var rows = found.tickets || [];
     if (board && board.dayIndex) {
-      for (var i = 0; i < rows.length; i++) rows[i].sandbag = await C.sandbagFor(rows[i].id, board.dayIndex);
+      for (var i = 0; i < rows.length; i++) {
+        if (!rows[i].legacy) rows[i].sandbag = await C.sandbagFor(rows[i].id, board.dayIndex);
+      }
     }
     ticketRows = rows;
+    var legacyListed = rows.filter(function (row) { return row.legacy; }).length;
     var extra = found.truncated ? (zh() ? " 已铸造数量较大，本次只扫描了前 800 个编号。" : " Supply is large, so this pass scanned the first 800 ids.") : "";
-    var transferred = (board && board.refunding && rows.length > Number(found.balance))
-      ? (zh() ? " 其中有已转出、但仍由这只钱包领退款的票。" : " Some were transferred away and can still be refunded by this wallet.")
+    var transferred = (found.legacyBalance != null && legacyListed > Number(found.legacyBalance))
+      ? (zh() ? " 其中有已转出、但仍记在这只付款钱包名下的旧票。" : " Some old tickets were transferred away and are still recorded to this paying wallet.")
+      : "";
+    var oldNote = legacyListed
+      ? (zh() ? (" 其中 " + legacyListed + " 张是旧发售船票。") : (" " + legacyListed + " of those are old-sale tickets."))
       : "";
     say(note,
-      C.shortAddr(raw) + " 持有 " + found.balance.toString() + " 张，下面列出 " + rows.length + " 张。" + transferred + extra,
-      C.shortAddr(raw) + " holds " + found.balance.toString() + ". Showing " + rows.length + "." + transferred + extra);
+      C.shortAddr(raw) + " 在新船票上持有 " + found.balance.toString() + " 张，下面列出 " + rows.length + " 张。" + oldNote + transferred + extra,
+      C.shortAddr(raw) + " holds " + found.balance.toString() + " on the new tickets. Showing " + rows.length + "." + oldNote + transferred + extra);
     renderTickets();
   }
 
@@ -1276,7 +1311,7 @@
       say($("arkStatus"), "正在发送交易。", "Sending the transaction.");
       run = function () { return C.sendApplyBag(id, board && board.dayIndex, board); };
     } else if (act === "claim-refund") {
-      if (!board || !board.refunding) {
+      if (!legacyRefund || !legacyRefund.refunding) {
         say($("arkStatus"), explain("refund-closed"), explain("refund-closed"));
         return;
       }
@@ -1335,7 +1370,7 @@
   refresh().catch(function () {
     say($("statusRead"), "链上读取失败", "Chain read failed");
     say($("mintStatus"), "链上状态暂时读不到。铸造保持暂停，不会发送交易。", "Chain state could not be read. Mint stays paused and no transaction will be sent.");
-    setBi($("mintBtn"), "铸造已暂停，合约升级中", "Minting paused, contract upgrade in progress");
+    setBi($("mintBtn"), "铸造已暂停，等待开售", "Minting paused until the sale starts");
     $("mintBtn").disabled = true;
     $("mintBtn").classList.add("is-paused");
     loadMarket().catch(function () {});

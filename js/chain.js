@@ -3,17 +3,23 @@
   var CHAIN_ID = 56;
   var LOG_FROM = 131600000;
   var ADDR = {
-    nft: "0x815202403e51C6525452dB09FC7c40dD2762D87e",
-    ark: "0xBCbA6cFc97d2c0A4Dcf22295D92EF5227B5db712",
-    sale: "0x5f92105341Cbc09462A0a10973664a322505BF32",
-    flood: "0xf15C1130fA9A5D0BAD783558379E39664aD79200",
-    shop: "0xcFC60dfb112Ab6BF19bE16d1d114990264aFF3bF",
-    pot: "0xf34aEBBc83Ce872f5692d9e7ae906A8e30f924Fa",
-    // TicketMarketBNB / TicketMarketARK / TicketBidMarket on BSC mainnet.
+    nft: "0x48eb4F2FB2C4D6765C8156428b7639F6dD92B70e",
+    ark: "0xF6E13Cd0D344f6De19392d526387667b33c74580",
+    sale: "0xB69f1F7A14dbCbB82A5eFcCB4B7579410eEc746E",
+    flood: "0x5f58A3d0cd684774bc6075bf588f345a391e637c",
+    shop: "0xD82fa4Dfa0086712CEB3986C453747a257E8655f",
+    pot: "0x3456AD558d17eF7D11646abfF6e602Ce647f40E3",
+    // TicketMarketBNB / TicketMarketARK / TicketBidMarket on the fixed BSC suite.
     // feeRecipient is the constructor arg 0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74.
-    marketBnb: "0xC24b79485705cEF5AfF36fb4c4cCda34F8423d95",
-    marketArk: "0x3fF61e70B89dc5b0EDD9a7f27435d6604683Bd64",
-    marketBid: "0xbC58134B8596e8A12050fcDF2435F42Ea0E2Aa32",
+    marketBnb: "0x9162AB0b4eC0Bb3cf5C3b53e3b19f866E2c54eA1",
+    marketArk: "0xBF6cE810aFc7974Da041299a16cb016b3ad45449",
+    marketBid: "0x480Fb7a8FA5feaBe3a20F7424669D9a63342f8Dd",
+    // Previous suite. Refunds of the tickets already sold stay on these contracts.
+    // enableRefunds only if !opened && startTime + 7 days. Do not mint against them.
+    legacySale: "0x5f92105341Cbc09462A0a10973664a322505BF32",
+    legacyNft: "0x815202403e51C6525452dB09FC7c40dD2762D87e",
+    // Predicted PancakeSwap V2 ARK/WBNB pair. The pair contract is created when the pool opens.
+    launchPair: "0x89cf36021Ac16f031F3E04D122d024663130499e",
     verifier: "0xf14F5cF3fCB976082Df08dA1609D1698C39Ff2e2",
     registry: "0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F",
     router: "0x10ED43C718714eb63d5aA57B78B54704E256024E",
@@ -352,35 +358,35 @@
     return { ok: ok && !!handle, handle: handle };
   }
 
-  async function readTicket(id) {
+  async function readTicketOn(nft, sale, id) {
     var tokenId = BigInt(id);
     var ownerRaw;
     try {
-      ownerRaw = await ethCall(ADDR.nft, SEL.ownerOf + hexUint(tokenId));
+      ownerRaw = await ethCall(nft, SEL.ownerOf + hexUint(tokenId));
     } catch (e) {
       return null;
     }
     var owner = addrFromWord(ownerRaw);
     if (!owner) return null;
-    var cabin = await callUint(ADDR.nft, SEL.cabinOf, tokenId);
-    var alive = (await callUint(ADDR.nft, SEL.isAlive, tokenId)) !== 0n;
+    var cabin = await callUint(nft, SEL.cabinOf, tokenId);
+    var alive = (await callUint(nft, SEL.isAlive, tokenId)) !== 0n;
     var pending = 0n;
-    try { pending = await callUint(ADDR.nft, SEL.pendingArk, tokenId); } catch (e) { pending = 0n; }
+    try { pending = await callUint(nft, SEL.pendingArk, tokenId); } catch (e) { pending = 0n; }
     var commitBlock = 0n;
     try {
-      var info = await ethCall(ADDR.nft, SEL.tickets + hexUint(tokenId));
+      var info = await ethCall(nft, SEL.tickets + hexUint(tokenId));
       commitBlock = word(info, 4);
     } catch (e2) { commitBlock = 0n; }
     var payer = "";
     var payerKnown = true;
     try {
-      payer = addrFromWord(await ethCall(ADDR.sale, SEL.payer + hexUint(tokenId)));
+      payer = addrFromWord(await ethCall(sale, SEL.payer + hexUint(tokenId)));
     } catch (e3) {
       payer = "";
       payerKnown = false;
     }
     var paidBnb = null;
-    try { paidBnb = await callUint(ADDR.sale, SEL.paidBnb, tokenId); } catch (e4) { paidBnb = null; }
+    try { paidBnb = await callUint(sale, SEL.paidBnb, tokenId); } catch (e4) { paidBnb = null; }
     var c = Number(cabin);
     var sunk = !alive || c === 4;
     var unsettled = !sunk && (c === 0);
@@ -397,44 +403,94 @@
       commitBlock: commitBlock,
       payer: payer,
       payerKnown: payerKnown,
-      paidBnb: paidBnb
+      paidBnb: paidBnb,
+      legacy: false
     };
   }
 
-  async function ticketsOf(owner, opts) {
+  async function readTicket(id) {
+    var primary = await readTicketOn(ADDR.nft, ADDR.sale, id);
+    if (primary) return primary;
+    var old = await readTicketOn(ADDR.legacyNft, ADDR.legacySale, id);
+    if (old) old.legacy = true;
+    return old;
+  }
+
+  async function ticketsOn(nft, sale, owner, includePayer) {
     if (!isAddr(owner)) throw fail("bad-address");
     var target = owner.toLowerCase();
-    var minted = await callUint(ADDR.nft, SEL.totalMinted);
-    var balance = await callUint(ADDR.nft, SEL.balanceOf, owner);
+    var minted = await callUint(nft, SEL.totalMinted);
+    var balance = await callUint(nft, SEL.balanceOf, owner);
     var rows = [];
-    var wantPayer = !!(opts && opts.includePayer);
-    if (minted === 0n || (balance === 0n && !wantPayer)) return { balance: balance, minted: minted, tickets: rows };
+    if (minted === 0n || (balance === 0n && !includePayer)) {
+      return { balance: balance, minted: minted, tickets: rows };
+    }
     var limit = minted > 800n ? 800n : minted;
     var ids = [];
     for (var i = 1n; i <= limit; i++) ids.push(i);
     var owners = await mapPool(ids, 12, async function (id) {
       try {
-        return addrFromWord(await ethCall(ADDR.nft, SEL.ownerOf + hexUint(id)));
+        return addrFromWord(await ethCall(nft, SEL.ownerOf + hexUint(id)));
       } catch (e) { return ""; }
     });
     var mine = [];
     owners.forEach(function (who, idx) { if (who === target) mine.push(ids[idx]); });
-    if (wantPayer) {
+    if (includePayer) {
       var payers = await mapPool(ids, 12, async function (id) {
         try {
-          return addrFromWord(await ethCall(ADDR.sale, SEL.payer + hexUint(id)));
+          return addrFromWord(await ethCall(sale, SEL.payer + hexUint(id)));
         } catch (e) { return ""; }
       });
       payers.forEach(function (who, idx) {
         if (who === target && mine.indexOf(ids[idx]) === -1) mine.push(ids[idx]);
       });
     }
-    rows = await mapPool(mine, 6, function (id) { return readTicket(id); });
+    rows = await mapPool(mine, 6, function (id) { return readTicketOn(nft, sale, id); });
     return {
       balance: balance,
       minted: minted,
       truncated: minted > limit,
       tickets: rows.filter(Boolean)
+    };
+  }
+
+  async function ticketsOf(owner, opts) {
+    var primary = await ticketsOn(ADDR.nft, ADDR.sale, owner, false);
+    if (!(opts && opts.includePayer)) return primary;
+    var old = await ticketsOn(ADDR.legacyNft, ADDR.legacySale, owner, true);
+    old.tickets.forEach(function (row) { row.legacy = true; });
+    return {
+      balance: primary.balance,
+      minted: primary.minted,
+      truncated: !!(primary.truncated || old.truncated),
+      tickets: primary.tickets.concat(old.tickets),
+      legacyBalance: old.balance,
+      legacyMinted: old.minted
+    };
+  }
+
+  async function readLegacyRefund() {
+    var head = await readBlockHead();
+    var now = head.now;
+    var row = await Promise.all([
+      callUint(ADDR.legacySale, SEL.opened),
+      callUint(ADDR.legacySale, SEL.refunding),
+      callUint(ADDR.legacySale, SEL.startTime),
+      callUint(ADDR.legacySale, SEL.sold)
+    ]);
+    var opened = row[0] !== 0n;
+    var refunding = row[1] !== 0n;
+    var startTime = row[2];
+    var sold = row[3];
+    var refundWindow = 7n * 24n * 60n * 60n;
+    var canEnableRefunds = !opened && !refunding && startTime !== 0n && now >= startTime + refundWindow;
+    return {
+      now: now,
+      opened: opened,
+      refunding: refunding,
+      startTime: startTime,
+      sold: sold,
+      canEnableRefunds: canEnableRefunds
     };
   }
 
@@ -731,7 +787,8 @@
 
   function isSaleMint(to, data) {
     if (!to || data == null) return false;
-    if (String(to).toLowerCase() !== ADDR.sale.toLowerCase()) return false;
+    var dest = String(to).toLowerCase();
+    if (dest !== ADDR.sale.toLowerCase() && dest !== ADDR.legacySale.toLowerCase()) return false;
     var body = String(data).toLowerCase();
     if (body.slice(0, 2) !== "0x") body = "0x" + body;
     return body.indexOf(SEL.mint.toLowerCase()) === 0;
@@ -781,13 +838,14 @@
     return sendTx(ADDR.flood, SEL.start, 0);
   }
 
-  async function sendEnableRefunds(board) {
-    if (!board || !board.canEnableRefunds) throw fail("refund-not-ready");
-    return sendTx(ADDR.sale, SEL.enableRefunds, 0);
+  async function sendEnableRefunds() {
+    var snap = await readLegacyRefund();
+    if (!snap.canEnableRefunds) throw fail("refund-not-ready");
+    return sendTx(ADDR.legacySale, SEL.enableRefunds, 0);
   }
 
-  async function sendRefund(id) {
-    return sendTx(ADDR.sale, SEL.refund + hexUint(id), 0);
+  function sendRefund(id) {
+    return sendTx(ADDR.legacySale, SEL.refund + hexUint(id), 0);
   }
 
   async function sendRequestCabin(id) {
@@ -848,6 +906,7 @@
     isZeroAddr: isZeroAddr,
     parseUnits: parseUnits,
     readBoard: readBoard,
+    readLegacyRefund: readLegacyRefund,
     readListingBook: readListingBook,
     readBidBook: readBidBook,
     readListing: readListing,
