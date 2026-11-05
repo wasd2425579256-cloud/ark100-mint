@@ -6,8 +6,10 @@ import {TicketMarketBNB} from "../src/TicketMarketBNB.sol";
 import {TicketMarketARK} from "../src/TicketMarketARK.sol";
 import {TicketBidMarket} from "../src/TicketBidMarket.sol";
 
-/// @notice Records the constructor args for the markets already deployed on BSC.
-/// @dev Do not broadcast this again. A second run would deploy duplicate books.
+/// @notice Records the constructor args for the markets already deployed on BSC against the
+///         original TicketNFT. Do not broadcast this again.
+/// @dev A fix for the stranded post-open BNB redeploys TicketNFT, so these books cannot see the
+///      new tickets. Use script/DeployFixedSuite.s.sol — it deploys fresh markets at the end.
 ///      Live addresses are already in js/chain.js:
 ///        TicketMarketBNB  0xC24b79485705cEF5AfF36fb4c4cCda34F8423d95
 ///          tx 0xc1d70e60ef4b9e7c3e1fb137b665701bcee5c9c0722eb16ec7b20bc68642055b

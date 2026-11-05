@@ -8,6 +8,8 @@ import {ArkPot} from "../src/ArkPot.sol";
 import {TicketNFT} from "../src/TicketNFT.sol";
 import {FloodEngine} from "../src/FloodEngine.sol";
 import {SandbagShop} from "../src/SandbagShop.sol";
+import {PancakeZap} from "../src/PancakeZap.sol";
+import {TicketMarketBNB} from "../src/TicketMarketBNB.sol";
 import {MockAgentId} from "../src/mocks/MockAgentId.sol";
 import {MockAggregator} from "../src/mocks/MockAggregator.sol";
 import {MockWETH} from "../src/mocks/MockWETH.sol";
@@ -157,7 +159,6 @@ contract Ark100Test is Test {
         ok3;
     }
 
-
     function test_lockedDefaults_poolSeedAndTeamImmutable() public view {
         assertEq(sale.POOL_SEED_ARK(), 1_500_000 ether);
         assertEq(sale.OPEN_AT(), 3_000);
@@ -296,6 +297,14 @@ contract Ark100Test is Test {
         assertGe(water1, 2);
         assertLe(water1, 3);
 
+        // A partial / empty candidate list must not settle the night with zero sinks.
+        uint256 aliveNight1 = aliveAfter;
+        vm.warp(block.timestamp + 1 days);
+        flood.commit(2);
+        vm.roll(block.number + 6);
+        flood.settle(2, new uint256[](0));
+        assertLt(tickets.aliveCount(), aliveNight1);
+
         // nights 8–100 stay on the 3..8% band
         vm.warp(block.timestamp + 7 days);
         flood.commit(8);
@@ -389,5 +398,403 @@ contract Ark100Test is Test {
         sale.openPool();
         flood.start();
         assertEq(flood.genesisDay(), (sale.openedAt() - 13 hours) / 1 days);
+    }
+
+    function test_siteSelectors_unchanged() public view {
+        assertEq(ArkSale.mint.selector, bytes4(hex"a0712d68"));
+        assertEq(ArkSale.openPool.selector, bytes4(hex"eb5797a4"));
+        assertEq(ArkSale.enableRefunds.selector, bytes4(hex"8c52dc41"));
+        assertEq(ArkSale.refund.selector, bytes4(hex"278ecde1"));
+        assertEq(ArkSale.quoteMint.selector, bytes4(hex"665216c6"));
+        assertEq(ArkSale.priceUsd.selector, bytes4(hex"8b3948bd"));
+        assertEq(ArkSale.currentTier.selector, bytes4(hex"d679677a"));
+        assertEq(ArkSale.bnbUsd.selector, bytes4(hex"58614dbf"));
+        assertEq(_sig("sold()"), bytes4(hex"02c7e7af"));
+        assertEq(_sig("startTime()"), bytes4(hex"78e97925"));
+        assertEq(_sig("opened()"), bytes4(hex"5f88eade"));
+        assertEq(_sig("openedAt()"), bytes4(hex"38930203"));
+        assertEq(_sig("refunding()"), bytes4(hex"f43e98c7"));
+        assertEq(_sig("lastMintTime()"), bytes4(hex"9d463520"));
+        assertEq(_sig("payer(uint256)"), bytes4(hex"561874ee"));
+        assertEq(_sig("paidBnb(uint256)"), bytes4(hex"f88e127c"));
+        assertEq(_sig("pair()"), bytes4(hex"a8aa1b31"));
+        assertEq(_sig("started()"), bytes4(hex"1f2698ab"));
+        assertEq(FloodEngine.currentDayIndex.selector, bytes4(hex"dbb8cc46"));
+        assertEq(_sig("dayState(uint256)"), bytes4(hex"68b9fa97"));
+        assertEq(FloodEngine.start.selector, bytes4(hex"be9a6555"));
+        assertEq(FloodEngine.commit.selector, bytes4(hex"f4f98ad5"));
+        assertEq(_sig("totalMinted()"), bytes4(hex"a2309ff8"));
+        assertEq(_sig("aliveCount()"), bytes4(hex"0145a938"));
+        assertEq(_sig("mintedBy(address)"), bytes4(hex"3cef28d2"));
+        assertEq(_sig("ownerOf(uint256)"), bytes4(hex"6352211e"));
+        assertEq(TicketNFT.cabinOf.selector, bytes4(hex"a768222b"));
+        assertEq(TicketNFT.isAlive.selector, bytes4(hex"d84b2361"));
+        assertEq(TicketNFT.pendingArk.selector, bytes4(hex"17d15042"));
+        assertEq(_sig("tickets(uint256)"), bytes4(hex"50b44712"));
+        assertEq(TicketNFT.requestCabin.selector, bytes4(hex"0ac028a7"));
+        assertEq(TicketNFT.settleCabin.selector, bytes4(hex"2cdf61fe"));
+        assertEq(TicketNFT.claim.selector, bytes4(hex"379607f5"));
+        assertEq(TicketNFT.isSurvivor.selector, bytes4(hex"7c649965"));
+        assertEq(SandbagShop.price.selector, bytes4(hex"a035b1fe"));
+        assertEq(_sig("BASE_PRICE()"), bytes4(hex"f86325ed"));
+        assertEq(_sig("bags(address)"), bytes4(hex"8c4c2801"));
+        assertEq(_sig("protectedUntil(uint256,uint256)"), bytes4(hex"736e07b9"));
+        assertEq(SandbagShop.buy.selector, bytes4(hex"d96a094a"));
+        assertEq(SandbagShop.applyBag.selector, bytes4(hex"840ced87"));
+        assertEq(_sig("landed()"), bytes4(hex"939a1b1b"));
+        assertEq(_sig("survivorCount()"), bytes4(hex"6f7840b2"));
+        assertEq(_sig("sharePerTicket()"), bytes4(hex"b771d65d"));
+        assertEq(ArkPot.claimShare.selector, bytes4(hex"0cc03e7a"));
+        assertEq(_sig("officialPair()"), bytes4(hex"2eab62e4"));
+        assertEq(_sig("totalSupply()"), bytes4(hex"18160ddd"));
+
+        // Getters the site reads. A rename or a removed variable fails compilation here.
+        sale.sold();
+        sale.startTime();
+        sale.opened();
+        sale.openedAt();
+        sale.refunding();
+        sale.lastMintTime();
+        sale.payer(1);
+        sale.paidBnb(1);
+        sale.pair();
+        flood.started();
+        flood.dayState(1);
+        tickets.totalMinted();
+        tickets.aliveCount();
+        tickets.mintedBy(alice);
+        tickets.tickets(1);
+        shop.BASE_PRICE();
+        shop.bags(alice);
+        shop.protectedUntil(1, 1);
+        pot.landed();
+        pot.survivorCount();
+        pot.sharePerTicket();
+        ark.officialPair();
+    }
+
+    function _sig(string memory signature) internal pure returns (bytes4) {
+        return bytes4(keccak256(bytes(signature)));
+    }
+
+    function test_overpayRefunded_andEscrowMatchesQuote() public {
+        (uint256 due,) = sale.quoteMint(2);
+        uint256 before = alice.balance;
+        vm.prank(alice);
+        sale.mint{value: due + 0.25 ether}(2);
+        assertEq(before - alice.balance, due);
+        assertEq(sale.outstandingRefunds(), due);
+        assertEq(sale.teamDue() + sale.potDue() + sale.reserveBNB(), due);
+        assertGe(address(sale).balance, due);
+    }
+
+    function test_refundPartial_thenRemaining() public {
+        (uint256 due,) = sale.quoteMint(2);
+        vm.prank(alice);
+        sale.mint{value: due}(2);
+        uint256 first = sale.paidBnb(1);
+        uint256 second = sale.paidBnb(2);
+        assertEq(first + second, due);
+
+        vm.warp(block.timestamp + 7 days + 1);
+        sale.enableRefunds();
+        uint256 mid = alice.balance;
+        vm.prank(alice);
+        sale.refund(1);
+        assertEq(alice.balance, mid + first);
+        assertEq(sale.outstandingRefunds(), second);
+        vm.prank(alice);
+        sale.refund(2);
+        assertEq(sale.outstandingRefunds(), 0);
+        assertEq(sale.paidBnb(2), 0);
+    }
+
+    function test_staleFeed_blocksMint() public {
+        (uint256 due,) = sale.quoteMint(1);
+        feed.setUpdatedAt(block.timestamp);
+        vm.warp(block.timestamp + 2 days);
+        vm.prank(alice);
+        vm.expectRevert(bytes("stale"));
+        sale.mint{value: due}(1);
+    }
+
+    function test_pairLocked_untilSaleSeeds() public {
+        vm.prank(address(tickets));
+        ark.mint(alice, 1000 ether);
+        address predicted = ark.launchPair();
+        vm.expectRevert(bytes("pair locked"));
+        vm.prank(alice);
+        ark.transfer(predicted, 1 ether);
+        // Wallet transfers that are not the predicted pair still work.
+        vm.prank(alice);
+        ark.transfer(bob, 1 ether);
+        assertEq(ark.balanceOf(bob), 1 ether);
+    }
+
+    function test_mintPast3000_postOpenSplit_notStranded() public {
+        _mintCount(sale.OPEN_AT());
+        assertTrue(sale.opened());
+        assertEq(sale.reserveBNB(), 0);
+        assertEq(sale.teamDue(), 0);
+        assertEq(sale.potDue(), 0);
+        assertEq(sale.outstandingRefunds(), 0);
+        assertEq(sale.pair(), address(router.lp()));
+        assertEq(ark.officialPair(), sale.pair());
+        assertGt(ark.poolOpenBlock(), 0);
+        assertGt(router.lp().balanceOf(sale.DEAD()), 0);
+        // Genesis liquidity took the escrow. The contract must not keep it.
+        assertEq(address(sale).balance, sale.pendingLiqBNB());
+
+        uint256 supply = ark.totalSupply();
+        uint256 teamBefore = team.balance;
+        uint256 potBefore = address(pot).balance;
+        uint256 pendingBefore = sale.pendingLiqBNB();
+
+        address w = makeAddr("after-open");
+        agent.setAllowed(w, true, "after.ai");
+        vm.deal(w, 10 ether);
+        (uint256 due,) = sale.quoteMint(1);
+        vm.prank(w);
+        sale.mint{value: due}(1);
+
+        uint256 teamPart = (due * sale.TEAM_BPS()) / 10_000;
+        uint256 potPart = (due * sale.POT_BPS()) / 10_000;
+        uint256 reservePart = due - teamPart - potPart;
+        assertEq(team.balance - teamBefore, teamPart);
+        assertEq(address(pot).balance - potBefore, potPart);
+        assertEq(sale.reserveBNB(), 0);
+        assertEq(sale.pendingLiqBNB(), pendingBefore + reservePart);
+        assertEq(address(sale).balance, sale.pendingLiqBNB());
+        // Post-open liquidity must not mint ARK.
+        assertEq(ark.totalSupply(), supply);
+        assertLt(sale.pendingLiqBNB(), sale.LIQ_THRESHOLD());
+    }
+
+    function test_manualZap_thresholdCap_andSlippage() public {
+        _openSmall();
+        uint256 supply = ark.totalSupply();
+        uint256 deadBefore = router.lp().balanceOf(sale.DEAD());
+        (uint256 bnbBefore,) = _pairReserves();
+
+        _donate(0.01 ether);
+        vm.expectRevert(bytes("below min"));
+        sale.addLiquidity();
+
+        _donate(1 ether);
+        assertFalse(sale.addLiquidity()); // snapshot only
+        vm.expectRevert(bytes("quote delay"));
+        sale.addLiquidity();
+        vm.roll(block.number + sale.QUOTE_MIN_DELAY() - 1);
+        vm.expectRevert(bytes("quote delay"));
+        sale.addLiquidity();
+
+        vm.roll(block.number + 1);
+        uint256 balBeforeZap = address(sale).balance;
+        assertGe(balBeforeZap, sale.LIQ_THRESHOLD());
+        assertTrue(sale.addLiquidity());
+        assertEq(ark.totalSupply(), supply);
+        assertGt(router.lp().balanceOf(sale.DEAD()), deadBefore);
+        (uint256 bnbAfter,) = _pairReserves();
+        assertGt(bnbAfter, bnbBefore);
+        assertEq(address(sale).balance, sale.pendingLiqBNB());
+        // The 0.01 BNB donated under the minimum stays behind; the 1 BNB batch itself must not.
+        assertLt(address(sale).balance, 0.02 ether);
+        assertLt(ark.balanceOf(address(sale)), 1e12);
+
+        // Spot moved past the tolerance: do not zap, and do not touch the BNB.
+        uint256 stuck = address(sale).balance;
+        uint256 deadNow = router.lp().balanceOf(sale.DEAD());
+        _donate(0.2 ether);
+        assertFalse(sale.addLiquidity());
+        vm.roll(block.number + sale.QUOTE_MIN_DELAY());
+        (uint256 liveBnb, uint256 liveArk) = _pairReserves();
+        router.skew(liveBnb, liveArk / 2);
+        uint256 held = address(sale).balance;
+        assertFalse(sale.addLiquidity());
+        assertEq(address(sale).balance, held);
+        assertEq(router.lp().balanceOf(sale.DEAD()), deadNow);
+        assertGt(held, stuck);
+    }
+
+    function test_repeatedZaps_balanceStaysUnderThreshold() public {
+        _openSmall();
+        uint256 supply = ark.totalSupply();
+        for (uint256 i; i < 5; ++i) {
+            _donate(1 ether);
+            assertFalse(sale.addLiquidity());
+            vm.roll(block.number + sale.QUOTE_MIN_DELAY());
+            assertTrue(sale.addLiquidity());
+            assertLt(address(sale).balance, sale.LIQ_THRESHOLD());
+            assertEq(address(sale).balance, sale.pendingLiqBNB());
+            assertEq(ark.totalSupply(), supply);
+        }
+    }
+
+    function test_soldOutFlush_andDonationAdoption() public {
+        _openSmall();
+        _donate(0.01 ether);
+        _forceSold(sale.MAX_SUPPLY());
+        assertFalse(sale.addLiquidity());
+        vm.roll(block.number + sale.QUOTE_MIN_DELAY());
+        assertTrue(sale.addLiquidity());
+        assertLt(address(sale).balance, 0.001 ether);
+        assertEq(address(sale).balance, sale.pendingLiqBNB());
+    }
+
+    function test_preOpenDonation_isNotTakenFromRefunds() public {
+        (uint256 due,) = sale.quoteMint(1);
+        vm.prank(alice);
+        sale.mint{value: due}(1);
+        _donate(0.4 ether);
+        vm.warp(block.timestamp + 7 days + 1);
+        sale.enableRefunds();
+        uint256 mid = alice.balance;
+        vm.prank(alice);
+        sale.refund(1);
+        assertEq(alice.balance, mid + due);
+        // Donation is not ticket escrow and is not pulled into the refund.
+        assertEq(address(sale).balance, 0.4 ether);
+    }
+
+    function test_preOpenDonation_isSeededIntoLp() public {
+        _mintSome();
+        uint256 reserve = sale.reserveBNB();
+        _donate(0.4 ether);
+        _forceSold(sale.OPEN_AT());
+        sale.openPool();
+        (uint256 bnbReserve,) = _pairReserves();
+        assertGe(bnbReserve, reserve + 0.4 ether);
+        assertEq(address(sale).balance, 0);
+        assertEq(sale.pendingLiqBNB(), 0);
+    }
+
+    function test_pot_rejectsPartialOrDuplicate_andPaysDust() public {
+        (uint256 due,) = sale.quoteMint(2);
+        vm.prank(alice);
+        sale.mint{value: due}(2);
+        _settleAll(2);
+
+        uint256[] memory one = new uint256[](1);
+        one[0] = 1;
+        vm.prank(address(flood));
+        vm.expectRevert(bytes("survivors"));
+        pot.land(one);
+
+        uint256[] memory dup = new uint256[](2);
+        dup[0] = 1;
+        dup[1] = 1;
+        vm.prank(address(flood));
+        vm.expectRevert(bytes("dup"));
+        pot.land(dup);
+
+        vm.deal(address(pot), 11);
+        uint256[] memory both = new uint256[](2);
+        both[0] = 2;
+        both[1] = 1;
+        vm.prank(address(flood));
+        pot.land(both);
+        assertEq(pot.sharePerTicket(), 5);
+
+        uint256 aBefore = alice.balance;
+        vm.prank(alice);
+        pot.claimShare(1);
+        vm.prank(alice);
+        pot.claimShare(2);
+        // 11 wei / 2 = 5, and the last claim takes the leftover wei.
+        assertEq(alice.balance - aBefore, 11);
+        assertEq(address(pot).balance, 0);
+    }
+
+    function test_marketRedeploy_listsRealTicket() public {
+        (uint256 due,) = sale.quoteMint(1);
+        vm.prank(alice);
+        sale.mint{value: due}(1);
+        _settleAll(1);
+
+        TicketMarketBNB book = new TicketMarketBNB(address(tickets), team);
+        vm.prank(alice);
+        tickets.approve(address(book), 1);
+        vm.prank(alice);
+        book.list(1, 1 ether);
+
+        uint256 teamBefore = team.balance;
+        uint256 aliceBefore = alice.balance;
+        vm.prank(bob);
+        book.buy{value: 1 ether}(1);
+        assertEq(tickets.ownerOf(1), bob);
+        (uint256 fee, uint256 proceeds) = book.feeOn(1 ether);
+        assertEq(team.balance - teamBefore, fee);
+        assertEq(alice.balance - aliceBefore, proceeds);
+        assertEq(address(book).balance, 0);
+    }
+
+    function testFuzz_zapLeavesBalancedRemainder(uint96 bnbIn_, uint96 reserveBnb_, uint96 reserveArk_) public pure {
+        uint256 b = bound(uint256(bnbIn_), 1e15, 1000 ether);
+        uint256 x = bound(uint256(reserveBnb_), 1e15, 1000 ether);
+        uint256 y = bound(uint256(reserveArk_), 1e18, 2_000_000_000 ether);
+        uint256 s = PancakeZap.bnbToSwap(b, x);
+        uint256 outAmt = PancakeZap.amountOut(s, x, y);
+        assertGt(s, 0);
+        assertGt(outAmt, 0);
+        assertLt(s, b);
+        uint256 xPrime = x + s;
+        uint256 yPrime = y - outAmt;
+        uint256 left = (b - s) * yPrime;
+        uint256 right = outAmt * xPrime;
+        uint256 diff = left > right ? left - right : right - left;
+        // Integer zap stays within 5 bps of the post-swap reserve ratio, so liquidity adds do not
+        // refund a growing BNB or ARK balance.
+        assertLe(diff * 10_000, right * 5 + xPrime + yPrime);
+    }
+
+    function _mintCount(uint256 n) internal {
+        uint256 created;
+        uint256 walletIdx;
+        while (created < n) {
+            address w = makeAddr(string(abi.encodePacked("m", vm.toString(walletIdx))));
+            agent.setAllowed(w, true, string(abi.encodePacked("m", vm.toString(walletIdx), ".ai")));
+            vm.deal(w, 500 ether);
+            uint256 batch = n - created;
+            if (batch > 10) batch = 10;
+            (uint256 due,) = sale.quoteMint(batch);
+            vm.prank(w);
+            sale.mint{value: due}(batch);
+            created += batch;
+            walletIdx++;
+        }
+    }
+
+    function _openSmall() internal {
+        _mintSome();
+        _forceSold(sale.OPEN_AT());
+        sale.openPool();
+        assertTrue(sale.opened());
+        assertEq(address(sale).balance, sale.pendingLiqBNB());
+    }
+
+    function _donate(uint256 amount) internal {
+        vm.deal(bob, bob.balance + amount);
+        vm.prank(bob);
+        (bool ok,) = address(sale).call{value: amount}("");
+        assertTrue(ok);
+    }
+
+    function _settleAll(uint256 n) internal {
+        for (uint256 id = 1; id <= n; ++id) {
+            address own = tickets.ownerOf(id);
+            vm.prank(own);
+            tickets.requestCabin(id);
+        }
+        vm.roll(block.number + 6);
+        for (uint256 id = 1; id <= n; ++id) {
+            tickets.settleCabin(id);
+        }
+    }
+
+    function _pairReserves() internal view returns (uint256 bnbReserve, uint256 arkReserve) {
+        MockLP lp = router.lp();
+        (uint112 r0, uint112 r1,) = lp.getReserves();
+        if (lp.token0() == address(wbnb)) return (uint256(r0), uint256(r1));
+        return (uint256(r1), uint256(r0));
     }
 }

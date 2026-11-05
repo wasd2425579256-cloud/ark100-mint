@@ -112,6 +112,8 @@ contract FloodEngine {
 
     /// @notice Re-commit if previous commit blockhash expired.
     function recommit(uint256 dayIndex) external {
+        require(started, "not started");
+        require(dayIndex >= 1 && dayIndex <= MAX_DAYS, "day");
         DayState storage st = dayState[dayIndex];
         require(st.commitBlock != 0 && !st.settled, "bad");
         require(block.number > st.commitBlock + 256, "not expired");
@@ -119,8 +121,16 @@ contract FloodEngine {
         emit Commit(dayIndex, st.commitBlock);
     }
 
-    /// @notice Settle flood: sink unprotected tickets. `candidates` is caller-supplied alive ids.
-    function settle(uint256 dayIndex, uint256[] calldata candidates) external {
+    /// @notice Settle flood: sink unprotected tickets.
+    /// @dev The candidate list is ignored. v1 trusted it, so an empty list settled the night with
+    ///      zero sinks and duplicates could inflate the sink rate or revert the whole settle.
+    ///      Every minted id is scanned. Pending cabins are skipped. Sandbags are consumed here.
+    function settle(
+        uint256 dayIndex,
+        uint256[] calldata /*candidates*/
+    )
+        external
+    {
         DayState storage st = dayState[dayIndex];
         require(st.commitBlock != 0 && !st.settled, "bad");
         require(block.number > st.commitBlock, "too early");
@@ -139,12 +149,10 @@ contract FloodEngine {
         }
         st.waterBps = waterPct;
 
-        // Filter alive & unprotected
-        uint256 len = candidates.length;
-        uint256[] memory exposed = new uint256[](len);
+        uint256 minted = ticketNft.totalMinted();
+        uint256[] memory exposed = new uint256[](minted);
         uint256 nExp;
-        for (uint256 i; i < len; ++i) {
-            uint256 id = candidates[i];
+        for (uint256 id = 1; id <= minted; ++id) {
             if (!ticketNft.isAlive(id)) continue;
             if (ticketNft.cabinOf(id) == 0) continue; // pending cabin skip
             bool protected_ = sandbagShop.consumeProtection(id, dayIndex);
@@ -169,7 +177,9 @@ contract FloodEngine {
         }
     }
 
-    /// @notice After day 100 settled, anyone passes survivor ids to lock the pot.
+    /// @notice After day 100 settled, anyone passes the survivor ids to lock the pot.
+    /// @dev ArkPot checks the list itself: every id unique, every id a real survivor, and the length
+    ///      equal to a full scan. A partial or duplicated list cannot set the share.
     function landfall(uint256[] calldata survivorIds) external {
         require(dayState[MAX_DAYS].settled, "not day100");
         pot.land(survivorIds);

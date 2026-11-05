@@ -4,7 +4,8 @@ pragma solidity 0.8.28;
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IAgentIdVerifier} from "./interfaces/IAgentIdVerifier.sol";
 import {IAggregatorV3} from "./interfaces/IAggregatorV3.sol";
-import {IPancakeRouter} from "./interfaces/IPancake.sol";
+import {IPancakeFactory, IPancakePair, IPancakeRouter} from "./interfaces/IPancake.sol";
+import {PancakeZap} from "./PancakeZap.sol";
 
 interface ITicketMinter {
     function mintTo(address to, address minter) external returns (uint256);
@@ -16,18 +17,44 @@ interface IArkTokenSale {
     function setOfficialPair(address pair) external;
     function notifyPoolOpened(address pair) external;
     function approve(address spender, uint256 amount) external returns (bool);
+    function balanceOf(address account) external view returns (uint256);
+    function launchPair() external view returns (address);
+    function PANCAKE_FACTORY() external view returns (address);
+    function WBNB() external view returns (address);
 }
 
 interface IArkPotWire {
     function setTicketNft(address nft) external;
 }
 
-interface IMockRouterExtra {
-    function lp() external view returns (address);
-}
-
 /// @title ArkSale — Gen0 ticket sale: tiered USD, full refund if unopened, auto pool @ #3000.
-/// @dev Pre-open escrow of team/pot legs enables 100% refunds. No withdraw/rescue.
+/// @dev Pre-open, the 20/15/65 split is escrowed so every payer can be refunded in full after
+///      `REFUND_WINDOW` if the pool never opens. There is no owner and no withdraw/rescue of ticket funds.
+///
+///      Post-open, the same 20/15/65 split is paid immediately: 20% to `projectWallet`, 15% to the pot,
+///      and 65% into `pendingLiqBNB`. That pending balance is zapped into the official PancakeSwap
+///      ARK/WBNB pair (about half swapped for ARK, both sides added, LP sent to `DEAD`). No ARK is minted
+///      for these adds — the genesis `POOL_SEED_ARK` mint is the only sale-side mint, same as v1.
+///
+///      Sandwich bound (permissionless zap):
+///      - A reserve snapshot must be at least `QUOTE_MIN_DELAY` blocks old and at most `QUOTE_TTL` old.
+///      - Execution reverts (and the snapshot is refreshed) if the live price has moved more than
+///        `SLIPPAGE_BPS` from that snapshot. A same-block / atomic sandwich that moves the price past
+///        the tolerance cannot fill.
+///      - Each zap is capped at `LIQ_THRESHOLD`, so a filled sandwich is bounded by that size and by
+///        the tolerance (about 2% of the swapped half), not by the whole remaining sale.
+///      - Residual risk: someone who can hold a manipulated price for `QUOTE_MIN_DELAY` blocks against
+///        arbitrage, then zap, does trade at the manipulated snapshot. The delay and the batch cap are
+///        the cost of that attack. Funds are never pulled out to an attacker; a failed check just waits.
+///      - Dust from the optimal-zap rounding stays in `pendingLiqBNB` and is included in the next zap.
+///        After sell-out, a permissionless call may zap any positive remainder, so the tail does not sit
+///        under `LIQ_MIN` forever. Sub-wei outputs that cannot clear the constant-product formula can
+///        remain; they do not grow.
+///
+///      Raw BNB sent to this contract is not a mint. Before open it is folded into the genesis LP.
+///      After open, `syncPending` / the next mint / `addLiquidity` adopts it into the zap balance.
+///      It is not refundable. During `refunding`, unswept donations are not ticket escrow; there is
+///      still no rescue, so do not send BNB directly.
 contract ArkSale is ReentrancyGuard {
     uint256 public constant MAX_SUPPLY = 10_000;
     uint256 public constant MAX_PER_ADDRESS = 10;
@@ -38,6 +65,17 @@ contract ArkSale is ReentrancyGuard {
     uint256 public constant TEAM_BPS = 2_000;
     uint256 public constant POOL_SEED_ARK = 1_500_000 ether; // ~7d economy payback at open (~$0.0028/ARK if LP≈$4225)
     address public constant DEAD = 0x000000000000000000000000000000000000dEaD;
+
+    /// @notice Auto-zap once pending BNB reaches this size. Also the per-call cap.
+    uint256 public constant LIQ_THRESHOLD = 1 ether;
+    /// @notice Smallest permissionless zap before sell-out. Below this, BNB waits for the next batch.
+    uint256 public constant LIQ_MIN = 0.05 ether;
+    /// @notice Max spot move versus the delayed reserve snapshot, in bps.
+    uint256 public constant SLIPPAGE_BPS = 200;
+    /// @notice Snapshot must be at least this many blocks old, so the quote is not from the zap's own block.
+    uint256 public constant QUOTE_MIN_DELAY = 10;
+    /// @notice Snapshot older than this is discarded and retaken.
+    uint256 public constant QUOTE_TTL = 100;
 
     uint256 public constant PRICE_T0 = 2 ether;
     uint256 public constant PRICE_T1 = 3 ether;
@@ -64,6 +102,15 @@ contract ArkSale is ReentrancyGuard {
     uint256 public teamDue;
     uint256 public potDue;
     uint256 public reserveBNB;
+    /// @notice Sum of ticket BNB still refundable. Equals teamDue + potDue + reserveBNB until open, then 0.
+    uint256 public outstandingRefunds;
+    /// @notice Post-open 65% (plus adopted donations and zap dust) waiting to be added to the pair.
+    uint256 public pendingLiqBNB;
+
+    /// @dev Reserve snapshot used as the zap's price reference. Not the live reserves.
+    uint112 public quoteReserveBnb;
+    uint112 public quoteReserveArk;
+    uint64 public quoteBlock;
 
     mapping(uint256 => uint256) public paidBnb;
     mapping(uint256 => address) public payer;
@@ -77,6 +124,10 @@ contract ArkSale is ReentrancyGuard {
     event PoolOpened(address pair, uint256 bnbLp, uint256 arkLp, uint256 teamPaid, uint256 potPaid);
     event RefundEnabled();
     event Refunded(uint256 indexed tokenId, address indexed to, uint256 amount);
+    event LiqQuotePoked(uint112 reserveBnb, uint112 reserveArk, uint256 blockNumber);
+    event LiquidityAdded(
+        uint256 bnbIn, uint256 bnbSwapped, uint256 arkBought, uint256 leftoverBnb, uint256 leftoverArk
+    );
 
     constructor(address projectWallet_, address pot_, address agentId_, address feed_, address router_) {
         require(
@@ -112,6 +163,7 @@ contract ArkSale is ReentrancyGuard {
     }
 
     function bnbUsd() public view returns (uint256) {
+        require(bnbUsdFeed.decimals() == 8, "decimals");
         (, int256 answer,, uint256 updatedAt,) = bnbUsdFeed.latestRoundData();
         require(answer > 0 && updatedAt != 0, "bad price");
         require(block.timestamp >= updatedAt && block.timestamp - updatedAt < 1 days, "stale");
@@ -173,73 +225,99 @@ contract ArkSale is ReentrancyGuard {
                 sold += 1;
             }
             emit Minted(msg.sender, tokenId, usdPx, slice, handle);
-            if (!opened && sold == OPEN_AT) {
-                // account this payment first below — open after accrual
-            }
         }
 
-        // Accrue split (escrow pre-open; pay immediately post-open)
+        // Split the quoted payment only. Overpay is returned before any of it can be treated as a donation.
         uint256 teamPart = (bnbDue * TEAM_BPS) / 10_000;
         uint256 potPart = (bnbDue * POT_BPS) / 10_000;
         uint256 reservePart = bnbDue - teamPart - potPart;
+
+        uint256 over = msg.value - bnbDue;
+        if (over > 0) {
+            (bool sent,) = msg.sender.call{value: over}("");
+            require(sent, "overpay refund");
+        }
 
         if (!opened) {
             teamDue += teamPart;
             potDue += potPart;
             reserveBNB += reservePart;
+            outstandingRefunds += bnbDue;
+            if (sold >= OPEN_AT) _openPool();
         } else {
-            (bool a,) = projectWallet.call{value: teamPart}("");
-            require(a, "team");
-            (bool b,) = pot.call{value: potPart}("");
-            require(b, "pot");
-            reserveBNB += reservePart; // post-open reserve unused in v1 (stranded) — acceptable for scaffold
+            _pay(projectWallet, teamPart, "team");
+            _pay(pot, potPart, "pot");
+            pendingLiqBNB = address(this).balance;
+            _maybeZapFromMint();
         }
 
         lastMintTime = block.timestamp;
-
-        if (!opened && sold >= OPEN_AT) {
-            _openPool();
-        }
-
-        if (msg.value > bnbDue) {
-            (bool sent,) = msg.sender.call{value: msg.value - bnbDue}("");
-            require(sent, "overpay refund");
-        }
     }
 
     function _openPool() internal {
         require(!opened, "opened");
-        opened = true;
-        openedAt = block.timestamp;
+        require(!refunding, "refunding");
 
         uint256 teamPay = teamDue;
         uint256 potPay = potDue;
-        uint256 lpBnb = reserveBNB;
+        uint256 reservePay = reserveBNB;
+        require(outstandingRefunds == teamPay + potPay + reservePay, "escrow");
+
+        opened = true;
+        openedAt = block.timestamp;
         teamDue = 0;
         potDue = 0;
         reserveBNB = 0;
+        outstandingRefunds = 0;
 
-        (bool a,) = projectWallet.call{value: teamPay}("");
-        require(a, "team");
-        (bool b,) = pot.call{value: potPay}("");
-        require(b, "pot");
+        _pay(projectWallet, teamPay, "team");
+        _pay(pot, potPay, "pot");
 
+        // Whatever remains is the 65% reserve plus any direct transfers. Both go to the genesis LP
+        // so neither is left on the contract. Ticket overpay was already refunded.
+        uint256 lpBnb = address(this).balance;
+        require(lpBnb >= reservePay && lpBnb > 0, "no lp");
+        _seedPair(lpBnb, teamPay, potPay);
+        pendingLiqBNB = address(this).balance;
+    }
+
+    function _seedPair(uint256 lpBnb, uint256 teamPay, uint256 potPay) internal {
         arkToken.mint(address(this), POOL_SEED_ARK);
         arkToken.approve(address(router), POOL_SEED_ARK);
-        router.addLiquidityETH{value: lpBnb}(address(arkToken), POOL_SEED_ARK, 0, 0, DEAD, block.timestamp + 1 hours);
 
-        try IMockRouterExtra(address(router)).lp() returns (address lpToken) {
-            pair = lpToken;
-        } catch {
-            pair = address(uint160(uint256(keccak256(abi.encodePacked("ARKPAIR", address(arkToken))))));
+        address lpToken = _ensurePair();
+        (uint112 r0, uint112 r1,) = IPancakePair(lpToken).getReserves();
+        // Full-size mins: an empty pair takes both amounts and sets the price. A pre-seeded pair
+        // would pull the genesis liquidity onto the attacker's price, so it is refused instead.
+        require(r0 == 0 && r1 == 0, "pair seeded");
+
+        router.addLiquidityETH{value: lpBnb}(
+            address(arkToken), POOL_SEED_ARK, POOL_SEED_ARK, lpBnb, DEAD, block.timestamp
+        );
+
+        pair = lpToken;
+        arkToken.setOfficialPair(lpToken);
+        arkToken.notifyPoolOpened(lpToken);
+        emit PoolOpened(lpToken, lpBnb, POOL_SEED_ARK, teamPay, potPay);
+    }
+
+    function _ensurePair() internal returns (address lpToken) {
+        address factory_ = router.factory();
+        address wbnb = router.WETH();
+        lpToken = IPancakeFactory(factory_).getPair(address(arkToken), wbnb);
+        if (lpToken == address(0)) {
+            lpToken = IPancakeFactory(factory_).createPair(address(arkToken), wbnb);
         }
-        arkToken.setOfficialPair(pair);
-        arkToken.notifyPoolOpened(pair);
-        emit PoolOpened(pair, lpBnb, POOL_SEED_ARK, teamPay, potPay);
+        // On BSC the router factory is Pancake V2, so the pair must be the token's predicted address.
+        // Tests use a mock factory; the token still locks its real predicted pair.
+        if (factory_ == arkToken.PANCAKE_FACTORY()) {
+            require(wbnb == arkToken.WBNB(), "wbnb");
+            require(lpToken == arkToken.launchPair(), "pair mismatch");
+        }
     }
 
     /// @notice Permissionless insurance: anyone may open the pool if the threshold is met
-    ///         but the auto-open in mint() did not fire. No privileges; same _openPool() path.
+    ///         but the auto-open in mint() did not fire. No privileges; same `_openPool` path.
     function openPool() external nonReentrant {
         require(!refunding, "refunding");
         require(!opened, "opened");
@@ -251,7 +329,7 @@ contract ArkSale is ReentrancyGuard {
         require(!opened, "opened");
         require(startTime != 0 && block.timestamp >= startTime + REFUND_WINDOW, "too early");
         refunding = true;
-        // escrowed teamDue/potDue/reserve all remain on contract for refunds
+        // escrowed teamDue/potDue/reserve all remain on the contract for refunds
         emit RefundEnabled();
     }
 
@@ -261,10 +339,137 @@ contract ArkSale is ReentrancyGuard {
         uint256 amount = paidBnb[tokenId];
         require(amount > 0, "zero");
         paidBnb[tokenId] = 0;
+        outstandingRefunds -= amount;
         (bool ok,) = msg.sender.call{value: amount}("");
         require(ok, "pay");
         emit Refunded(tokenId, msg.sender, amount);
     }
 
+    /// @notice Adopt direct BNB transfers into the post-open zap balance.
+    function syncPending() external nonReentrant {
+        require(opened && !refunding, "closed");
+        pendingLiqBNB = address(this).balance;
+    }
+
+    /// @notice Permissionless zap of post-open BNB into the official pair. LP tokens go to `DEAD`.
+    /// @dev If the reserve snapshot is missing, expired, or the spot has moved past `SLIPPAGE_BPS`,
+    ///      this refreshes the snapshot and returns false. The BNB stays here. A snapshot younger than
+    ///      `QUOTE_MIN_DELAY` reverts so the caller does not accidentally reset it.
+    ///      Before sell-out the amount must be at least `LIQ_MIN`. After sell-out any positive balance
+    ///      can be flushed. Each call zaps at most `LIQ_THRESHOLD`.
+    function addLiquidity() external nonReentrant returns (bool zapped) {
+        require(opened && !refunding, "closed");
+        pendingLiqBNB = address(this).balance;
+        uint256 bal = pendingLiqBNB;
+        require(bal >= LIQ_MIN || (sold == MAX_SUPPLY && bal > 0), "below min");
+        uint256 amount = bal > LIQ_THRESHOLD ? LIQ_THRESHOLD : bal;
+        if (_quoteUsable() && _slippageOk(amount)) {
+            _zap(amount);
+            return true;
+        }
+        if (quoteBlock != 0 && block.number >= quoteBlock && block.number - quoteBlock < QUOTE_MIN_DELAY) {
+            revert("quote delay");
+        }
+        _poke();
+        return false;
+    }
+
+    function _maybeZapFromMint() internal {
+        uint256 bal = address(this).balance;
+        if (bal >= LIQ_THRESHOLD) {
+            uint256 amount = LIQ_THRESHOLD;
+            if (_quoteUsable() && _slippageOk(amount)) {
+                _zap(amount);
+                return;
+            }
+            // Keep a snapshot that is still inside the delay window; taking a new one would reset it.
+            if (!(quoteBlock != 0 && block.number >= quoteBlock && block.number - quoteBlock < QUOTE_MIN_DELAY)) {
+                if (quoteBlock != block.number) _poke();
+            }
+        } else if (quoteBlock == 0 || block.number > quoteBlock + QUOTE_TTL) {
+            _poke();
+        }
+        pendingLiqBNB = address(this).balance;
+    }
+
+    function _quoteUsable() internal view returns (bool) {
+        if (quoteBlock == 0 || block.number <= quoteBlock) return false;
+        uint256 age = block.number - quoteBlock;
+        return age >= QUOTE_MIN_DELAY && age <= QUOTE_TTL;
+    }
+
+    function _poke() internal {
+        (uint256 liveBnb, uint256 liveArk) = _reserves();
+        require(liveBnb > 0 && liveArk > 0, "reserves");
+        require(liveBnb <= type(uint112).max && liveArk <= type(uint112).max, "reserves");
+        quoteReserveBnb = uint112(liveBnb);
+        quoteReserveArk = uint112(liveArk);
+        quoteBlock = uint64(block.number);
+        emit LiqQuotePoked(quoteReserveBnb, quoteReserveArk, block.number);
+    }
+
+    /// @dev True when the live mid price is within tolerance of the snapshot and the zap's live output
+    ///      still clears the snapshot's min-out. A same-block reserve read is not used as the reference.
+    function _slippageOk(uint256 bnbAmount) internal view returns (bool) {
+        if (quoteReserveBnb == 0 || quoteReserveArk == 0) return false;
+        (uint256 liveBnb, uint256 liveArk) = _reserves();
+        if (liveBnb == 0 || liveArk == 0) return false;
+        uint256 liveCross = liveArk * uint256(quoteReserveBnb);
+        uint256 quoteCross = uint256(quoteReserveArk) * liveBnb;
+        uint256 diff = liveCross > quoteCross ? liveCross - quoteCross : quoteCross - liveCross;
+        if (quoteCross == 0 || diff * 10_000 > SLIPPAGE_BPS * quoteCross) return false;
+
+        uint256 swapAmt = PancakeZap.bnbToSwap(bnbAmount, liveBnb);
+        if (swapAmt == 0) return false;
+        uint256 quoted = PancakeZap.amountOut(swapAmt, quoteReserveBnb, quoteReserveArk);
+        if (quoted == 0) return false;
+        uint256 live = PancakeZap.amountOut(swapAmt, liveBnb, liveArk);
+        return live * 10_000 >= quoted * (10_000 - SLIPPAGE_BPS);
+    }
+
+    function _zap(uint256 bnbAmount) internal {
+        (uint256 liveBnb,) = _reserves();
+        uint256 swapAmt = PancakeZap.bnbToSwap(bnbAmount, liveBnb);
+        uint256 quoted = PancakeZap.amountOut(swapAmt, quoteReserveBnb, quoteReserveArk);
+        uint256 minOut = quoted * (10_000 - SLIPPAGE_BPS) / 10_000;
+        require(swapAmt > 0 && minOut > 0, "dust");
+
+        uint256 arkBefore = arkToken.balanceOf(address(this));
+        address[] memory path = new address[](2);
+        path[0] = router.WETH();
+        path[1] = address(arkToken);
+        router.swapExactETHForTokens{value: swapAmt}(minOut, path, address(this), block.timestamp);
+
+        uint256 arkBal = arkToken.balanceOf(address(this));
+        uint256 bought = arkBal - arkBefore;
+        uint256 bnbLeft = bnbAmount - swapAmt;
+        arkToken.approve(address(router), arkBal);
+        // Swap min-out is the price check. The add sits in the same transaction, after that swap,
+        // so a 1-wei floor only rejects an empty mint — it does not widen the sandwich bound.
+        (,, uint256 liquidity) =
+            router.addLiquidityETH{value: bnbLeft}(address(arkToken), arkBal, 1, 1, DEAD, block.timestamp);
+        require(liquidity > 0, "lp");
+
+        uint256 leftoverArk = arkToken.balanceOf(address(this));
+        pendingLiqBNB = address(this).balance;
+        emit LiquidityAdded(bnbAmount, swapAmt, bought, pendingLiqBNB, leftoverArk);
+    }
+
+    function _reserves() internal view returns (uint256 reserveBnb, uint256 reserveArk) {
+        IPancakePair p = IPancakePair(pair);
+        (uint112 r0, uint112 r1,) = p.getReserves();
+        if (p.token0() == router.WETH()) return (uint256(r0), uint256(r1));
+        return (uint256(r1), uint256(r0));
+    }
+
+    function _pay(address to, uint256 amount, string memory err) internal {
+        if (amount == 0) return;
+        (bool ok,) = to.call{value: amount}("");
+        require(ok, err);
+    }
+
+    /// @dev Direct transfers are not mints. Post-open they sit until `syncPending`, the next mint,
+    ///      or `addLiquidity` adopts `address(this).balance` into the zap. Pre-open they are folded
+    ///      into the genesis LP inside `_openPool`.
     receive() external payable {}
 }
