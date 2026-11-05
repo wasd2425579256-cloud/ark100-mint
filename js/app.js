@@ -87,11 +87,10 @@
         "铸造已暂停，合约升级中。本站不会发送铸造。",
         "",
         "当前发售合约里，开池之后购票所付的 BNB 不会进入流动性池。正在部署修复后的合约。",
-        "请不要直接调用旧的发售合约铸造。",
         "",
-        "目前已售出的船票都在开池之前，可以全额退回当时支付的 BNB。",
-        "退款窗口大约在 11 月 11 日北京时间 18:36 开启。",
-        "到时先在本站「公开动作」开启退款，再到「我的方舟」，用当时付款的钱包按船票领取。",
+        "只要开池前没有卖满 3000 张，现有船票都能在退款窗口打开后（约 11/11 18:36 北京时间）全额退款。",
+        "旧合约卖满 3000 张会自动开池，开池后就不能退款。请不要绕过官网直接调用旧合约铸造。",
+        "窗口打开后，先在本站「公开动作」开启退款，再到「我的方舟」，用当时付款的钱包按船票领取。",
         "重新开放铸造的时间，我们会另行公布。"
       ].join("\n");
     }
@@ -100,11 +99,10 @@
       "Minting is paused while the sale contract is upgraded. This site will not send a mint.",
       "",
       "In the current sale contract, BNB paid for tickets after the pool opens would not go into the liquidity pool. A fixed contract is being deployed.",
-      "Do not mint by calling the old sale contract directly.",
       "",
-      "Tickets already sold were bought before the pool opened and can be refunded in full.",
-      "The refund window opens around Nov 11, 18:36 Beijing time.",
-      "Turn refunds on under Public actions, then claim each ticket in My Ark from the wallet that paid.",
+      "If sales stay under 3,000 before the pool opens, tickets already sold can be refunded in full once the refund window opens (around Nov 11, 18:36 Beijing time).",
+      "If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not bypass this site and mint by calling the old contract directly.",
+      "After the window opens, turn refunds on under Public actions, then claim each ticket in My Ark from the wallet that paid.",
       "The relaunch will be announced separately."
     ].join("\n");
   }
@@ -904,7 +902,7 @@
 
   function explain(code, detail) {
     var map = {
-      "mint-paused": ["铸造已暂停，合约升级中。没有发送交易。请不要直接调用旧的发售合约铸造。", "Minting is paused while the contract is upgraded. No transaction was sent. Do not mint on the old contract directly."],
+      "mint-paused": ["铸造已暂停，合约升级中。没有发送交易。旧合约卖满 3000 张会自动开池，开池后就不能退款，请不要绕过官网直接铸造。", "Minting is paused while the contract is upgraded. No transaction was sent. If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not bypass this site and mint on the old contract."],
       "sale-not-started": ["正式未开售，没有发送交易。", "Sale not started. No transaction was sent."],
       "refunding": ["退款已开启，铸造已停止，没有发送交易。", "Refunds are on, so mint is closed. No transaction was sent."],
       "mint-closed": ["当前不能铸造，没有发送交易。", "Mint is closed. No transaction was sent."],
