@@ -249,7 +249,6 @@
       callUint(ADDR.sale, SEL.startTime),
       callUint(ADDR.sale, SEL.opened),
       callUint(ADDR.sale, SEL.openedAt),
-      callUint(ADDR.sale, SEL.refunding),
       callUint(ADDR.sale, SEL.currentTier),
       callUint(ADDR.sale, SEL.priceUsd),
       callUint(ADDR.sale, SEL.lastMintTime),
@@ -270,20 +269,19 @@
     var startTime = row[2];
     var opened = row[3] !== 0n;
     var openedAt = row[4];
-    var refunding = row[5] !== 0n;
-    var tier = row[6];
-    var priceUsd = row[7];
-    var lastMintTime = row[8];
-    var floodStarted = row[9] !== 0n;
-    var totalMinted = row[10];
-    var aliveCount = row[11];
-    var shopPrice = row[12];
-    var basePrice = row[13];
-    var landed = row[14] !== 0n;
-    var survivors = row[15];
-    var share = row[16];
-    var pair = row[17];
-    var officialPair = row[18];
+    var tier = row[5];
+    var priceUsd = row[6];
+    var lastMintTime = row[7];
+    var floodStarted = row[8] !== 0n;
+    var totalMinted = row[9];
+    var aliveCount = row[10];
+    var shopPrice = row[11];
+    var basePrice = row[12];
+    var landed = row[13] !== 0n;
+    var survivors = row[14];
+    var share = row[15];
+    var pair = row[16];
+    var officialPair = row[17];
     var dayIndex = null;
     var day = null;
     if (floodStarted) {
@@ -301,11 +299,12 @@
       }
     }
     var saleStarted = startTime !== 0n && now >= startTime;
-    var mintOpen = saleStarted && !refunding && sold < 10000n;
-    var canOpen = sold >= 3000n && !opened && !refunding;
+    var mintOpen = saleStarted && sold < 10000n;
+    var canOpen = sold >= 3000n && !opened;
     var canStart = opened && !floodStarted;
     var refundWindow = 7n * 24n * 60n * 60n;
-    var canEnableRefunds = !opened && !refunding && sold < 3000n && startTime !== 0n && now >= startTime + refundWindow;
+    var refundOpensAt = startTime === 0n ? 0n : startTime + refundWindow;
+    var refundsOpen = startTime !== 0n && !opened && now >= refundOpensAt;
     return {
       block: BigInt(head.blockHex),
       now: now,
@@ -313,7 +312,6 @@
       startTime: startTime,
       opened: opened,
       openedAt: openedAt,
-      refunding: refunding,
       tier: tier,
       priceUsd: priceUsd,
       lastMintTime: lastMintTime,
@@ -333,7 +331,8 @@
       mintOpen: mintOpen,
       canOpen: canOpen,
       canStart: canStart,
-      canEnableRefunds: canEnableRefunds
+      refundOpensAt: refundOpensAt,
+      refundsOpen: refundsOpen
     };
   }
 
@@ -848,11 +847,6 @@
     return sendTx(ADDR.legacySale, SEL.enableRefunds, 0);
   }
 
-  async function sendEnableNewRefunds(board) {
-    if (!board || !board.canEnableRefunds || board.startTime === 0n) throw fail("refund-not-ready");
-    return sendTx(ADDR.sale, SEL.enableRefunds, 0);
-  }
-
   function sendRefund(id) {
     return sendTx(ADDR.legacySale, SEL.refund + hexUint(id), 0);
   }
@@ -938,7 +932,6 @@
     sendOpenPool: sendOpenPool,
     sendStartFlood: sendStartFlood,
     sendEnableRefunds: sendEnableRefunds,
-    sendEnableNewRefunds: sendEnableNewRefunds,
     sendRefund: sendRefund,
     sendRefundNew: sendRefundNew,
     sendRequestCabin: sendRequestCabin,

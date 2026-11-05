@@ -15,6 +15,11 @@ import {TicketBidMarket} from "../src/TicketBidMarket.sol";
 /// @title DeployFixedSuite — full ARK100 redeploy. Does not broadcast unless the operator passes
 ///        `forge script --broadcast`. This repository run must not broadcast.
 ///
+///        The suite at ArkSale `0xB69f1F7A14dbCbB82A5eFcCB4B7579410eEc746E` was never started
+///        (`startTime` is 0). Per-ticket refunds change ArkSale and TicketNFT, and every wire is
+///        one-shot, so redeploy this whole script. After a real broadcast, point `js/chain.js` at
+///        the new addresses.
+///
 /// Contracts that must be redeployed together (each is wired once, or takes an address in its constructor):
 ///   1. ArkPot            — `sale` and `floodEngine` are one-shot; `setTicketNft` is only callable by the sale
 ///   2. ArkToken          — `sale`, `ticketNft`, and `sandbagShop` are one-shot; only that sale may set the pair

@@ -10,6 +10,7 @@ import {FloodEngine} from "../src/FloodEngine.sol";
 import {SandbagShop} from "../src/SandbagShop.sol";
 import {PancakeZap} from "../src/PancakeZap.sol";
 import {TicketMarketBNB} from "../src/TicketMarketBNB.sol";
+import {TicketBidMarket} from "../src/TicketBidMarket.sol";
 import {MockAgentId} from "../src/mocks/MockAgentId.sol";
 import {MockAggregator} from "../src/mocks/MockAggregator.sol";
 import {MockWETH} from "../src/mocks/MockWETH.sol";
@@ -130,15 +131,24 @@ contract Ark100Test is Test {
         sale.mint{value: due}(1);
         assertEq(alice.balance, balBefore - due);
 
-        vm.warp(block.timestamp + 7 days + 1);
-        sale.enableRefunds();
-        assertTrue(sale.refunding());
+        vm.warp(sale.startTime() + sale.REFUND_WINDOW() - 1);
+        vm.prank(alice);
+        vm.expectRevert(bytes("too early"));
+        sale.refund(1);
+        (uint256 dueBob,) = sale.quoteMint(1);
+        vm.prank(bob);
+        sale.mint{value: dueBob}(1);
 
+        vm.warp(sale.startTime() + sale.REFUND_WINDOW());
         uint256 mid = alice.balance;
         vm.prank(alice);
         sale.refund(1);
         assertEq(alice.balance, mid + due);
         assertEq(sale.paidBnb(1), 0);
+        assertEq(sale.sold(), 1);
+        assertEq(tickets.mintedBy(alice), 1);
+        vm.expectRevert();
+        tickets.ownerOf(1);
     }
 
     function test_noOwnerWithdraw_onSaleAndPot() public {
@@ -380,14 +390,21 @@ contract Ark100Test is Test {
         sale.openPool();
     }
 
-    function test_openPool_revertsWhenRefunding() public {
+    function test_openPool_duringRefundWindow_countsLiveTickets() public {
         _mintSome();
         vm.warp(block.timestamp + sale.REFUND_WINDOW());
-        sale.enableRefunds();
-        _forceSold(sale.OPEN_AT());
-        vm.expectRevert(bytes("refunding"));
+        vm.prank(alice);
+        sale.refund(1);
+        assertEq(sale.sold(), 9);
+        _forceSold(sale.OPEN_AT() - 1);
+        vm.expectRevert(bytes("below OPEN_AT"));
         sale.openPool();
-        assertFalse(sale.opened());
+        _forceSold(sale.OPEN_AT());
+        sale.openPool();
+        assertTrue(sale.opened());
+        vm.prank(alice);
+        vm.expectRevert(bytes("opened"));
+        sale.refund(2);
     }
 
     function test_autoOpen_setsOpenedAt_andFloodStarts() public {
@@ -403,7 +420,6 @@ contract Ark100Test is Test {
     function test_siteSelectors_unchanged() public view {
         assertEq(ArkSale.mint.selector, bytes4(hex"a0712d68"));
         assertEq(ArkSale.openPool.selector, bytes4(hex"eb5797a4"));
-        assertEq(ArkSale.enableRefunds.selector, bytes4(hex"8c52dc41"));
         assertEq(ArkSale.refund.selector, bytes4(hex"278ecde1"));
         assertEq(ArkSale.quoteMint.selector, bytes4(hex"665216c6"));
         assertEq(ArkSale.priceUsd.selector, bytes4(hex"8b3948bd"));
@@ -413,7 +429,6 @@ contract Ark100Test is Test {
         assertEq(_sig("startTime()"), bytes4(hex"78e97925"));
         assertEq(_sig("opened()"), bytes4(hex"5f88eade"));
         assertEq(_sig("openedAt()"), bytes4(hex"38930203"));
-        assertEq(_sig("refunding()"), bytes4(hex"f43e98c7"));
         assertEq(_sig("lastMintTime()"), bytes4(hex"9d463520"));
         assertEq(_sig("payer(uint256)"), bytes4(hex"561874ee"));
         assertEq(_sig("paidBnb(uint256)"), bytes4(hex"f88e127c"));
@@ -453,7 +468,6 @@ contract Ark100Test is Test {
         sale.startTime();
         sale.opened();
         sale.openedAt();
-        sale.refunding();
         sale.lastMintTime();
         sale.payer(1);
         sale.paidBnb(1);
@@ -497,16 +511,18 @@ contract Ark100Test is Test {
         assertEq(first + second, due);
 
         vm.warp(block.timestamp + 7 days + 1);
-        sale.enableRefunds();
         uint256 mid = alice.balance;
         vm.prank(alice);
         sale.refund(1);
         assertEq(alice.balance, mid + first);
         assertEq(sale.outstandingRefunds(), second);
+        assertEq(sale.sold(), 1);
         vm.prank(alice);
         sale.refund(2);
         assertEq(sale.outstandingRefunds(), 0);
         assertEq(sale.paidBnb(2), 0);
+        assertEq(sale.sold(), 0);
+        assertEq(sale.teamDue() + sale.potDue() + sale.reserveBNB(), 0);
     }
 
     function test_staleFeed_blocksMint() public {
@@ -647,7 +663,6 @@ contract Ark100Test is Test {
         sale.mint{value: due}(1);
         _donate(0.4 ether);
         vm.warp(block.timestamp + 7 days + 1);
-        sale.enableRefunds();
         uint256 mid = alice.balance;
         vm.prank(alice);
         sale.refund(1);
@@ -745,6 +760,242 @@ contract Ark100Test is Test {
         // Integer zap stays within 5 bps of the post-swap reserve ratio, so liquidity adds do not
         // refund a growing BNB or ARK balance.
         assertLe(diff * 10_000, right * 5 + xPrime + yPrime);
+    }
+
+    function test_refund_holderNotPayer_quotaStaysUsed() public {
+        (uint256 due,) = sale.quoteMint(1);
+        vm.prank(alice);
+        sale.mint{value: due}(1);
+        vm.prank(alice);
+        tickets.transferFrom(alice, bob, 1);
+        vm.warp(sale.startTime() + sale.REFUND_WINDOW());
+        vm.prank(alice);
+        vm.expectRevert(bytes("not holder"));
+        sale.refund(1);
+        uint256 bobBefore = bob.balance;
+        vm.prank(bob);
+        sale.refund(1);
+        assertEq(bob.balance, bobBefore + due);
+        assertEq(tickets.mintedBy(alice), 1);
+        assertEq(sale.sold(), 0);
+        for (uint256 i; i < 9; ++i) {
+            (uint256 more,) = sale.quoteMint(1);
+            vm.prank(alice);
+            sale.mint{value: more}(1);
+        }
+        (uint256 blocked,) = sale.quoteMint(1);
+        vm.prank(alice);
+        vm.expectRevert(bytes("max per addr"));
+        sale.mint{value: blocked}(1);
+        assertEq(tickets.mintedBy(alice), 10);
+        assertEq(sale.sold(), 9);
+    }
+
+    function test_refund_listedAndBid_doNotBreak_andTicketIsUnusable() public {
+        (uint256 due,) = sale.quoteMint(1);
+        vm.prank(alice);
+        sale.mint{value: due}(1);
+        TicketMarketBNB book = new TicketMarketBNB(address(tickets), team);
+        vm.prank(alice);
+        tickets.approve(address(book), 1);
+        vm.prank(alice);
+        book.list(1, 1 ether);
+
+        TicketBidMarket bids = new TicketBidMarket(address(tickets), team);
+        vm.deal(bob, bob.balance + 2 ether);
+        uint256 bobBefore = bob.balance;
+        vm.prank(bob);
+        uint256 bidId = bids.postBid{value: 2 ether}(2, 1, 2 ether, 1, 1 hours);
+
+        vm.warp(sale.startTime() + sale.REFUND_WINDOW());
+        vm.prank(alice);
+        sale.refund(1);
+        assertEq(tickets.mintedBy(alice), 1);
+        assertFalse(tickets.isAlive(1));
+        assertFalse(tickets.isSurvivor(1));
+        (uint8 cabin,,,,) = tickets.tickets(1);
+        assertEq(cabin, 4);
+
+        vm.prank(bob);
+        vm.expectRevert();
+        book.buy{value: 1 ether}(1);
+        assertEq(address(book).balance, 0);
+        book.cleanListing(1);
+        assertEq(book.listingCount(), 0);
+
+        vm.prank(bob);
+        vm.expectRevert();
+        bids.acceptBid(bidId, 1);
+        vm.prank(bob);
+        bids.cancelBid(bidId);
+        assertEq(bob.balance, bobBefore);
+        assertEq(address(bids).balance, 0);
+
+        vm.expectRevert();
+        tickets.ownerOf(1);
+        vm.prank(alice);
+        vm.expectRevert();
+        tickets.requestCabin(1);
+        vm.expectRevert(bytes("not pending"));
+        tickets.settleCabin(1);
+        vm.prank(alice);
+        vm.expectRevert();
+        tickets.claim(1);
+        vm.prank(alice);
+        vm.expectRevert();
+        shop.applyBag(1, 1);
+        vm.expectRevert(bytes("dead"));
+        shop.gift(1, 1);
+
+        _donate(0.2 ether);
+        _forceSold(sale.OPEN_AT());
+        sale.openPool();
+        flood.start();
+        vm.warp(block.timestamp + 2 days);
+        flood.commit(1);
+        vm.roll(block.number + 6);
+        flood.settle(1, new uint256[](0));
+        assertEq(tickets.aliveCount(), 0);
+        assertEq(tickets.mintedBy(alice), 1);
+    }
+
+    function test_refund_escrowReversesAndOpenPaysRemainder() public {
+        feed.setAnswer(123e8);
+        (uint256 due,) = sale.quoteMint(3);
+        vm.prank(alice);
+        sale.mint{value: due}(3);
+        vm.warp(sale.startTime() + sale.REFUND_WINDOW());
+        vm.prank(alice);
+        sale.refund(1);
+        _assertEscrow(0);
+
+        feed.setAnswer(456e8);
+        _forceSold(2700);
+        (uint256 due2,) = sale.quoteMint(2);
+        vm.prank(bob);
+        sale.mint{value: due2}(2);
+        _forceSold(4);
+        vm.prank(bob);
+        sale.refund(5);
+        _donate(0.25 ether);
+        _assertEscrow(0.25 ether);
+
+        uint256 teamDue = sale.teamDue();
+        uint256 potDue = sale.potDue();
+        uint256 reserve = sale.reserveBNB();
+        uint256 teamBefore = team.balance;
+        uint256 potBefore = address(pot).balance;
+        _forceSold(sale.OPEN_AT());
+        sale.openPool();
+        assertEq(team.balance - teamBefore, teamDue);
+        assertEq(address(pot).balance - potBefore, potDue);
+        assertEq(address(sale).balance, 0);
+        assertEq(sale.outstandingRefunds(), 0);
+        assertEq(sale.teamDue(), 0);
+        assertEq(sale.potDue(), 0);
+        assertEq(sale.reserveBNB(), 0);
+        vm.prank(alice);
+        vm.expectRevert(bytes("opened"));
+        sale.refund(2);
+        (uint256 bnbReserve,) = _pairReserves();
+        assertGe(bnbReserve, reserve + 0.25 ether);
+    }
+
+    /// forge-config: default.fuzz.runs = 32
+    function testFuzz_solvency_interleavedMintsRefunds(uint256 seed) public {
+        address[4] memory actors;
+        for (uint256 i; i < 4; ++i) {
+            actors[i] = makeAddr(string(abi.encodePacked("fuzz", vm.toString(i))));
+            agent.setAllowed(actors[i], true, "fuzz.ai");
+            vm.deal(actors[i], 200 ether);
+        }
+        uint256 donations;
+        bool window;
+        for (uint256 step; step < 12; ++step) {
+            seed = uint256(keccak256(abi.encode(seed, step)));
+            if (!window && step == 5) {
+                vm.warp(sale.startTime() + sale.REFUND_WINDOW());
+                window = true;
+            }
+            uint256 action = seed % 4;
+            if (action == 0) {
+                feed.setAnswer(int256(uint256(50 + (seed % 1950)) * 1e8));
+            } else if (action == 1) {
+                address who = actors[seed % 4];
+                uint256 room = 10 - tickets.mintedBy(who);
+                if (room == 0) continue;
+                uint256 count = 1 + (seed % 3);
+                if (count > room) count = room;
+                uint256 live = sale.sold();
+                uint256 fake = seed % 2990;
+                if (fake + count >= 3000) fake = 3000 - count - 1;
+                _forceSold(fake);
+                (uint256 due,) = sale.quoteMint(count);
+                vm.prank(who);
+                sale.mint{value: due}(count);
+                _forceSold(live + count);
+            } else if (action == 2 && window) {
+                uint256 n = tickets.totalMinted();
+                if (n == 0) continue;
+                for (uint256 k; k < 4 && k < n; ++k) {
+                    uint256 id = 1 + ((seed + k) % n);
+                    if (sale.paidBnb(id) == 0) continue;
+                    address holder = tickets.ownerOf(id);
+                    vm.prank(holder);
+                    sale.refund(id);
+                    break;
+                }
+            } else {
+                uint256 gift = ((seed % 4) + 1) * 0.01 ether;
+                vm.deal(address(this), address(this).balance + gift);
+                (bool ok,) = address(sale).call{value: gift}("");
+                assertTrue(ok);
+                donations += gift;
+            }
+            _assertEscrow(donations);
+        }
+        if (address(sale).balance == 0) return;
+        uint256 teamDue = sale.teamDue();
+        uint256 potDue = sale.potDue();
+        uint256 reserve = sale.reserveBNB();
+        uint256 extra = address(sale).balance - sale.outstandingRefunds();
+        uint256 teamBefore = team.balance;
+        uint256 potBefore = address(pot).balance;
+        _forceSold(sale.OPEN_AT());
+        sale.openPool();
+        assertEq(team.balance - teamBefore, teamDue);
+        assertEq(address(pot).balance - potBefore, potDue);
+        assertEq(address(sale).balance, 0);
+        assertEq(sale.outstandingRefunds(), 0);
+        (uint256 bnbReserve,) = _pairReserves();
+        assertGe(bnbReserve, reserve + extra);
+    }
+
+    function _assertEscrow(uint256 donations) internal view {
+        uint256 sum;
+        uint256 live;
+        uint256 teamLeg;
+        uint256 potLeg;
+        uint256 reserveLeg;
+        uint256 n = tickets.totalMinted();
+        for (uint256 id = 1; id <= n; ++id) {
+            uint256 paid = sale.paidBnb(id);
+            if (paid == 0) continue;
+            live++;
+            sum += paid;
+            uint256 t = (paid * sale.TEAM_BPS()) / 10_000;
+            uint256 p = (paid * sale.POT_BPS()) / 10_000;
+            teamLeg += t;
+            potLeg += p;
+            reserveLeg += paid - t - p;
+        }
+        assertEq(sum, sale.outstandingRefunds());
+        assertEq(sale.teamDue(), teamLeg);
+        assertEq(sale.potDue(), potLeg);
+        assertEq(sale.reserveBNB(), reserveLeg);
+        assertEq(teamLeg + potLeg + reserveLeg, sale.outstandingRefunds());
+        assertEq(sale.sold(), live);
+        assertEq(address(sale).balance, sale.outstandingRefunds() + donations);
     }
 
     function _mintCount(uint256 n) internal {

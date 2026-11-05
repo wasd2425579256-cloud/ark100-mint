@@ -91,7 +91,7 @@
       <p id="oldRefundStats"><span class="t-zh">正在读取旧发售。这里只记旧合约上的船票，不改新发售潮位。</span><span class="t-en">Reading the old sale. This is only the previous contract’s tickets, not the new sale tide.</span></p>
       <p id="oldRefundWhen"><span class="t-zh">退款窗口时间读取后显示。</span><span class="t-en">The refund window time appears after the chain read.</span></p>
       <p class="old-refund-count" id="oldRefundClock" role="timer"><span class="t-zh">倒计时读取后显示。</span><span class="t-en">The countdown appears after the chain read.</span></p>
-      <p class="old-refund-split"><span class="t-zh">旧船票从约 11/11 18:36（北京）起退。新发售铸出的票，要等新的开售时间再加 7 天，而且那时已售还不到 3000 张，才能退。</span><span class="t-en">Old tickets refund from about Nov 11, 18:36 Beijing. Tickets minted on the new sale follow that sale’s start plus 7 days, and only if fewer than 3,000 are sold by then.</span></p>
+      <p class="old-refund-split"><span class="t-zh">旧船票从约 11/11 18:36（北京）起退。新发售的票，开售满 7 天且池子还没打开时，由持有人按票退；铸造继续，卖到 3000 张仍会开池。</span><span class="t-en">Old tickets refund from about Nov 11, 18:36 Beijing. On the new sale, after start plus 7 days and while the pool is closed, the holder refunds a ticket. Minting continues, and the pool still opens at 3,000 live tickets.</span></p>
       <button class="cta" id="oldEnableRefundBtn" type="button" disabled aria-disabled="true">
         <span class="t-zh">11/11 18:36（北京）后开放</span>
         <span class="t-en">Opens Nov 11, 18:36 Beijing</span>
@@ -246,7 +246,7 @@
         <article class="trust-item">
           <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="16" fill="none" stroke="#c48a4a" stroke-width="2.4"/><path d="M24 14 v10 l7 4" fill="none" stroke="#e8b23a" stroke-width="2.4" stroke-linecap="round"/><path d="M16 34 h16" stroke="#2ec4c6" stroke-width="2.4" stroke-linecap="round"/></svg>
           <h3><span class="t-zh">未开池全额退</span><span class="t-en">Full refund if no pool</span></h3>
-          <p><span class="t-zh">7 天没到 #3000，先开启一次退款，再由当时付款的钱包按票领回 BNB。</span><span class="t-en">If #3000 is missed within 7 days, refunds turn on once, then the wallet that paid claims each ticket’s BNB.</span></p>
+          <p><span class="t-zh">开售满 7 天且池子还没打开时，持有人可以按票退回铸造时付的 BNB。铸造不停止，卖到 3000 张仍会开池。</span><span class="t-en">Seven days after the sale starts, while the pool is closed, the holder can refund a ticket for the BNB paid at mint. Minting continues, and the pool still opens at 3,000.</span></p>
         </article>
         <article class="trust-item">
           <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 30 Q24 16 40 30" fill="none" stroke="#2ec4c6" stroke-width="2.4"/><path d="M14 34 Q24 26 34 34" fill="none" stroke="#178fb8" stroke-width="2.4"/><path d="M18 18 l12 12 M30 18 L18 30" stroke="#c48a4a" stroke-width="2.4" stroke-linecap="round"/></svg>
@@ -389,7 +389,7 @@
         <h2><span class="t-zh">我的方舟</span><span class="t-en">My Ark</span></h2>
         <span class="note-pill"><span class="t-zh">链上舱单</span><span class="t-en">On-chain tickets</span></span>
       </div>
-      <p class="muted"><span class="t-zh">这里读取新船票。输入钱包时，也会列出旧发售上由这只钱包持有或付款的船票，并标成「旧票」。旧票的退款走旧发售合约。洪水启动后，新船票会显示当前是第几晚，以及当夜有没有沙袋。</span><span class="t-en">This reads the new TicketNFT. A wallet lookup also lists old-sale tickets that wallet holds or paid for, marked Old. Those refunds go to the previous sale. After the flood starts, new tickets show the current night and tonight’s sandbag.</span></p>
+      <p class="muted"><span class="t-zh">这里读取新船票。输入钱包时，也会列出旧发售上由这只钱包持有或付款的船票，并标成「旧票」。旧票的退款走旧发售合约。新票在开售满 7 天、池子未开时，由当前持有人按票退；窗口未到时显示倒计时。洪水启动后，新船票会显示当前是第几晚，以及当夜有没有沙袋。</span><span class="t-en">This reads the new TicketNFT. A wallet lookup also lists old-sale tickets that wallet holds or paid for, marked Old. Those refunds go to the previous sale. A new ticket shows a refund button for its holder after start plus 7 days, while the pool is closed, and a countdown before that. After the flood starts, new tickets show the current night and tonight’s sandbag.</span></p>
       <p class="muted" id="arkNight"><span class="t-zh">当前晚数：正在读取。</span><span class="t-en">Current night: reading.</span></p>
       <form class="lookup" id="lookup">
         <label class="sr-only" for="walletInput" id="walletLabel"><span class="t-zh">钱包地址或船票编号</span><span class="t-en">Wallet address or ticket id</span></label>
@@ -588,7 +588,7 @@
         </article>
         <article class="trigger" id="openPoolCard" hidden>
           <h3><span class="t-zh">开池</span><span class="t-en">Open pool</span></h3>
-          <p><span class="t-zh">链上条件已满足：已售至少 3000，还没开池，也没在退款。点这一步会打开池子。开池时间由合约写成当前区块时间。</span><span class="t-en">The chain matches: at least 3,000 sold, not opened, and not refunding. This calls <code>ArkSale.openPool()</code>. The contract sets <code>openedAt</code> to the current block time.</span></p>
+          <p><span class="t-zh">链上条件已满足：已售至少 3000，还没开池。点这一步会打开池子，打开之后不能再退款。开池时间由合约写成当前区块时间。</span><span class="t-en">The chain matches: at least 3,000 sold, and the pool is not open. This calls <code>ArkSale.openPool()</code>. Refunds stop once it opens. The contract sets <code>openedAt</code> to the current block time.</span></p>
           <button class="cta" id="openPoolBtn" type="button"><span class="t-zh">开池</span><span class="t-en">openPool</span></button>
         </article>
         <article class="trigger" id="startFloodCard" hidden>
@@ -597,9 +597,9 @@
           <button class="cta" id="startFloodBtn" type="button"><span class="t-zh">启动百夜洪水</span><span class="t-en">start</span></button>
         </article>
         <article class="trigger" id="refundCard" hidden>
-          <h3><span class="t-zh">新发售开启退款</span><span class="t-en">New sale · enable refunds</span></h3>
-          <p><span class="t-zh">这是新发售合约自己的退款。新发售写入 startTime 之后满 7 天，池子仍没打开，而且已售还不到 3000 张，才会出现这个按钮。startTime 还是 0，或者窗口没到时，按钮不出现。旧船票不走这里。</span><span class="t-en">This refund belongs to the new sale contract. The button appears only seven days after that sale’s startTime, while its pool is still closed and fewer than 3,000 tickets are sold. While startTime is still 0, or the window has not arrived, there is no button. Old tickets are not refunded here.</span></p>
-          <button class="cta" id="enableRefundBtn" type="button"><span class="t-zh">开启退款</span><span class="t-en">enableRefunds</span></button>
+          <h3><span class="t-zh">新发售按票退款</span><span class="t-en">New sale · refund one ticket</span></h3>
+          <p><span class="t-zh">开售满 7 天后，池子还没打开时，持有人可以在「我的方舟」随时按票退款。不想退的人继续持有。铸造不停止。已售只数还在的付费船票，卖到 3000 张仍会自动开池。开池之后不能再退。退款会烧掉这张票，退回铸造时付的 BNB，不恢复每地址 10 张的额度。startTime 还是 0 时不显示。旧船票不走这里。</span><span class="t-en">Seven days after startTime, while the pool is still closed, the holder can refund any ticket at any time from My Ark. Holders who stay keep the ticket. Minting continues. Sold counts live paid tickets, and the pool still opens automatically at 3,000. After the pool opens, refunds stop. A refund burns that ticket, returns the BNB paid at mint, and does not restore the 10-per-address mint cap. Hidden while startTime is 0. Old tickets are not refunded here.</span></p>
+          <p class="old-refund-count" id="newRefundClock" role="timer" hidden><span class="t-zh">倒计时读取后显示。</span><span class="t-en">The countdown appears after the chain read.</span></p>
         </article>
         <article class="trigger">
           <h3><span class="t-zh">第 100 晚领取</span><span class="t-en">Day-100 claim</span></h3>
@@ -658,8 +658,8 @@
       <details class="rule">
         <summary><span class="r-badge">R5</span> <span class="t-zh">开池、税与退款</span><span class="t-en">Pool, tax, refund</span></summary>
         <div class="body">
-          <p class="t-zh">网站已暂停铸造，要等新发售设定 startTime。修复后的合约已经部署，开池后的分配按下面执行：售到 #3000 才开池。开池前铸造款 100% 留在发售合约。代币名 ARK100，符号 ARK。硬顶 20 亿（2,000,000,000），只由船票产出和开池种子铸造，没有预挖。开池时 20% 给写死的团队钱包，15% 进奖池，65% 的 BNB 与 1,500,000 ARK 在 PancakeSwap 的 ARK/WBNB 池加池，流动性代币转入 0xdead。交易税写死 2%：销毁 0.5%，奖池 0.5%，团队 1%，不可调。合约没有管理员，不可升级。新发售开售后满 7 天仍未到 #3000，任何人可先开启一次退款。已经买到的旧船票不走这份新合约：只有旧发售在开池前没有卖满 3000 张，才能在约 2026-11-11 18:36（北京时间）后，向旧发售合约按票领回 BNB。</p>
-          <p class="t-en">Minting on this site is paused until the new sale’s startTime is set. The fixed suite is deployed, and the split below is what it does: the pool opens at ticket #3000. Until then mint proceeds stay in the sale contract. Token name ARK100, symbol ARK. Hard cap 2,000,000,000, minted only by ticket yield and the pool seed, no premine. At open: 20% to the fixed team wallet, 15% to the pot, 65% of the BNB plus 1,500,000 ARK into the PancakeSwap ARK/WBNB pool, LP to 0xdead. Trade tax is a fixed 2%: 0.5% burn, 0.5% pot, 1% team. No owner and not upgradeable. If #3000 is still unreached 7 days after the new sale starts, anyone may turn refunds on once. Tickets already bought do not refund through this new contract. They refund from the old sale only if that sale stays under 3,000 before its pool opens, around 2026-11-11 18:36 Asia/Shanghai.</p>
+          <p class="t-zh">网站已暂停铸造，要等新发售设定 startTime。修复后的合约已经部署，开池后的分配按下面执行：售到 #3000 才开池。开池前铸造款 100% 留在发售合约。代币名 ARK100，符号 ARK。硬顶 20 亿（2,000,000,000），只由船票产出和开池种子铸造，没有预挖。开池时 20% 给写死的团队钱包，15% 进奖池，65% 的 BNB 与 1,500,000 ARK 在 PancakeSwap 的 ARK/WBNB 池加池，流动性代币转入 0xdead。交易税写死 2%：销毁 0.5%，奖池 0.5%，团队 1%，不可调。合约没有管理员，不可升级。新发售开售满 7 天后，池子还没打开时，持有人可以按票退款，铸造不停止，卖到 3000 张仍会自动开池，开池后不能再退。已经买到的旧船票不走这份新合约：只有旧发售在开池前没有卖满 3000 张，才能在约 2026-11-11 18:36（北京时间）后，向旧发售合约按票领回 BNB。</p>
+          <p class="t-en">Minting on this site is paused until the new sale’s startTime is set. The fixed suite is deployed, and the split below is what it does: the pool opens at ticket #3000. Until then mint proceeds stay in the sale contract. Token name ARK100, symbol ARK. Hard cap 2,000,000,000, minted only by ticket yield and the pool seed, no premine. At open: 20% to the fixed team wallet, 15% to the pot, 65% of the BNB plus 1,500,000 ARK into the PancakeSwap ARK/WBNB pool, LP to 0xdead. Trade tax is a fixed 2%: 0.5% burn, 0.5% pot, 1% team. No owner and not upgradeable. Seven days after the new sale starts, while its pool is still closed, the holder can refund a ticket. Minting continues, the pool still opens at 3,000, and refunds stop after open. Tickets already bought do not refund through this new contract. They refund from the old sale only if that sale stays under 3,000 before its pool opens, around 2026-11-11 18:36 Asia/Shanghai.</p>
         </div>
       </details>
     </section>
@@ -673,7 +673,7 @@
       </details>
       <details class="faq-item">
         <summary><span class="t-zh">什么时候开池？</span><span class="t-en">When does the pool open?</span></summary>
-        <div class="body"><p class="t-zh">卖到第 3000 张的那笔铸造里会自动开池。开池时 65% 的 BNB 加上 1,500,000 ARK 组成流动性，流动性代币销毁。如果那一笔没有打开，而且已售不少于 3000、还没开池、也没进入退款，任何人可以再点开池。开池时间由合约写成当时的区块时间。百夜洪水在开池之后启动，不能自己填时间，合约只认开池那一刻写下的时间。</p><p class="t-en">The mint that sells ticket #3000 opens the pool automatically. At open, 65% of the BNB plus 1,500,000 ARK become the liquidity, and the LP is burned. If that open does not happen, anyone may call <code>ArkSale.openPool()</code> once at least 3,000 are sold, the pool is still closed, and refunds are not on. <code>openedAt</code> is the block timestamp written inside the contract. <code>FloodEngine.start()</code> takes no timestamp. It reads <code>sale.openedAt</code>, so nobody can pass a fake clock.</p></div>
+        <div class="body"><p class="t-zh">卖到第 3000 张的那笔铸造里会自动开池。开池时 65% 的 BNB 加上 1,500,000 ARK 组成流动性，流动性代币销毁。如果那一笔没有打开，而且已售不少于 3000、还没开池，任何人可以再点开池。开池之后不能再退款。开池时间由合约写成当时的区块时间。百夜洪水在开池之后启动，不能自己填时间，合约只认开池那一刻写下的时间。</p><p class="t-en">The mint that sells ticket #3000 opens the pool automatically. At open, 65% of the BNB plus 1,500,000 ARK become the liquidity, and the LP is burned. If that open does not happen, anyone may call <code>ArkSale.openPool()</code> once at least 3,000 are sold and the pool is still closed. Refunds stop after open. <code>openedAt</code> is the block timestamp written inside the contract. <code>FloodEngine.start()</code> takes no timestamp. It reads <code>sale.openedAt</code>, so nobody can pass a fake clock.</p></div>
       </details>
       <details class="faq-item" id="faq-payback">
         <summary><span class="t-zh">买一张、抽到经济舱，大概多久回本？</span><span class="t-en">One Economy ticket: how long to pay it back?</span></summary>
@@ -697,19 +697,19 @@
       <details class="faq-item">
         <summary><span class="t-zh">没到 #3000 怎么办？</span><span class="t-en">What if #3000 is never reached?</span></summary>
         <div class="body">
-          <p class="t-zh">开售后满 7 天还没卖到 #3000，而且池子没打开时，可以退款。</p>
+          <p class="t-zh">开售满 7 天、池子还没打开时，持有人可以按票退款。没有单独的「开启退款」这一步。</p>
           <ul class="t-zh">
-            <li>任何人先开启一次退款。开启之后就不能再铸造，也不能开池。</li>
-            <li>然后每位买家自己领。在「我的方舟」里用当时付款的钱包查看，每张票点「领退款」。</li>
-            <li>领回的是买这张票时付的 BNB。票如果转给了别人，仍然只有原付款钱包能领。</li>
-            <li>已经领过的票不能再领。</li>
+            <li>窗口还没到时，「我的方舟」显示倒计时。startTime 还是 0 时不显示。</li>
+            <li>窗口打开后，用当前持有这张票的钱包点「领退款」。退回的是铸造时付的 BNB。票转给别人之后，退款权跟着票走。</li>
+            <li>不想退的人继续持有。铸造不停止。已售只数还在的付费船票，卖到 3000 张仍会自动开池。</li>
+            <li>退款会烧掉这张票，不能再抽舱、挂单或领产出，也不恢复每地址 10 张的铸造额度。开池之后不能再退。</li>
           </ul>
-          <p class="t-en">If 7 days have passed since the sale started, sales are still short of #3000, and the pool never opened, refunds can be turned on.</p>
+          <p class="t-en">Seven days after the sale starts, while the pool is still closed, the holder can refund a ticket. There is no separate enable-refunds step.</p>
           <ul class="t-en">
-            <li>Anyone turns refunds on once. After that, minting stops and the pool cannot be opened.</li>
-            <li>Each buyer then claims their own tickets. In My Ark, look them up with the wallet that paid and press Claim refund on each ticket.</li>
-            <li>You get back the BNB paid for that ticket. If the ticket was transferred, only the original paying wallet can claim.</li>
-            <li>A ticket that was already claimed cannot be claimed again.</li>
+            <li>Before the window, My Ark shows a countdown. Nothing is shown while startTime is 0.</li>
+            <li>Once the window is open, the wallet that currently holds the ticket presses Claim refund. The BNB returned is what was paid at mint. If the ticket was transferred, the refund right goes with it.</li>
+            <li>Holders who stay keep the ticket. Minting continues. Sold counts live paid tickets, and the pool still opens automatically at 3,000.</li>
+            <li>A refund burns that ticket. It cannot draw a cabin, be listed, or earn, and it does not restore the 10-per-address mint cap. After the pool opens, refunds stop.</li>
           </ul>
         </div>
       </details>

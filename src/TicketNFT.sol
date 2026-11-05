@@ -50,6 +50,7 @@ contract TicketNFT is ERC721, ReentrancyGuard {
     event CabinRequested(uint256 indexed tokenId, uint64 commitBlock);
     event CabinSettled(uint256 indexed tokenId, uint8 cabin);
     event Sunk(uint256 indexed tokenId, address indexed owner);
+    event TicketRetired(uint256 indexed tokenId, address indexed holder);
     event Claimed(uint256 indexed tokenId, address indexed to, uint256 amount);
 
     modifier onlySale() {
@@ -112,6 +113,19 @@ contract TicketNFT is ERC721, ReentrancyGuard {
         if (aliveCount > 0) aliveCount -= 1;
         if (mintedBy[t.minter] > 0) mintedBy[t.minter] -= 1;
         emit Sunk(tokenId, ownerOf(tokenId));
+    }
+
+    /// @notice Sale refund. Burns the ticket and marks it sunk. Does not return `mintedBy` quota.
+    function retire(uint256 tokenId) external onlySale {
+        Ticket storage t = tickets[tokenId];
+        require(t.mintedAt != 0 && t.cabin != CABIN_SUNK, "bad");
+        address holder = ownerOf(tokenId);
+        t.cabin = CABIN_SUNK;
+        t.cabinCommitBlock = 0;
+        t.lastClaim = uint64(block.timestamp);
+        if (aliveCount > 0) aliveCount -= 1;
+        _burn(tokenId);
+        emit TicketRetired(tokenId, holder);
     }
 
     function isSurvivor(uint256 tokenId) external view returns (bool) {

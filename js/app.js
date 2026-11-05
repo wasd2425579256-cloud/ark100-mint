@@ -6,6 +6,8 @@
   var legacyRefund = null;
   var legacyAnchorMs = 0;
   var legacyRechecked = false;
+  var boardAnchorMs = 0;
+  var newRefundRechecked = false;
   var quote = null;
   var ticketFilter = "all";
   var ticketRows = [];
@@ -75,7 +77,6 @@
   }
 
   function saleLabel() {
-    if (board && board.refunding) return { zh: "退款已开启", en: "Refunds are open" };
     if (mintPaused()) return { zh: "铸造已暂停", en: "Minting paused" };
     if (!board) return { zh: "正在读取", en: "Reading" };
     if (!board.saleStarted) return { zh: "正式未开售", en: "Sale not started" };
@@ -213,20 +214,22 @@
     var refundCard = $("refundCard");
     if (openCard) openCard.hidden = !board.canOpen;
     if (startCard) startCard.hidden = !board.canStart;
-    if (refundCard) refundCard.hidden = !board.canEnableRefunds;
+    if (refundCard) refundCard.hidden = board.startTime === 0n || board.opened;
     var dayInput = $("floodDayInput");
     if (dayInput && board.dayIndex && !dayInput.value) dayInput.value = board.dayIndex.toString();
     var parts = [];
+    var refundZh = board.startTime === 0n ? "未开始" : (board.opened ? "已结束" : (board.refundsOpen ? "可按票退" : "倒计时"));
+    var refundEn = board.startTime === 0n ? "not started" : (board.opened ? "closed" : (board.refundsOpen ? "per ticket" : "countdown"));
     parts.push(zh()
-      ? ("已售 " + C.formatInt(board.sold) + " / 10,000。开池：" + (board.opened ? "已打开" : "未打开") + "。退款：" + (board.refunding ? "已开启" : "未开启") + "。洪水：" + (board.floodStarted ? "已启动" : "未启动") + "。")
-      : (C.formatInt(board.sold) + " / 10,000 sold. Pool: " + (board.opened ? "open" : "closed") + ". Refunds: " + (board.refunding ? "on" : "off") + ". Flood: " + (board.floodStarted ? "started" : "not started") + "."));
+      ? ("已售 " + C.formatInt(board.sold) + " / 10,000。开池：" + (board.opened ? "已打开" : "未打开") + "。退款：" + refundZh + "。洪水：" + (board.floodStarted ? "已启动" : "未启动") + "。")
+      : (C.formatInt(board.sold) + " / 10,000 sold. Pool: " + (board.opened ? "open" : "closed") + ". Refunds: " + refundEn + ". Flood: " + (board.floodStarted ? "started" : "not started") + "."));
     if (mintPaused()) parts.push(zh() ? "网站已暂停铸造，不会发送铸造交易。" : "Minting on this site is paused. No mint is sent.");
     else if (!board.saleStarted) parts.push(zh() ? "铸造正式未开售。" : "Minting is not open yet.");
     else if (board.mintOpen) parts.push(zh() ? "铸造已开放。" : "Minting is open.");
-    if (board.refunding) {
+    if (board.refundsOpen) {
       parts.push(zh()
-        ? "到「我的方舟」，用当时付款的钱包按票领取。"
-        : "In My Ark, claim each ticket from the wallet that paid.");
+        ? "新发售可按票退。到「我的方舟」，用持有这张票的钱包领取。铸造继续，卖到 3000 张仍会开池。"
+        : "New-sale tickets can be refunded one by one. In My Ark, use the wallet that holds the ticket. Minting continues, and the pool still opens at 3,000.");
     }
     if (legacyRefund && legacyRefund.refunding) {
       parts.push(zh()
@@ -244,6 +247,7 @@
       buy.disabled = !board.opened;
       setBi(buy, board.opened ? "购买 1 个沙袋" : "开池后才能买沙袋", board.opened ? "Buy 1 sandbag" : "Sandbags open with the pool");
     }
+    paintNewClocks();
   }
 
   function pad2(n) {
@@ -284,6 +288,47 @@
     var clock = pad2(Math.floor((s % 86400) / 3600)) + ":" + pad2(Math.floor((s % 3600) / 60)) + ":" + pad2(s % 60);
     if (zh()) return days > 0 ? ("还剩 " + days + " 天 " + clock) : ("还剩 " + clock);
     return days > 0 ? (days + "d " + clock + " left") : (clock + " left");
+  }
+
+  function boardNowSec() {
+    if (!board || !boardAnchorMs) return BigInt(Math.floor(Date.now() / 1000));
+    var elapsed = BigInt(Math.max(0, Math.floor((Date.now() - boardAnchorMs) / 1000)));
+    return board.now + elapsed;
+  }
+
+  function paintNewClocks() {
+    var clock = $("newRefundClock");
+    if (!board || board.startTime === 0n || board.opened) {
+      if (clock) clock.hidden = true;
+      return;
+    }
+    if (clock) {
+      clock.hidden = false;
+      var left = board.refundOpensAt - boardNowSec();
+      if (board.refundsOpen || left <= 0n) {
+        setBi(clock, "窗口已打开。到「我的方舟」按票退款。", "The window is open. Refund each ticket in My Ark.");
+      } else {
+        var text = countdownText(left);
+        setBi(clock, text, text);
+      }
+    }
+    document.querySelectorAll("[data-refund-clock]").forEach(function (el) {
+      var remain = board.refundOpensAt - boardNowSec();
+      if (remain < 0n) remain = 0n;
+      var label = countdownText(remain);
+      var zhEl = el.querySelector(".t-zh");
+      var enEl = el.querySelector(".t-en");
+      if (zhEl && enEl) {
+        zhEl.textContent = label;
+        enEl.textContent = label;
+      } else {
+        el.textContent = label;
+      }
+    });
+    if (!board.refundsOpen && board.refundOpensAt !== 0n && boardNowSec() >= board.refundOpensAt && !newRefundRechecked) {
+      newRefundRechecked = true;
+      refresh().catch(function () {});
+    }
   }
 
   function paintOldClock() {
@@ -399,15 +444,23 @@
       var note = payerNote(payerClaim(row.payer || ""));
       return { kind: "button", disabled: true, paid: paid, sale: "legacy", zh: note[0], en: note[1] };
     }
-    if (!board || !board.refunding || board.opened || board.startTime === 0n || board.sold >= 3000n) return null;
-    if (row.paidBnb == null || row.payerKnown === false) {
+    if (!board || board.opened || board.startTime === 0n) return null;
+    if (row.paidBnb == null) {
       return { kind: "mute", zh: "退款信息暂时读不到", en: "Refund details could not be read" };
     }
     var paidNew = BigInt(row.paidBnb);
     if (paidNew === 0n) return null;
-    if (payerClaim(row.payer || "") !== "ok") {
-      var blocked = payerNote(payerClaim(row.payer || ""));
-      return { kind: "mute", zh: blocked[0], en: blocked[1] };
+    if (!board.refundsOpen) return { kind: "countdown", paid: paidNew };
+    var holding = account && sameAddr(account, row.owner || "");
+    if (!holding) {
+      return {
+        kind: "button",
+        disabled: true,
+        paid: paidNew,
+        sale: "new",
+        zh: account ? "只有持有人能退" : "连接持有钱包后可退",
+        en: account ? "Only the holder can refund" : "Connect the holding wallet to refund"
+      };
     }
     return { kind: "button", disabled: false, paid: paidNew, sale: "new" };
   }
@@ -449,7 +502,13 @@
         "<td></td>";
       var cell = tr.lastChild;
       var offer = refundOffer(row);
-      if (offer && offer.kind === "button") {
+      if (offer && offer.kind === "countdown") {
+        var clock = document.createElement("span");
+        clock.className = "muted";
+        clock.setAttribute("data-refund-clock", "1");
+        clock.innerHTML = "<span class=\"t-zh\"></span><span class=\"t-en\"></span>";
+        cell.appendChild(clock);
+      } else if (offer && offer.kind === "button") {
         var wrap = document.createElement("div");
         wrap.className = "row-acts";
         var claim = actionButton("claim-refund", row.id, "领退款", "Claim refund", "refund");
@@ -497,10 +556,17 @@
       } else if (legacyN > 0) {
         hint.hidden = false;
         setBi(hint, "旧票的「领退款」先停着，等旧发售退款开启后才能点。已经领过的票不显示按钮。", "Claim refund on an old ticket stays off until that sale’s refunds are on. A ticket already claimed shows no button.");
+      } else if (board && board.refundsOpen) {
+        hint.hidden = false;
+        setBi(hint, "新发售可以按票退款。用持有这张票的钱包点「领退款」。铸造不停止，卖到 3000 张仍会开池。开池后不能再退。退款不恢复每地址 10 张的额度。", "New-sale tickets can be refunded one by one from the wallet that holds them. Minting continues, and the pool still opens at 3,000. Refunds stop once the pool opens. A refund does not restore the 10-per-address mint cap.");
+      } else if (board && board.startTime !== 0n && !board.opened) {
+        hint.hidden = false;
+        setBi(hint, "新发售满 7 天、池子还没开时，持有人可以按票退款。窗口还没到，先显示倒计时。", "Seven days after the new sale starts, while the pool is closed, the holder can refund a ticket. The window is not open yet, so this shows a countdown.");
       } else {
         hint.hidden = true;
       }
     }
+    paintNewClocks();
   }
 
   function textSpan(zhText, enText) {
@@ -1084,7 +1150,7 @@
       "refunding": ["退款已开启，铸造已停止，没有发送交易。", "Refunds are on, so mint is closed. No transaction was sent."],
       "mint-closed": ["当前不能铸造，没有发送交易。", "Mint is closed. No transaction was sent."],
       "no-wallet": ["没有发现浏览器钱包。", "No browser wallet was found."],
-      "open-not-ready": ["还不能开池：需要已售至少 3000、池子未开、且不在退款。没有发送交易。", "openPool is not ready: sold must be at least 3,000, the pool closed, and refunds off. No transaction was sent."],
+      "open-not-ready": ["还不能开池：需要已售至少 3000，而且池子还没打开。没有发送交易。", "openPool is not ready: sold must be at least 3,000 and the pool still closed. No transaction was sent."],
       "start-not-ready": ["还不能启动洪水：需要池子已开且洪水未启动。没有发送交易。", "start() is not ready: the pool must be open and the flood not started. No transaction was sent."],
       "refund-not-ready": ["退款窗口还没到。没有发送交易。", "The refund window is not open. No transaction was sent."],
       "refund-closed": ["退款还没开启，没有发送交易。", "Refunds are not on yet. No transaction was sent."],
@@ -1140,6 +1206,7 @@
 
   async function refresh() {
     board = await C.readBoard();
+    boardAnchorMs = Date.now();
     try {
       legacyRefund = await C.readLegacyRefund();
       legacyAnchorMs = Date.now();
@@ -1444,15 +1511,6 @@
     say($("triggerStatus"), "正在启动百夜洪水。", "Sending start.");
     return C.sendStartFlood(board);
   });
-  wireSend("enableRefundBtn", "triggerStatus", function () {
-    if (!board || !board.canEnableRefunds || board.startTime === 0n) {
-      var early = new Error("refund-not-ready");
-      early.code = "refund-not-ready";
-      throw early;
-    }
-    say($("triggerStatus"), "正在发送新发售的开启退款。", "Sending enableRefunds on the new sale.");
-    return C.sendEnableNewRefunds(board);
-  });
   wireSend("oldEnableRefundBtn", "oldRefundStatus", function () {
     var btn = $("oldEnableRefundBtn");
     if (!btn || btn.disabled || btn.hidden) return;
@@ -1491,8 +1549,8 @@
       if (btn.disabled) return;
       var sale = btn.getAttribute("data-sale") || "legacy";
       if (sale === "new") {
-        if (!board || !board.refunding || board.opened || board.startTime === 0n || board.sold >= 3000n) {
-          say($("arkStatus"), explain("refund-closed"), explain("refund-closed"));
+        if (!board || !board.refundsOpen || board.opened || board.startTime === 0n) {
+          say($("arkStatus"), explain("refund-not-ready"), explain("refund-not-ready"));
           return;
         }
         say($("arkStatus"), "正在发送领退款。", "Sending the refund claim.");
@@ -1570,6 +1628,7 @@
   });
   setInterval(function () {
     paintOldClock();
+    paintNewClocks();
     if (!legacyRefund || legacyRefund.refundsClosed || legacyRefund.refunding || legacyRefund.canEnableRefunds) return;
     if (!legacyRefund.opensAt || legacyNowSec() < legacyRefund.opensAt || legacyRechecked) return;
     legacyRechecked = true;
