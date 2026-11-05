@@ -80,9 +80,25 @@
       <h2 id="pauseTitle"><span class="t-zh">铸造已暂停，等待新发售开售</span><span class="t-en">Minting is paused until the new sale starts</span></h2>
       <p><span class="t-zh">修复后的合约套件已经部署在 BSC 主网。本站仍暂停铸造，要等新的发售合约写入开售时间（startTime）之后才会开放。在那之前，本站不会发送铸造。</span><span class="t-en">The fixed contract suite is deployed on BSC mainnet. Minting on this site stays paused until the new sale’s startTime is set. Until then, this site will not send a mint.</span></p>
       <p class="pause-warn"><span class="t-zh">已经买到的旧船票，只有在旧发售开池前没有卖满 3000 张时，才能在退款窗口打开后全额退款。退款窗口大约是 2026-11-11 18:36（北京时间）。旧合约卖满 3000 张会自动开池，开池后就不能退款。请不要绕过本站去调用旧发售合约铸造。</span><span class="t-en">Tickets already bought on the old sale can be refunded in full only if that sale stays under 3,000 before its pool opens. The refund window is around 2026-11-11 18:36 Asia/Shanghai. If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not bypass this site and mint by calling the old sale.</span></p>
-      <p><span class="t-zh">窗口打开后，在<a href="#triggers">公开动作</a>为旧发售开启退款，再到<a href="#ark">我的方舟</a>用当时付款的钱包按船票领取。新发售的开售时间会另行公布。</span><span class="t-en">After the window opens, turn refunds on for the old sale under <a href="#triggers">Public actions</a>, then claim each ticket in <a href="#ark">My Ark</a> from the wallet that paid. When the new sale’s start time is set, it will be announced separately.</span></p>
+      <p><span class="t-zh">窗口打开后，在<a href="#oldRefund">旧票退款</a>为旧发售开启退款，再到<a href="#ark">我的方舟</a>用当时付款的钱包按船票领取。新发售的开售时间会另行公布。</span><span class="t-en">After the window opens, turn refunds on for the old sale under <a href="#oldRefund">Old-ticket refunds</a>, then claim each ticket in <a href="#ark">My Ark</a> from the wallet that paid. When the new sale’s start time is set, it will be announced separately.</span></p>
     </div>
   </aside>
+
+  <section class="old-refund" id="oldRefund" aria-labelledby="oldRefundTitle">
+    <div class="old-refund-inner">
+      <p class="pause-kicker"><span class="t-zh">旧发售</span><span class="t-en">Previous sale</span></p>
+      <h2 id="oldRefundTitle"><span class="t-zh">旧票退款</span><span class="t-en">Old-ticket refunds</span></h2>
+      <p id="oldRefundStats"><span class="t-zh">正在读取旧发售。这里只记旧合约上的船票，不改新发售潮位。</span><span class="t-en">Reading the old sale. This is only the previous contract’s tickets, not the new sale tide.</span></p>
+      <p id="oldRefundWhen"><span class="t-zh">退款窗口时间读取后显示。</span><span class="t-en">The refund window time appears after the chain read.</span></p>
+      <p class="old-refund-count" id="oldRefundClock" role="timer"><span class="t-zh">倒计时读取后显示。</span><span class="t-en">The countdown appears after the chain read.</span></p>
+      <p class="old-refund-split"><span class="t-zh">旧船票从约 11/11 18:36（北京）起退。新发售铸出的票，要等新的开售时间再加 7 天，而且那时已售还不到 3000 张，才能退。</span><span class="t-en">Old tickets refund from about Nov 11, 18:36 Beijing. Tickets minted on the new sale follow that sale’s start plus 7 days, and only if fewer than 3,000 are sold by then.</span></p>
+      <button class="cta" id="oldEnableRefundBtn" type="button" disabled aria-disabled="true">
+        <span class="t-zh">11/11 18:36（北京）后开放</span>
+        <span class="t-en">Opens Nov 11, 18:36 Beijing</span>
+      </button>
+      <p class="copy-status" id="oldRefundStatus" role="status"></p>
+    </div>
+  </section>
 
   <div class="stage" id="top">
     <div class="glow" aria-hidden="true"></div>
@@ -382,7 +398,7 @@
         <button class="ghost" id="useWalletBtn" type="button"><span class="t-zh">用已连接钱包</span><span class="t-en">Use connected wallet</span></button>
       </form>
       <p class="copy-status" id="lookupNote" role="status"><span class="t-zh">还没有查询。表是空的，直到读到链上船票。</span><span class="t-en">No lookup yet. The table stays empty until tickets are read on-chain.</span></p>
-      <p class="muted refund-hint" id="refundHint" hidden><span class="t-zh">旧发售退款已开启。用当时付款的钱包查看旧船票，再按票点「领退款」。票转给别人之后，仍由原付款钱包向旧发售合约领取。已经领过的票不再显示按钮。</span><span class="t-en">Refunds are on for the old sale. Look up tickets with the wallet that paid, then press Claim refund on each one. A transferred ticket is still claimed by the original paying wallet, from the old sale. A ticket already claimed does not show the button.</span></p>
+      <p class="muted refund-hint" id="refundHint" hidden><span class="t-zh">旧票的「领退款」先停着，等旧发售退款开启后才能点。已经领过的票不显示按钮。</span><span class="t-en">Claim refund on an old ticket stays off until that sale’s refunds are on. A ticket already claimed shows no button.</span></p>
       <div class="dash">
         <div>
           <div class="stats" style="grid-template-columns:1fr 1fr">
@@ -581,8 +597,8 @@
           <button class="cta" id="startFloodBtn" type="button"><span class="t-zh">启动百夜洪水</span><span class="t-en">start</span></button>
         </article>
         <article class="trigger" id="refundCard" hidden>
-          <h3><span class="t-zh">开启退款</span><span class="t-en">Enable refunds</span></h3>
-          <p><span class="t-zh">这是旧发售合约的退款。旧发售开售后满 7 天、池子仍没打开时，任何人可以先开启一次退款。已经买到的船票只有在旧发售开池前没有卖满 3000 张时才能退。窗口大约在 2026-11-11 18:36（北京时间）。开启之后，到「我的方舟」，用当时付款的钱包按旧船票领取。</span><span class="t-en">This refund is for the previous ArkSale. Seven days after that sale started, if its pool is still closed, anyone can turn refunds on once. Tickets already bought refund only if that sale stayed under 3,000 before the pool opens. The window is around 2026-11-11 18:36 Asia/Shanghai. Then claim each old ticket in My Ark from the wallet that paid.</span></p>
+          <h3><span class="t-zh">新发售开启退款</span><span class="t-en">New sale · enable refunds</span></h3>
+          <p><span class="t-zh">这是新发售合约自己的退款。新发售写入 startTime 之后满 7 天，池子仍没打开，而且已售还不到 3000 张，才会出现这个按钮。startTime 还是 0，或者窗口没到时，按钮不出现。旧船票不走这里。</span><span class="t-en">This refund belongs to the new sale contract. The button appears only seven days after that sale’s startTime, while its pool is still closed and fewer than 3,000 tickets are sold. While startTime is still 0, or the window has not arrived, there is no button. Old tickets are not refunded here.</span></p>
           <button class="cta" id="enableRefundBtn" type="button"><span class="t-zh">开启退款</span><span class="t-en">enableRefunds</span></button>
         </article>
         <article class="trigger">
