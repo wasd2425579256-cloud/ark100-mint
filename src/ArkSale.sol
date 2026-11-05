@@ -12,6 +12,7 @@ interface ITicketMinter {
     function mintedBy(address) external view returns (uint256);
     function ownerOf(uint256 tokenId) external view returns (address);
     function retire(uint256 tokenId) external;
+    function yieldClaimed(uint256 tokenId) external view returns (bool);
 }
 
 interface IArkTokenSale {
@@ -340,10 +341,13 @@ contract ArkSale is ReentrancyGuard {
     ///      `ownerOf` revert, so `buy` and `acceptBid` revert before taking payment. `cleanListing`
     ///      still drops the stale row. Bid BNB stays until cancel or expiry. `retire` marks the
     ///      ticket sunk, so cabin, flood, shop, and the pot skip it, and mint quota is not returned.
+    ///      Cabin `claim` and an applied sandbag set `yieldClaimed` and block the refund. The pot and
+    ///      the flood pay nothing until the pool is open, which already closes refunds.
     function refund(uint256 tokenId) external nonReentrant {
         require(!opened, "opened");
         require(startTime != 0 && block.timestamp >= startTime + REFUND_WINDOW, "too early");
         require(ticketNft.ownerOf(tokenId) == msg.sender, "not holder");
+        require(!ticketNft.yieldClaimed(tokenId), "yield claimed");
         uint256 amount = paidBnb[tokenId];
         require(amount > 0, "zero");
         (uint256 teamPart, uint256 potPart, uint256 reservePart) = _legs(amount);

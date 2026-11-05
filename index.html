@@ -598,7 +598,7 @@
         </article>
         <article class="trigger" id="refundCard" hidden>
           <h3><span class="t-zh">新发售按票退款</span><span class="t-en">New sale · refund one ticket</span></h3>
-          <p><span class="t-zh">开售满 7 天后，池子还没打开时，持有人可以在「我的方舟」随时按票退款。不想退的人继续持有。铸造不停止。已售只数还在的付费船票，卖到 3000 张仍会自动开池。开池之后不能再退。退款会烧掉这张票，退回铸造时付的 BNB，不恢复每地址 10 张的额度。startTime 还是 0 时不显示。旧船票不走这里。</span><span class="t-en">Seven days after startTime, while the pool is still closed, the holder can refund any ticket at any time from My Ark. Holders who stay keep the ticket. Minting continues. Sold counts live paid tickets, and the pool still opens automatically at 3,000. After the pool opens, refunds stop. A refund burns that ticket, returns the BNB paid at mint, and does not restore the 10-per-address mint cap. Hidden while startTime is 0. Old tickets are not refunded here.</span></p>
+          <p><span class="t-zh">开售满 7 天后，池子还没打开时，持有人可以在「我的方舟」随时按票退款。不想退的人继续持有。铸造不停止。已售只数还在的付费船票，卖到 3000 张仍会自动开池。开池之后不能再退。退款会烧掉这张票，退回铸造时付的 BNB，不恢复每地址 10 张的额度。领过收益的船票不可退款。startTime 还是 0 时不显示。旧船票不走这里。</span><span class="t-en">Seven days after startTime, while the pool is still closed, the holder can refund any ticket at any time from My Ark. Holders who stay keep the ticket. Minting continues. Sold counts live paid tickets, and the pool still opens automatically at 3,000. After the pool opens, refunds stop. A refund burns that ticket, returns the BNB paid at mint, and does not restore the 10-per-address mint cap. Tickets that have claimed yield can't be refunded. Hidden while startTime is 0. Old tickets are not refunded here.</span></p>
           <p class="old-refund-count" id="newRefundClock" role="timer" hidden><span class="t-zh">倒计时读取后显示。</span><span class="t-en">The countdown appears after the chain read.</span></p>
         </article>
         <article class="trigger">
@@ -703,6 +703,7 @@
             <li>窗口打开后，用当前持有这张票的钱包点「领退款」。退回的是铸造时付的 BNB。票转给别人之后，退款权跟着票走。</li>
             <li>不想退的人继续持有。铸造不停止。已售只数还在的付费船票，卖到 3000 张仍会自动开池。</li>
             <li>退款会烧掉这张票，不能再抽舱、挂单或领产出，也不恢复每地址 10 张的铸造额度。开池之后不能再退。</li>
+            <li>领过收益的船票不可退款。</li>
           </ul>
           <p class="t-en">Seven days after the sale starts, while the pool is still closed, the holder can refund a ticket. There is no separate enable-refunds step.</p>
           <ul class="t-en">
@@ -710,6 +711,7 @@
             <li>Once the window is open, the wallet that currently holds the ticket presses Claim refund. The BNB returned is what was paid at mint. If the ticket was transferred, the refund right goes with it.</li>
             <li>Holders who stay keep the ticket. Minting continues. Sold counts live paid tickets, and the pool still opens automatically at 3,000.</li>
             <li>A refund burns that ticket. It cannot draw a cabin, be listed, or earn, and it does not restore the 10-per-address mint cap. After the pool opens, refunds stop.</li>
+            <li>Tickets that have claimed yield can't be refunded.</li>
           </ul>
         </div>
       </details>

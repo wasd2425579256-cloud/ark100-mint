@@ -65,6 +65,7 @@
     ownerOf: "0x6352211e",
     cabinOf: "0xa768222b",
     isAlive: "0xd84b2361",
+    yieldClaimed: "0xfe271972",
     pendingArk: "0x17d15042",
     tickets: "0x50b44712",
     requestCabin: "0x0ac028a7",
@@ -386,6 +387,8 @@
     }
     var paidBnb = null;
     try { paidBnb = await callUint(sale, SEL.paidBnb, tokenId); } catch (e4) { paidBnb = null; }
+    var yieldClaimed = false;
+    try { yieldClaimed = (await callUint(nft, SEL.yieldClaimed, tokenId)) !== 0n; } catch (e5) { yieldClaimed = false; }
     var c = Number(cabin);
     var sunk = !alive || c === 4;
     var unsettled = !sunk && (c === 0);
@@ -403,6 +406,7 @@
       payer: payer,
       payerKnown: payerKnown,
       paidBnb: paidBnb,
+      yieldClaimed: yieldClaimed,
       legacy: false
     };
   }

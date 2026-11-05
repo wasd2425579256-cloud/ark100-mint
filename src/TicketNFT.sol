@@ -8,6 +8,10 @@ interface IArkMinter {
     function mint(address to, uint256 amount) external;
 }
 
+interface IArkShopView {
+    function sandbagShop() external view returns (address);
+}
+
 /// @title TicketNFT — Gen0 ark tickets (ERC721).
 /// @notice Cabins assigned via future-block settle. Sunk tickets produce 0.
 /// No Ownable. Sale address set once by deployer.
@@ -42,6 +46,8 @@ contract TicketNFT is ERC721, ReentrancyGuard {
 
     mapping(uint256 => Ticket) public tickets;
     mapping(address => uint256) public mintedBy; // slots used
+    /// @notice True after this ticket was paid cabin yield, or had a sandbag applied.
+    mapping(uint256 => bool) public yieldClaimed;
 
     event SaleSet(address sale);
     event FloodEngineSet(address flood);
@@ -190,8 +196,16 @@ contract TicketNFT is ERC721, ReentrancyGuard {
         uint256 amount = pendingArk(tokenId);
         require(amount > 0, "zero");
         t.lastClaim = uint64(block.timestamp);
+        yieldClaimed[tokenId] = true;
         arkToken.mint(msg.sender, amount);
         emit Claimed(tokenId, msg.sender, amount);
+    }
+
+    /// @notice SandbagShop marks a ticket that received a bag. Pot and flood pay only after open.
+    function markYield(uint256 tokenId) external {
+        require(tickets[tokenId].mintedAt != 0, "bad");
+        require(msg.sender == IArkShopView(address(arkToken)).sandbagShop(), "not reward");
+        yieldClaimed[tokenId] = true;
     }
 
     function _rate(uint8 cabin) internal pure returns (uint256) {

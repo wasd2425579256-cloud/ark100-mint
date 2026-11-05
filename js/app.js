@@ -450,6 +450,9 @@
     }
     var paidNew = BigInt(row.paidBnb);
     if (paidNew === 0n) return null;
+    if (row.yieldClaimed) {
+      return { kind: "mute", zh: "领过收益的船票不可退款", en: "Tickets that have claimed yield can't be refunded" };
+    }
     if (!board.refundsOpen) return { kind: "countdown", paid: paidNew };
     var holding = account && sameAddr(account, row.owner || "");
     if (!holding) {

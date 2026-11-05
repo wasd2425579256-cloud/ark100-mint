@@ -450,6 +450,7 @@ contract Ark100Test is Test {
         assertEq(TicketNFT.settleCabin.selector, bytes4(hex"2cdf61fe"));
         assertEq(TicketNFT.claim.selector, bytes4(hex"379607f5"));
         assertEq(TicketNFT.isSurvivor.selector, bytes4(hex"7c649965"));
+        assertEq(_sig("yieldClaimed(uint256)"), bytes4(hex"fe271972"));
         assertEq(SandbagShop.price.selector, bytes4(hex"a035b1fe"));
         assertEq(_sig("BASE_PRICE()"), bytes4(hex"f86325ed"));
         assertEq(_sig("bags(address)"), bytes4(hex"8c4c2801"));
@@ -478,6 +479,7 @@ contract Ark100Test is Test {
         tickets.aliveCount();
         tickets.mintedBy(alice);
         tickets.tickets(1);
+        tickets.yieldClaimed(1);
         shop.BASE_PRICE();
         shop.bags(alice);
         shop.protectedUntil(1, 1);
@@ -760,6 +762,70 @@ contract Ark100Test is Test {
         // Integer zap stays within 5 bps of the post-swap reserve ratio, so liquidity adds do not
         // refund a growing BNB or ARK balance.
         assertLe(diff * 10_000, right * 5 + xPrime + yPrime);
+    }
+
+    function test_refund_allowsAccruedUnclaimedYield() public {
+        (uint256 due,) = sale.quoteMint(2);
+        vm.prank(alice);
+        sale.mint{value: due}(2);
+        vm.prank(alice);
+        tickets.requestCabin(1);
+        vm.roll(block.number + 6);
+        tickets.settleCabin(1);
+        vm.warp(block.timestamp + 2 days);
+        assertGt(tickets.pendingArk(1), 0);
+
+        vm.warp(sale.startTime() + sale.REFUND_WINDOW());
+        uint256 owed = sale.paidBnb(2);
+        uint256 bal = alice.balance;
+        vm.prank(alice);
+        sale.refund(2);
+        assertEq(alice.balance, bal + owed);
+
+        // Accrued cabin yield that was not claimed can still be refunded.
+        uint256 owed1 = sale.paidBnb(1);
+        bal = alice.balance;
+        vm.prank(alice);
+        sale.refund(1);
+        assertEq(alice.balance, bal + owed1);
+    }
+
+    function test_refund_revertsOnceYieldIsClaimedOrBagApplied() public {
+        (uint256 due,) = sale.quoteMint(2);
+        vm.prank(alice);
+        sale.mint{value: due}(2);
+        vm.prank(alice);
+        tickets.requestCabin(1);
+        vm.roll(block.number + 6);
+        tickets.settleCabin(1);
+        vm.warp(block.timestamp + 1 days);
+        vm.prank(alice);
+        tickets.claim(1);
+        assertTrue(tickets.yieldClaimed(1));
+        assertGt(ark.balanceOf(alice), 0);
+
+        vm.prank(address(tickets));
+        ark.mint(alice, 1_000_000 ether);
+        uint256 px = shop.price();
+        vm.startPrank(alice);
+        ark.approve(address(shop), px);
+        shop.buy(1);
+        shop.applyBag(2, 1);
+        vm.stopPrank();
+        assertTrue(tickets.yieldClaimed(2));
+
+        vm.warp(sale.startTime() + sale.REFUND_WINDOW());
+        uint256 soldBefore = sale.sold();
+        uint256 escrow = sale.outstandingRefunds();
+        vm.prank(alice);
+        vm.expectRevert(bytes("yield claimed"));
+        sale.refund(1);
+        vm.prank(alice);
+        vm.expectRevert(bytes("yield claimed"));
+        sale.refund(2);
+        assertEq(sale.sold(), soldBefore);
+        assertEq(sale.outstandingRefunds(), escrow);
+        assertGt(sale.paidBnb(1), 0);
     }
 
     function test_refund_holderNotPayer_quotaStaysUsed() public {
