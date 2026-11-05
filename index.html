@@ -13,10 +13,10 @@
     })();
   </script>
   <title>ARK100｜方舟100天</title>
-  <meta name="description" content="铸造已暂停。只要开池前没有卖满 3000 张，现有船票可在约 11/11 18:36 北京时间后退款。卖满 3000 会自动开池，开池后不能退款。Minting is paused. Refunds require sales to stay under 3,000 before the pool opens." />
+  <meta name="description" content="修复后的合约已部署。铸造仍暂停，直到新发售设定 startTime。旧船票仅在旧发售未满 3000 张且未开池时，约 2026-11-11 18:36（北京时间）后退款。The fixed suite is deployed. Minting stays paused until the new sale startTime is set." />
   <meta name="theme-color" content="#b7e3ff" />
   <meta property="og:title" content="ARK100｜方舟100天" />
-  <meta property="og:description" content="铸造已暂停。未满 3000 张、且未开池时，现有船票可在约 11/11 18:36 北京时间后退款。卖满 3000 会自动开池，之后不能退款。Refunds require sales to stay under 3,000." />
+  <meta property="og:description" content="修复后的合约已部署。铸造仍暂停，直到新发售设定 startTime。旧船票仅在未满 3000 张且未开池时，约 2026-11-11 18:36（北京时间）后退款。Old tickets refund only if that sale stays under 3,000." />
   <meta property="og:image" content="assets/banner.png" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" href="assets/favicon.png" />
@@ -77,10 +77,10 @@
   <aside class="pause-banner" id="pauseNotice" aria-labelledby="pauseTitle">
     <div class="pause-banner-inner">
       <p class="pause-kicker"><span class="t-zh">公告</span><span class="t-en">Notice</span></p>
-      <h2 id="pauseTitle"><span class="t-zh">铸造已暂停，合约升级中</span><span class="t-en">Minting is paused for a contract upgrade</span></h2>
-      <p><span class="t-zh">我们发现，当前发售合约里，开池之后购票所付的 BNB 不会进入流动性池。本站已暂停铸造，正在部署修复后的合约。</span><span class="t-en">In the current sale contract, BNB paid for tickets after the pool opens would not go into the liquidity pool. Minting on this site is paused while a fixed contract is deployed.</span></p>
-      <p class="pause-warn"><span class="t-zh">只要开池前没有卖满 3000 张，现有船票都能在退款窗口打开后（约 11/11 18:36 北京时间）全额退款；旧合约卖满 3000 张会自动开池、开池后就不能退款，所以请不要绕过官网直接调用旧合约铸造。</span><span class="t-en">If sales stay under 3,000 before the pool opens, tickets already sold can be refunded in full once the refund window opens (around Nov 11, 18:36 Beijing time). If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not bypass this site and mint by calling the old contract directly.</span></p>
-      <p><span class="t-zh">窗口打开后，在<a href="#triggers">公开动作</a>开启退款，再到<a href="#ark">我的方舟</a>用当时付款的钱包按船票领取。重新开放铸造的时间，我们会另行公布。</span><span class="t-en">After the window opens, turn refunds on under <a href="#triggers">Public actions</a>, then claim each ticket in <a href="#ark">My Ark</a> from the wallet that paid. The relaunch will be announced separately.</span></p>
+      <h2 id="pauseTitle"><span class="t-zh">铸造已暂停，等待新发售开售</span><span class="t-en">Minting is paused until the new sale starts</span></h2>
+      <p><span class="t-zh">修复后的合约套件已经部署在 BSC 主网。本站仍暂停铸造，要等新的发售合约写入开售时间（startTime）之后才会开放。在那之前，本站不会发送铸造。</span><span class="t-en">The fixed contract suite is deployed on BSC mainnet. Minting on this site stays paused until the new sale’s startTime is set. Until then, this site will not send a mint.</span></p>
+      <p class="pause-warn"><span class="t-zh">已经买到的旧船票，只有在旧发售开池前没有卖满 3000 张时，才能在退款窗口打开后全额退款。退款窗口大约是 2026-11-11 18:36（北京时间）。旧合约卖满 3000 张会自动开池，开池后就不能退款。请不要绕过本站去调用旧发售合约铸造。</span><span class="t-en">Tickets already bought on the old sale can be refunded in full only if that sale stays under 3,000 before its pool opens. The refund window is around 2026-11-11 18:36 Asia/Shanghai. If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not bypass this site and mint by calling the old sale.</span></p>
+      <p><span class="t-zh">窗口打开后，在<a href="#triggers">公开动作</a>为旧发售开启退款，再到<a href="#ark">我的方舟</a>用当时付款的钱包按船票领取。新发售的开售时间会另行公布。</span><span class="t-en">After the window opens, turn refunds on for the old sale under <a href="#triggers">Public actions</a>, then claim each ticket in <a href="#ark">My Ark</a> from the wallet that paid. When the new sale’s start time is set, it will be announced separately.</span></p>
     </div>
   </aside>
 
@@ -150,14 +150,14 @@
         </div>
         <div class="refund-strip">
           <strong><span class="t-zh">7 天</span><span class="t-en">7 days</span></strong>
-          <p><span class="t-zh">开售后满 7 天仍未开池，任何人可先开启一次退款。然后每位买家用当时付款的钱包，按船票自己领回已付的 BNB。开池前这些 BNB 都留在发售合约里。只要开池前没有卖满 3000 张，现有船票都能在退款窗口打开后（约 11/11 18:36 北京时间）全额退款。旧合约卖满 3000 张会自动开池，开池后就不能退款。</span><span class="t-en">If the pool is still closed 7 days after the sale starts, anyone may turn refunds on once. Each buyer then claims their own ticket from the wallet that paid, and gets that BNB back. Until the pool opens, that BNB stays in the sale contract. If sales stay under 3,000 before the pool opens, tickets already sold can be refunded in full once the window opens (around Nov 11, 18:36 Beijing time). If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that.</span></p>
+          <p><span class="t-zh">旧发售上已经卖出的船票：只要那一份旧合约在开池前没有卖满 3000 张，退款窗口打开后（约 2026-11-11 18:36 北京时间）可以全额退。开池前这些 BNB 留在旧发售合约里。旧合约卖满 3000 张会自动开池，开池后就不能退款。新发售要等 startTime 设定后才开始，本站在那之前不铸造。</span><span class="t-en">Tickets already sold on the old sale can be refunded in full once the window opens (around 2026-11-11 18:36 Asia/Shanghai), and only if that old contract stays under 3,000 before its pool opens. Until then, that BNB stays in the old sale. If it reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. The new sale does not start until its startTime is set, and this site does not mint before then.</span></p>
         </div>
       </section>
 
       <section class="card" id="mint">
         <p class="section-kicker"><span class="t-zh">铸造</span><span class="t-en">Mint</span></p>
         <h2><span class="t-zh">Agent 铸造</span><span class="t-en">Agent mint</span></h2>
-        <p class="muted"><span class="t-zh">网站已暂停铸造，下面的按钮不会发送交易。连接 BSC 钱包仍可读取 Agent ID 和报价。只要开池前没有卖满 3000 张，退款窗口打开后可以在「我的方舟」全额退；卖满 3000 张会自动开池，之后不能退款。</span><span class="t-en">Minting on this site is paused, and the button below does not send a transaction. A connected BSC wallet can still read the Agent ID and the quote. If sales stay under 3,000 before the pool opens, tickets already bought can be refunded in full from My Ark after the window opens. Reaching 3,000 opens the pool automatically, and refunds cannot be enabled after that.</span></p>
+        <p class="muted"><span class="t-zh">网站已暂停铸造，下面的按钮不会发送交易。修复后的合约已部署，要等新发售写入 startTime 才会开放。连接 BSC 钱包仍可读取 Agent ID 和报价。旧船票只有在旧发售开池前没有卖满 3000 张时，才能在约 2026-11-11 18:36（北京时间）后于「我的方舟」全额退款。</span><span class="t-en">Minting on this site is paused, and the button below does not send a transaction. The fixed suite is deployed, and mint stays closed until the new sale’s startTime is set. A connected BSC wallet can still read the Agent ID and the quote. Old tickets can be refunded in full from My Ark only if the old sale stays under 3,000 before its pool opens. The window is around 2026-11-11 18:36 Asia/Shanghai.</span></p>
         <div class="mint-layout">
           <div>
             <div class="ladder" id="ladder">
@@ -173,8 +173,8 @@
               <li><i class="swatch pot"></i><span class="t-zh">15% 奖池</span><span class="t-en">15% pot</span></li>
               <li><i class="swatch lp"></i><span class="t-zh">65% BNB + 1,500,000 ARK 加池 · 流动性进销毁地址</span><span class="t-en">65% BNB + 1,500,000 ARK into LP · LP → dead</span></li>
             </ul>
-            <p class="muted"><span class="t-zh">上面是合约文本里的分配。当前这份发售合约在开池之后，后来购票的 BNB 并不会进入流动性池，所以本站已暂停铸造。</span><span class="t-en">The split above is what the contract text describes. In the current sale contract, BNB from tickets bought after the pool opens would not go into the liquidity pool, so minting on this site is paused.</span></p>
-            <p class="muted" id="tokenLine"><span class="t-zh">代币名 <b>ARK100</b>，符号 <b>ARK</b>。硬顶 <b>20 亿</b>（2,000,000,000），只由船票产出和开池种子铸造，没有预挖。官方池是 PancakeSwap 的 <b>ARK/WBNB</b>：65% 开池 BNB + 150 万 ARK，LP 进 0xdead。</span><span class="t-en">Token name <b>ARK100</b>, symbol <b>ARK</b>. Hard cap <b>2,000,000,000</b>, minted only by ticket yield and the pool seed—no premine. Official pool is PancakeSwap <b>ARK/WBNB</b>: 65% of open BNB plus 1.5 million ARK, LP to 0xdead.</span></p>
+            <p class="muted"><span class="t-zh">上面是新发售合约里的分配。修复后的套件已经部署。本站仍暂停铸造，直到新发售的 startTime 被设定。</span><span class="t-en">The split above is the new sale contract. The fixed suite is deployed. Minting on this site stays paused until that sale’s startTime is set.</span></p>
+            <p class="muted" id="tokenLine"><span class="t-zh">代币名 <b>ARK100</b>，符号 <b>ARK</b>。硬顶 <b>20 亿</b>（2,000,000,000），只由船票产出和开池种子铸造，没有预挖。官方池是 PancakeSwap 的 <b>ARK/WBNB</b>（<a href="https://bscscan.com/address/0x89cf36021Ac16f031F3E04D122d024663130499e" rel="noopener noreferrer">0x89cf36021Ac16f031F3E04D122d024663130499e</a>）：65% 开池 BNB + 150 万 ARK，LP 进 0xdead。这个池子地址在开池时才会有合约。</span><span class="t-en">Token name <b>ARK100</b>, symbol <b>ARK</b>. Hard cap <b>2,000,000,000</b>, minted only by ticket yield and the pool seed—no premine. Official pool is PancakeSwap <b>ARK/WBNB</b> (<a href="https://bscscan.com/address/0x89cf36021Ac16f031F3E04D122d024663130499e" rel="noopener noreferrer">0x89cf36021Ac16f031F3E04D122d024663130499e</a>): 65% of open BNB plus 1.5 million ARK, LP to 0xdead. That pair address has no contract until the pool opens.</span></p>
           </div>
           <div class="slip">
             <div class="slip-head">
@@ -201,8 +201,8 @@
             <p class="wallet-chip" id="walletChip"></p>
             <p class="copy-status" id="agentLine" role="status"><span class="t-zh">连接后会读取 Agent ID。</span><span class="t-en">Connect to read the Agent ID.</span></p>
             <button class="cta is-paused" id="mintBtn" type="button" disabled aria-disabled="true">
-              <span class="t-zh">铸造已暂停，合约升级中</span>
-              <span class="t-en">Minting paused, contract upgrade in progress</span>
+              <span class="t-zh">铸造已暂停，等待开售</span>
+              <span class="t-en">Minting paused until the sale starts</span>
             </button>
             <button class="cta secondary" id="connectBtn" type="button">
               <span class="t-zh">连接钱包</span>
@@ -213,10 +213,11 @@
               <span class="t-en">Copy the pause notice</span>
             </button>
             <p class="copy-status" id="mintStatus" role="status"></p>
-            <pre class="cmd" id="cmd">铸造已暂停，合约升级中。本站不会发送铸造。
-只要开池前没有卖满 3000 张，现有船票都能在退款窗口打开后（约 11/11 18:36 北京时间）全额退款。
+            <pre class="cmd" id="cmd">修复后的合约已经部署。铸造仍暂停，要等新发售写入 startTime。本站不会发送铸造。
+已经买到的旧船票，只有在旧发售开池前没有卖满 3000 张时，才能在退款窗口打开后全额退款。
+退款窗口大约是 2026-11-11 18:36（北京时间）。
 旧合约卖满 3000 张会自动开池，开池后就不能退款。请不要绕过官网直接调用旧合约铸造。
-窗口打开后，先在「公开动作」开启退款，再到「我的方舟」用付款钱包按票领取。</pre>
+窗口打开后，先在「公开动作」为旧发售开启退款，再到「我的方舟」用付款钱包按票领取。</pre>
           </div>
         </div>
       </section>
@@ -372,7 +373,7 @@
         <h2><span class="t-zh">我的方舟</span><span class="t-en">My Ark</span></h2>
         <span class="note-pill"><span class="t-zh">链上舱单</span><span class="t-en">On-chain tickets</span></span>
       </div>
-      <p class="muted"><span class="t-zh">这里读取你的船票。输入钱包地址，或输入船票编号。洪水启动后，会显示当前是第几晚，以及当夜有没有沙袋。</span><span class="t-en">This reads TicketNFT. Paste a wallet, or a ticket id. After the flood starts it shows currentDayIndex() and tonight’s sandbag.</span></p>
+      <p class="muted"><span class="t-zh">这里读取新船票。输入钱包时，也会列出旧发售上由这只钱包持有或付款的船票，并标成「旧票」。旧票的退款走旧发售合约。洪水启动后，新船票会显示当前是第几晚，以及当夜有没有沙袋。</span><span class="t-en">This reads the new TicketNFT. A wallet lookup also lists old-sale tickets that wallet holds or paid for, marked Old. Those refunds go to the previous sale. After the flood starts, new tickets show the current night and tonight’s sandbag.</span></p>
       <p class="muted" id="arkNight"><span class="t-zh">当前晚数：正在读取。</span><span class="t-en">Current night: reading.</span></p>
       <form class="lookup" id="lookup">
         <label class="sr-only" for="walletInput" id="walletLabel"><span class="t-zh">钱包地址或船票编号</span><span class="t-en">Wallet address or ticket id</span></label>
@@ -381,7 +382,7 @@
         <button class="ghost" id="useWalletBtn" type="button"><span class="t-zh">用已连接钱包</span><span class="t-en">Use connected wallet</span></button>
       </form>
       <p class="copy-status" id="lookupNote" role="status"><span class="t-zh">还没有查询。表是空的，直到读到链上船票。</span><span class="t-en">No lookup yet. The table stays empty until tickets are read on-chain.</span></p>
-      <p class="muted refund-hint" id="refundHint" hidden><span class="t-zh">退款已开启。用当时付款的钱包查看船票，再按票点「领退款」。票转给别人之后，仍由原付款钱包领取。已经领过的票不再显示按钮。</span><span class="t-en">Refunds are on. Look up tickets with the wallet that paid, then press Claim refund on each one. A transferred ticket is still claimed by the original paying wallet. A ticket already claimed does not show the button.</span></p>
+      <p class="muted refund-hint" id="refundHint" hidden><span class="t-zh">旧发售退款已开启。用当时付款的钱包查看旧船票，再按票点「领退款」。票转给别人之后，仍由原付款钱包向旧发售合约领取。已经领过的票不再显示按钮。</span><span class="t-en">Refunds are on for the old sale. Look up tickets with the wallet that paid, then press Claim refund on each one. A transferred ticket is still claimed by the original paying wallet, from the old sale. A ticket already claimed does not show the button.</span></p>
       <div class="dash">
         <div>
           <div class="stats" style="grid-template-columns:1fr 1fr">
@@ -581,7 +582,7 @@
         </article>
         <article class="trigger" id="refundCard" hidden>
           <h3><span class="t-zh">开启退款</span><span class="t-en">Enable refunds</span></h3>
-          <p><span class="t-zh">开售后满 7 天，池子仍没打开时，任何人可以先开启退款，只需一次。开启之后，请到「我的方舟」，用当时付款的钱包按船票自己领取。领回的是买这张票付的 BNB。</span><span class="t-en">Seven days after the sale starts, if the pool is still closed, anyone can turn refunds on once. Then open My Ark and claim each ticket yourself, from the wallet that paid. You get back the BNB paid for that ticket.</span></p>
+          <p><span class="t-zh">这是旧发售合约的退款。旧发售开售后满 7 天、池子仍没打开时，任何人可以先开启一次退款。已经买到的船票只有在旧发售开池前没有卖满 3000 张时才能退。窗口大约在 2026-11-11 18:36（北京时间）。开启之后，到「我的方舟」，用当时付款的钱包按旧船票领取。</span><span class="t-en">This refund is for the previous ArkSale. Seven days after that sale started, if its pool is still closed, anyone can turn refunds on once. Tickets already bought refund only if that sale stayed under 3,000 before the pool opens. The window is around 2026-11-11 18:36 Asia/Shanghai. Then claim each old ticket in My Ark from the wallet that paid.</span></p>
           <button class="cta" id="enableRefundBtn" type="button"><span class="t-zh">开启退款</span><span class="t-en">enableRefunds</span></button>
         </article>
         <article class="trigger">
@@ -613,8 +614,8 @@
       <details class="rule" open>
         <summary><span class="r-badge">R1</span> <span class="t-zh">门槛与铸造</span><span class="t-en">Gate and mint</span></summary>
         <div class="body">
-          <p class="t-zh">网站已暂停铸造。旧合约卖满 3000 张会自动开池，开池后就不能退款，请不要按这些规则去调用旧合约。合约上的门槛是：只有持有 .ai Agent ID、且名字不是空的钱包可以铸造。注册表 <span class="ca">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span> 上要能查到这只钱包持有 Agent ID，并且名字不是空的。每址最多 10 张。一共 10,000 张，每 2,500 张一档：$2、$3、$4、$5。连续 5 分钟无人铸造，价格降一档，最低 $2。没有免费票，没有 ARK 预挖。团队钱包开铸后按同样上限购买。挂单、购买和求购不需要 Agent ID。</p>
-          <p class="t-en">Minting on this site is paused. If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not use these rules to call the old contract. On the contract, only a wallet with a .ai Agent ID and a non-empty handle can mint. The registry <span class="ca">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span> checks balanceOf and handleOf. Max 10 tickets per address. Supply is 10,000, in tiers of 2,500: $2, $3, $4, $5. Five quiet minutes drop one tier, floor $2. No free tickets and no ARK premine. After launch the team wallet buys under the same cap. Listing, buying, and bidding do not require an Agent ID.</p>
+          <p class="t-zh">网站已暂停铸造，要等新发售设定 startTime。修复后的合约已经部署。旧船票退款只在旧发售未满 3000 张、且池子没打开时成立，窗口大约是 2026-11-11 18:36（北京时间）。旧合约卖满 3000 张会自动开池，开池后就不能退款，请不要按这些规则去调用旧合约。合约上的门槛是：只有持有 .ai Agent ID、且名字不是空的钱包可以铸造。注册表 <span class="ca">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span> 上要能查到这只钱包持有 Agent ID，并且名字不是空的。每址最多 10 张。一共 10,000 张，每 2,500 张一档：$2、$3、$4、$5。连续 5 分钟无人铸造，价格降一档，最低 $2。没有免费票，没有 ARK 预挖。团队钱包开铸后按同样上限购买。挂单、购买和求购不需要 Agent ID。</p>
+          <p class="t-en">Minting on this site is paused until the new sale’s startTime is set. The fixed suite is deployed. Old tickets refund only if that sale stays under 3,000 and its pool stays closed. The window is around 2026-11-11 18:36 Asia/Shanghai. If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not use these rules to call the old contract. On the contract, only a wallet with a .ai Agent ID and a non-empty handle can mint. The registry <span class="ca">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span> checks balanceOf and handleOf. Max 10 tickets per address. Supply is 10,000, in tiers of 2,500: $2, $3, $4, $5. Five quiet minutes drop one tier, floor $2. No free tickets and no ARK premine. After launch the team wallet buys under the same cap. Listing, buying, and bidding do not require an Agent ID.</p>
         </div>
       </details>
       <details class="rule">
@@ -641,8 +642,8 @@
       <details class="rule">
         <summary><span class="r-badge">R5</span> <span class="t-zh">开池、税与退款</span><span class="t-en">Pool, tax, refund</span></summary>
         <div class="body">
-          <p class="t-zh">网站已暂停铸造。当前发售合约在开池之后，后来购票的 BNB 不会进入流动性池。下面是合约文本里的规则：售到 #3000 才开池。开池前铸造款 100% 留在发售合约。代币名 ARK100，符号 ARK。硬顶 20 亿（2,000,000,000），只由船票产出和开池种子铸造，没有预挖。开池时 20% 给写死的团队钱包，15% 进奖池，65% 的 BNB 与 1,500,000 ARK 在 PancakeSwap 的 ARK/WBNB 池加池，流动性代币转入 0xdead。交易税写死 2%：销毁 0.5%，奖池 0.5%，团队 1%，不可调。合约没有管理员，不可升级。开售后满 7 天仍未到 #3000，任何人可先开启一次退款，再由每位买家用付款钱包按票领回 BNB。</p>
-          <p class="t-en">Minting on this site is paused. In the current sale contract, BNB from tickets bought after the pool opens would not go into the liquidity pool. The contract text says: the pool opens at ticket #3000. Until then mint proceeds stay in the sale contract. Token name ARK100, symbol ARK. Hard cap 2,000,000,000, minted only by ticket yield and the pool seed, no premine. At open: 20% to the fixed team wallet, 15% to the pot, 65% of the BNB plus 1,500,000 ARK into the PancakeSwap ARK/WBNB pool, LP to 0xdead. Trade tax is a fixed 2%: 0.5% burn, 0.5% pot, 1% team. No owner and not upgradeable. If #3000 is still unreached 7 days after the sale starts, anyone may turn refunds on once. Each buyer then claims their own ticket from the wallet that paid.</p>
+          <p class="t-zh">网站已暂停铸造，要等新发售设定 startTime。修复后的合约已经部署，开池后的分配按下面执行：售到 #3000 才开池。开池前铸造款 100% 留在发售合约。代币名 ARK100，符号 ARK。硬顶 20 亿（2,000,000,000），只由船票产出和开池种子铸造，没有预挖。开池时 20% 给写死的团队钱包，15% 进奖池，65% 的 BNB 与 1,500,000 ARK 在 PancakeSwap 的 ARK/WBNB 池加池，流动性代币转入 0xdead。交易税写死 2%：销毁 0.5%，奖池 0.5%，团队 1%，不可调。合约没有管理员，不可升级。新发售开售后满 7 天仍未到 #3000，任何人可先开启一次退款。已经买到的旧船票不走这份新合约：只有旧发售在开池前没有卖满 3000 张，才能在约 2026-11-11 18:36（北京时间）后，向旧发售合约按票领回 BNB。</p>
+          <p class="t-en">Minting on this site is paused until the new sale’s startTime is set. The fixed suite is deployed, and the split below is what it does: the pool opens at ticket #3000. Until then mint proceeds stay in the sale contract. Token name ARK100, symbol ARK. Hard cap 2,000,000,000, minted only by ticket yield and the pool seed, no premine. At open: 20% to the fixed team wallet, 15% to the pot, 65% of the BNB plus 1,500,000 ARK into the PancakeSwap ARK/WBNB pool, LP to 0xdead. Trade tax is a fixed 2%: 0.5% burn, 0.5% pot, 1% team. No owner and not upgradeable. If #3000 is still unreached 7 days after the new sale starts, anyone may turn refunds on once. Tickets already bought do not refund through this new contract. They refund from the old sale only if that sale stays under 3,000 before its pool opens, around 2026-11-11 18:36 Asia/Shanghai.</p>
         </div>
       </details>
     </section>
@@ -751,20 +752,20 @@
       <details class="faq-item" id="faq-ark-token">
         <summary><span class="t-zh">ARK 总量多少？跟什么交易？</span><span class="t-en">What is ARK supply, and which pair?</span></summary>
         <div class="body">
-          <p class="t-zh">代币名 <b>ARK100</b>，符号 <b>ARK</b>。流通硬顶 <b>20 亿</b>（2,000,000,000），只能靠船票产出与开池种子铸造，没有预挖。开池交易对是 PancakeSwap 上的 <b>ARK/WBNB</b>：65% 的开池 BNB + 150 万 ARK 加池，LP 进 0xdead。</p>
-          <p class="t-en">Token name <b>ARK100</b>, symbol <b>ARK</b>. Hard cap <b>2,000,000,000</b>. Minted only by ticket yield and the pool-seed path—no premine. The official pair is PancakeSwap <b>ARK/WBNB</b>: 65% of open BNB plus 1.5M ARK into LP, LP to 0xdead.</p>
+          <p class="t-zh">代币名 <b>ARK100</b>，符号 <b>ARK</b>。流通硬顶 <b>20 亿</b>（2,000,000,000），只能靠船票产出与开池种子铸造，没有预挖。开池交易对是 PancakeSwap 上的 <b>ARK/WBNB</b>（<a href="https://bscscan.com/address/0x89cf36021Ac16f031F3E04D122d024663130499e" rel="noopener noreferrer">0x89cf36021Ac16f031F3E04D122d024663130499e</a>）：65% 的开池 BNB + 150 万 ARK 加池，LP 进 0xdead。这个地址在开池时才会变成交易对合约。</p>
+          <p class="t-en">Token name <b>ARK100</b>, symbol <b>ARK</b>. Hard cap <b>2,000,000,000</b>. Minted only by ticket yield and the pool-seed path—no premine. The official pair is PancakeSwap <b>ARK/WBNB</b> (<a href="https://bscscan.com/address/0x89cf36021Ac16f031F3E04D122d024663130499e" rel="noopener noreferrer">0x89cf36021Ac16f031F3E04D122d024663130499e</a>): 65% of open BNB plus 1.5M ARK into LP, LP to 0xdead. That address becomes the pair contract when the pool opens.</p>
         </div>
       </details>
       <details class="faq-item">
         <summary><span class="t-zh">现在能连钱包、扫货或者领奖吗？</span><span class="t-en">Can I connect a wallet, buy a listing, or claim now?</span></summary>
-        <div class="body"><p class="t-zh">可以连接钱包，并读取舱单、报价、洪水和二级市场。网站已暂停铸造，按钮不会发送铸造。只要开池前没有卖满 3000 张，现有船票都能在退款窗口打开后（约 11/11 18:36 北京时间）于「我的方舟」全额退款。旧合约卖满 3000 张会自动开池，开池后就不能退款，所以请不要绕过官网直接调用旧合约铸造。二级市场已经在 BSC 上：BNB 挂单、ARK 挂单和 BNB 求购，成交抽 2.5%。买卖和求购不需要 Agent ID。某一本簿的地址如果被清成 0，页面会写「市场合约待部署」，那一本表保持空白。</p><p class="t-en">Yes. You can connect a wallet and read tickets, quotes, the flood, and the secondary market. Minting on this site is paused, and the button does not send a mint. If sales stay under 3,000 before the pool opens, tickets already sold can be refunded in full from My Ark once the window opens (around Nov 11, 18:36 Beijing time). If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not bypass this site and mint by calling the old contract directly. The secondary market is live on BSC: a BNB book, an ARK book, and BNB quantity bids, with a 2.5% fee on each fill. Buying, listing, and bidding do not need an Agent ID. If one of those addresses is cleared back to zero, that book says the market contract is not deployed and its table stays empty.</p></div>
+        <div class="body"><p class="t-zh">可以连接钱包，并读取舱单、报价、洪水和二级市场。修复后的合约已部署。网站仍暂停铸造，要等新发售写入 startTime，按钮不会发送铸造。旧船票只有在旧发售开池前没有卖满 3000 张时，才能在退款窗口打开后（约 2026-11-11 18:36 北京时间）于「我的方舟」全额退款。旧合约卖满 3000 张会自动开池，开池后就不能退款，所以请不要绕过官网直接调用旧合约铸造。二级市场已经换成新套件里的三本簿：BNB 挂单、ARK 挂单和 BNB 求购，成交抽 2.5%。买卖和求购不需要 Agent ID。某一本簿的地址如果被清成 0，页面会写「市场合约待部署」，那一本表保持空白。</p><p class="t-en">Yes. You can connect a wallet and read tickets, quotes, the flood, and the secondary market. The fixed suite is deployed. Minting on this site stays paused until the new sale’s startTime is set, and the button does not send a mint. Old tickets can be refunded in full from My Ark only if the old sale stays under 3,000 before its pool opens. The window is around 2026-11-11 18:36 Asia/Shanghai. If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not bypass this site and mint by calling the old contract directly. The secondary market is the new suite’s three books: a BNB book, an ARK book, and BNB quantity bids, with a 2.5% fee on each fill. Buying, listing, and bidding do not need an Agent ID. If one of those addresses is cleared back to zero, that book says the market contract is not deployed and its table stays empty.</p></div>
       </details>
     </section>
 
     <section class="risk" id="risk">
       <h2><span class="t-zh">风险</span><span class="t-en">Risk</span></h2>
-      <p class="t-zh">付费本金和 ARK 都可能归零。洪水会让没有沙袋的船票沉没，奖池没有保底价格。玩法可能受你所在地法规限制。这不是投资建议。网站已暂停铸造。旧合约卖满 3000 张会自动开池，开池后就不能退款，所以请不要绕过官网直接调用旧合约铸造，也不要为了铸造转入 BNB。</p>
-      <p class="t-en">Capital and ARK can go to zero. Unprotected tickets can sink, and the pot has no promised price. Flood and pot rules may be restricted where you live. This is not financial advice. Minting on this site is paused. If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not bypass this site and mint on the old contract, and do not send BNB for a mint.</p>
+      <p class="t-zh">付费本金和 ARK 都可能归零。洪水会让没有沙袋的船票沉没，奖池没有保底价格。玩法可能受你所在地法规限制。这不是投资建议。修复后的合约已部署，网站仍暂停铸造，直到新发售设定 startTime。旧合约卖满 3000 张会自动开池，开池后就不能退款，所以请不要绕过官网直接调用旧合约铸造，也不要为了铸造转入 BNB。</p>
+      <p class="t-en">Capital and ARK can go to zero. Unprotected tickets can sink, and the pot has no promised price. Flood and pot rules may be restricted where you live. This is not financial advice. The fixed suite is deployed, and minting on this site stays paused until the new sale’s startTime is set. If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not bypass this site and mint on the old contract, and do not send BNB for a mint.</p>
     </section>
   </main>
 
@@ -792,8 +793,9 @@
           <h3><span class="t-zh">链接</span><span class="t-en">Links</span></h3>
           <ul class="socials">
             <li><a href="https://x.com/ARK100Game" rel="noopener noreferrer">X · @ARK100Game</a></li>
-            <li><a href="https://bscscan.com/address/0x5f92105341Cbc09462A0a10973664a322505BF32" rel="noopener noreferrer">BscScan · ArkSale</a></li>
-            <li><a href="https://sourcify.dev/#/lookup/0x5f92105341Cbc09462A0a10973664a322505BF32" rel="noopener noreferrer">Sourcify · ArkSale</a></li>
+            <li><a href="https://bscscan.com/address/0xB69f1F7A14dbCbB82A5eFcCB4B7579410eEc746E" rel="noopener noreferrer">BscScan · ArkSale</a></li>
+            <li><a href="https://sourcify.dev/#/lookup/0xB69f1F7A14dbCbB82A5eFcCB4B7579410eEc746E" rel="noopener noreferrer">Sourcify · ArkSale</a></li>
+            <li><a href="https://bscscan.com/address/0x5f92105341Cbc09462A0a10973664a322505BF32" rel="noopener noreferrer"><span class="t-zh">BscScan · 旧发售退款</span><span class="t-en">BscScan · old sale refunds</span></a></li>
           </ul>
         </div>
         <div>
@@ -803,21 +805,24 @@
         </div>
       </div>
       <ul class="ca-list">
-        <li><span><span class="t-zh">铸造</span><span class="t-en">Sale</span></span><span><span class="ca">0x5f92105341Cbc09462A0a10973664a322505BF32</span><span class="ca-links"><a href="https://bscscan.com/address/0x5f92105341Cbc09462A0a10973664a322505BF32#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0x5f92105341Cbc09462A0a10973664a322505BF32" rel="noopener noreferrer">Sourcify</a></span></span></li>
-        <li><span><span class="t-zh">BNB 挂单</span><span class="t-en">BNB market</span></span><span><span class="ca">0xC24b79485705cEF5AfF36fb4c4cCda34F8423d95</span><span class="ca-links"><a href="https://bscscan.com/address/0xC24b79485705cEF5AfF36fb4c4cCda34F8423d95" rel="noopener noreferrer">BscScan</a><a href="https://bscscan.com/tx/0xc1d70e60ef4b9e7c3e1fb137b665701bcee5c9c0722eb16ec7b20bc68642055b" rel="noopener noreferrer">Deploy tx</a></span></span></li>
-        <li><span><span class="t-zh">ARK 挂单</span><span class="t-en">ARK market</span></span><span><span class="ca">0x3fF61e70B89dc5b0EDD9a7f27435d6604683Bd64</span><span class="ca-links"><a href="https://bscscan.com/address/0x3fF61e70B89dc5b0EDD9a7f27435d6604683Bd64" rel="noopener noreferrer">BscScan</a><a href="https://bscscan.com/tx/0x1a8c2859d6957be284da4bf2353446467fb4cc0733d5392d943b7deede78abb0" rel="noopener noreferrer">Deploy tx</a></span></span></li>
-        <li><span><span class="t-zh">求购</span><span class="t-en">Bid market</span></span><span><span class="ca">0xbC58134B8596e8A12050fcDF2435F42Ea0E2Aa32</span><span class="ca-links"><a href="https://bscscan.com/address/0xbC58134B8596e8A12050fcDF2435F42Ea0E2Aa32" rel="noopener noreferrer">BscScan</a><a href="https://bscscan.com/tx/0x1277e5eca9d58adb69bab65b88848961afdf9ec408159f56a646f4f3444f67e7" rel="noopener noreferrer">Deploy tx</a></span></span></li>
-        <li><span>TicketNFT</span><span><span class="ca">0x815202403e51C6525452dB09FC7c40dD2762D87e</span><span class="ca-links"><a href="https://bscscan.com/address/0x815202403e51C6525452dB09FC7c40dD2762D87e#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0x815202403e51C6525452dB09FC7c40dD2762D87e" rel="noopener noreferrer">Sourcify</a></span></span></li>
-        <li><span>ARK</span><span><span class="ca">0xBCbA6cFc97d2c0A4Dcf22295D92EF5227B5db712</span><span class="ca-links"><a href="https://bscscan.com/address/0xBCbA6cFc97d2c0A4Dcf22295D92EF5227B5db712#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0xBCbA6cFc97d2c0A4Dcf22295D92EF5227B5db712" rel="noopener noreferrer">Sourcify</a></span></span></li>
-        <li><span><span class="t-zh">洪水</span><span class="t-en">Flood</span></span><span><span class="ca">0xf15C1130fA9A5D0BAD783558379E39664aD79200</span><span class="ca-links"><a href="https://bscscan.com/address/0xf15C1130fA9A5D0BAD783558379E39664aD79200#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0xf15C1130fA9A5D0BAD783558379E39664aD79200" rel="noopener noreferrer">Sourcify</a></span></span></li>
-        <li><span><span class="t-zh">沙袋店</span><span class="t-en">Sandbag</span></span><span><span class="ca">0xcFC60dfb112Ab6BF19bE16d1d114990264aFF3bF</span><span class="ca-links"><a href="https://bscscan.com/address/0xcFC60dfb112Ab6BF19bE16d1d114990264aFF3bF#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0xcFC60dfb112Ab6BF19bE16d1d114990264aFF3bF" rel="noopener noreferrer">Sourcify</a></span></span></li>
-        <li><span><span class="t-zh">奖池</span><span class="t-en">Pot</span></span><span><span class="ca">0xf34aEBBc83Ce872f5692d9e7ae906A8e30f924Fa</span><span class="ca-links"><a href="https://bscscan.com/address/0xf34aEBBc83Ce872f5692d9e7ae906A8e30f924Fa#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0xf34aEBBc83Ce872f5692d9e7ae906A8e30f924Fa" rel="noopener noreferrer">Sourcify</a></span></span></li>
+        <li><span><span class="t-zh">铸造</span><span class="t-en">Sale</span></span><span><span class="ca">0xB69f1F7A14dbCbB82A5eFcCB4B7579410eEc746E</span><span class="ca-links"><a href="https://bscscan.com/address/0xB69f1F7A14dbCbB82A5eFcCB4B7579410eEc746E#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0xB69f1F7A14dbCbB82A5eFcCB4B7579410eEc746E" rel="noopener noreferrer">Sourcify</a></span></span></li>
+        <li><span><span class="t-zh">旧发售 · 退款</span><span class="t-en">Old sale · refunds</span></span><span><span class="ca">0x5f92105341Cbc09462A0a10973664a322505BF32</span><span class="ca-links"><a href="https://bscscan.com/address/0x5f92105341Cbc09462A0a10973664a322505BF32#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0x5f92105341Cbc09462A0a10973664a322505BF32" rel="noopener noreferrer">Sourcify</a></span></span></li>
+        <li><span><span class="t-zh">旧船票 · 退款</span><span class="t-en">Old tickets · refunds</span></span><span><span class="ca">0x815202403e51C6525452dB09FC7c40dD2762D87e</span><span class="ca-links"><a href="https://bscscan.com/address/0x815202403e51C6525452dB09FC7c40dD2762D87e#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0x815202403e51C6525452dB09FC7c40dD2762D87e" rel="noopener noreferrer">Sourcify</a></span></span></li>
+        <li><span><span class="t-zh">BNB 挂单</span><span class="t-en">BNB market</span></span><span><span class="ca">0x9162AB0b4eC0Bb3cf5C3b53e3b19f866E2c54eA1</span><span class="ca-links"><a href="https://bscscan.com/address/0x9162AB0b4eC0Bb3cf5C3b53e3b19f866E2c54eA1#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0x9162AB0b4eC0Bb3cf5C3b53e3b19f866E2c54eA1" rel="noopener noreferrer">Sourcify</a></span></span></li>
+        <li><span><span class="t-zh">ARK 挂单</span><span class="t-en">ARK market</span></span><span><span class="ca">0xBF6cE810aFc7974Da041299a16cb016b3ad45449</span><span class="ca-links"><a href="https://bscscan.com/address/0xBF6cE810aFc7974Da041299a16cb016b3ad45449#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0xBF6cE810aFc7974Da041299a16cb016b3ad45449" rel="noopener noreferrer">Sourcify</a></span></span></li>
+        <li><span><span class="t-zh">求购</span><span class="t-en">Bid market</span></span><span><span class="ca">0x480Fb7a8FA5feaBe3a20F7424669D9a63342f8Dd</span><span class="ca-links"><a href="https://bscscan.com/address/0x480Fb7a8FA5feaBe3a20F7424669D9a63342f8Dd#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0x480Fb7a8FA5feaBe3a20F7424669D9a63342f8Dd" rel="noopener noreferrer">Sourcify</a></span></span></li>
+        <li><span>TicketNFT</span><span><span class="ca">0x48eb4F2FB2C4D6765C8156428b7639F6dD92B70e</span><span class="ca-links"><a href="https://bscscan.com/address/0x48eb4F2FB2C4D6765C8156428b7639F6dD92B70e#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0x48eb4F2FB2C4D6765C8156428b7639F6dD92B70e" rel="noopener noreferrer">Sourcify</a></span></span></li>
+        <li><span>ARK</span><span><span class="ca">0xF6E13Cd0D344f6De19392d526387667b33c74580</span><span class="ca-links"><a href="https://bscscan.com/address/0xF6E13Cd0D344f6De19392d526387667b33c74580#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0xF6E13Cd0D344f6De19392d526387667b33c74580" rel="noopener noreferrer">Sourcify</a></span></span></li>
+        <li><span><span class="t-zh">洪水</span><span class="t-en">Flood</span></span><span><span class="ca">0x5f58A3d0cd684774bc6075bf588f345a391e637c</span><span class="ca-links"><a href="https://bscscan.com/address/0x5f58A3d0cd684774bc6075bf588f345a391e637c#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0x5f58A3d0cd684774bc6075bf588f345a391e637c" rel="noopener noreferrer">Sourcify</a></span></span></li>
+        <li><span><span class="t-zh">沙袋店</span><span class="t-en">Sandbag</span></span><span><span class="ca">0xD82fa4Dfa0086712CEB3986C453747a257E8655f</span><span class="ca-links"><a href="https://bscscan.com/address/0xD82fa4Dfa0086712CEB3986C453747a257E8655f#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0xD82fa4Dfa0086712CEB3986C453747a257E8655f" rel="noopener noreferrer">Sourcify</a></span></span></li>
+        <li><span><span class="t-zh">奖池</span><span class="t-en">Pot</span></span><span><span class="ca">0x3456AD558d17eF7D11646abfF6e602Ce647f40E3</span><span class="ca-links"><a href="https://bscscan.com/address/0x3456AD558d17eF7D11646abfF6e602Ce647f40E3#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0x3456AD558d17eF7D11646abfF6e602Ce647f40E3" rel="noopener noreferrer">Sourcify</a></span></span></li>
+        <li><span><span class="t-zh">ARK/WBNB 预定池</span><span class="t-en">ARK/WBNB launch pair</span></span><span><span class="ca">0x89cf36021Ac16f031F3E04D122d024663130499e</span><span class="ca-links"><a href="https://bscscan.com/address/0x89cf36021Ac16f031F3E04D122d024663130499e" rel="noopener noreferrer">BscScan</a></span></span></li>
         <li><span><span class="t-zh">校验</span><span class="t-en">Verifier</span></span><span><span class="ca">0xf14F5cF3fCB976082Df08dA1609D1698C39Ff2e2</span><span class="ca-links"><a href="https://bscscan.com/address/0xf14F5cF3fCB976082Df08dA1609D1698C39Ff2e2#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0xf14F5cF3fCB976082Df08dA1609D1698C39Ff2e2" rel="noopener noreferrer">Sourcify</a></span></span></li>
         <li><span><span class="t-zh">注册表</span><span class="t-en">Registry</span></span><span><span class="ca">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span><span class="ca-links"><a href="https://bscscan.com/address/0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F#code" rel="noopener noreferrer">BscScan</a><a href="https://sourcify.dev/#/lookup/0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F" rel="noopener noreferrer">Sourcify</a></span></span></li>
         <li><span><span class="t-zh">路由</span><span class="t-en">Router</span></span><span><span class="ca">0x10ED43C718714eb63d5aA57B78B54704E256024E</span><span class="ca-links"><a href="https://bscscan.com/address/0x10ED43C718714eb63d5aA57B78B54704E256024E#code" rel="noopener noreferrer">BscScan</a></span></span></li>
         <li><span>BNB/USD</span><span><span class="ca">0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE</span><span class="ca-links"><a href="https://bscscan.com/address/0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE#code" rel="noopener noreferrer">BscScan</a></span></span></li>
       </ul>
-      <p class="fine"><span class="t-zh">风险提醒：本金与代币都可能归零；未防护船票会沉；奖池无价格承诺；当地法规可能限制洪水与分池玩法。舱位概率是 70/25/5，日产是 100/200/600。网站已暂停铸造。旧合约卖满 3000 张会自动开池，开池后就不能退款。请不要绕过官网直接调用旧合约铸造。</span><span class="t-en">Risk: capital and tokens can go to zero. Unprotected tickets can sink. The pot has no promised price. Local rules may restrict the flood and the split. Cabin odds are the TicketNFT rates (70/25/5, 100/200/600). Minting on this site is paused. If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not bypass this site and mint on the old contract.</span></p>
+      <p class="fine"><span class="t-zh">风险提醒：本金与代币都可能归零；未防护船票会沉；奖池无价格承诺；当地法规可能限制洪水与分池玩法。舱位概率是 70/25/5，日产是 100/200/600。修复后的合约已部署，网站仍暂停铸造，直到新发售设定 startTime。旧合约卖满 3000 张会自动开池，开池后就不能退款。请不要绕过官网直接调用旧合约铸造。</span><span class="t-en">Risk: capital and tokens can go to zero. Unprotected tickets can sink. The pot has no promised price. Local rules may restrict the flood and the split. Cabin odds are the TicketNFT rates (70/25/5, 100/200/600). The fixed suite is deployed, and minting on this site stays paused until the new sale’s startTime is set. If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not bypass this site and mint on the old contract.</span></p>
     </div>
   </footer>
 

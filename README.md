@@ -2,9 +2,13 @@
 
 Static site for ARK100 on BNB Smart Chain (chainId 56). Publish path `./`, build command `echo ok`. `index.html` is served at `/`.
 
-The page reads ArkSale, TicketNFT, ARK, FloodEngine, SandbagShop, and ArkPot. Minting is paused on the site: the mint control stays on 铸造已暂停，合约升级中 / Minting paused, contract upgrade in progress, and no code path sends `ArkSale.mint`. In the current sale contract, BNB paid for tickets after the pool opens would not go into the liquidity pool. A fixed contract will be deployed separately. Existing tickets can be refunded in full only if sales stay under 3,000 before the pool opens. The refund window is around 2026-11-11 18:36 Asia/Shanghai. Anyone may then call `enableRefunds`, and each payer claims with `refund(tokenId)` from My Ark. If the old contract reaches 3,000 sold, it opens the pool automatically and `enableRefunds` cannot succeed after that. Do not bypass the site and mint by calling the old sale contract directly.
+The page reads the fixed ArkSale, TicketNFT, ARK, FloodEngine, SandbagShop, and ArkPot on BSC mainnet. Minting stays paused on the site until the new sale’s `startTime` is set. This page does not call `startSale`. The mint control stays on 铸造已暂停，等待开售 / Minting paused until the sale starts, and no code path sends `ArkSale.mint`.
 
-Secondary trading is live on BSC: `TicketMarketBNB`, `TicketMarketARK`, and `TicketBidMarket`. Addresses are in `js/chain.js`. A zero address would leave that book blank with 市场合约待部署; these three are set.
+Tickets bought on the previous sale can be refunded in full only if that sale stays under 3,000 before its pool opens. The refund window is around 2026-11-11 18:36 Asia/Shanghai. Anyone may then call `enableRefunds` on the old ArkSale (`0x5f92105341Cbc09462A0a10973664a322505BF32`), and each payer claims with `refund(tokenId)` from My Ark. Those reads and sends use `ADDR.legacySale` and `ADDR.legacyNft` (`0x815202403e51C6525452dB09FC7c40dD2762D87e`). If the old contract reaches 3,000 sold, it opens the pool automatically and `enableRefunds` cannot succeed after that. Do not mint by calling the old sale contract directly.
+
+The tide, mint quote, markets, flood, sandbag shop, pot, and ARK token read the new suite. Addresses are in `js/chain.js`.
+
+Secondary trading uses the fixed suite on BSC: `TicketMarketBNB`, `TicketMarketARK`, and `TicketBidMarket`, each bound to the new TicketNFT. Addresses are in `js/chain.js`. A zero address would leave that book blank with 市场合约待部署; these three are set.
 
 Cabin rates are the TicketNFT numbers: Economy 70% at 100 ARK/day, Business 25% at 200, Captain 5% at 600, drawn after mint with `requestCabin` / `settleCabin`. Sunk tickets produce 0. The 0.70 / 0.25 / 0.05 figures are cabin-draw probabilities. 150 ARK/day is the expected value across that draw, not a floor. A roughly 7-day payback is an open-price anchor, not a promise. Unprotected tickets: about 2–3% on nights 1–7, about 3–8% on nights 8–100.
 
@@ -26,22 +30,34 @@ Listable tickets are afloat (`isAlive`) and not inside `requestCabin` (`tickets(
 
 Bid kinds match NestEgg EggBidMarketV2: `0` any listable ticket (`param` 0), `1` cabin (`param` 0 unsettled, 1 economy, 2 business, 3 captain), `2` one `tokenId` (`qty` must be 1). Duration is 1 hour to 30 days. The buyer can `cancelBid` any time the bid is open. After `expires`, anyone can `refundExpired`. A fill of the last unit closes the bid.
 
-The live TicketNFT (`0x815202403e51C6525452dB09FC7c40dD2762D87e`) is a normal ERC-721. `transferFrom` / `approve` are open. There is no transfer hook blocking sales, so this change does not redeploy TicketNFT, ArkSale, or FloodEngine.
+The new TicketNFT (`0x48eb4F2FB2C4D6765C8156428b7639F6dD92B70e`) is the book the markets trade. The previous TicketNFT (`0x815202403e51C6525452dB09FC7c40dD2762D87e`) stays in place so the tickets already sold can be refunded through the old ArkSale. It is not the listing book.
 
-### Deployed on BSC mainnet
+### Deployed on BSC mainnet (fixed suite)
 
-Do not deploy these again. `script/DeployMarkets.s.sol` records the constructor args used:
+`startSale` has not been called on the new ArkSale. This site does not call it. `feeRecipient` on the three markets remains `0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74`.
 
-- `ticketNft`: `0x815202403e51C6525452dB09FC7c40dD2762D87e`
-- `arkToken` (ARK market only): `0xBCbA6cFc97d2c0A4Dcf22295D92EF5227B5db712`
-- `feeRecipient`: ArkSale `projectWallet()`, also ArkToken `projectWallet()`, `0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74`
+| Contract | Address |
+| --- | --- |
+| `ArkPot` | `0x3456AD558d17eF7D11646abfF6e602Ce647f40E3` |
+| `ArkToken` (ARK) | `0xF6E13Cd0D344f6De19392d526387667b33c74580` |
+| `TicketNFT` | `0x48eb4F2FB2C4D6765C8156428b7639F6dD92B70e` |
+| `FloodEngine` | `0x5f58A3d0cd684774bc6075bf588f345a391e637c` |
+| `SandbagShop` | `0xD82fa4Dfa0086712CEB3986C453747a257E8655f` |
+| `ArkSale` | `0xB69f1F7A14dbCbB82A5eFcCB4B7579410eEc746E` |
+| `TicketMarketBNB` (`marketBnb`) | `0x9162AB0b4eC0Bb3cf5C3b53e3b19f866E2c54eA1` |
+| `TicketMarketARK` (`marketArk`) | `0xBF6cE810aFc7974Da041299a16cb016b3ad45449` |
+| `TicketBidMarket` (`marketBid`) | `0x480Fb7a8FA5feaBe3a20F7424669D9a63342f8Dd` |
+| Pancake ARK/WBNB `launchPair` | `0x89cf36021Ac16f031F3E04D122d024663130499e` |
 
-| Book | Address | Deploy tx |
-| --- | --- | --- |
-| `TicketMarketBNB` (`marketBnb`) | `0xC24b79485705cEF5AfF36fb4c4cCda34F8423d95` | [`0xc1d70e60ef4b9e7c3e1fb137b665701bcee5c9c0722eb16ec7b20bc68642055b`](https://bscscan.com/tx/0xc1d70e60ef4b9e7c3e1fb137b665701bcee5c9c0722eb16ec7b20bc68642055b) |
-| `TicketMarketARK` (`marketArk`) | `0x3fF61e70B89dc5b0EDD9a7f27435d6604683Bd64` | [`0x1a8c2859d6957be284da4bf2353446467fb4cc0733d5392d943b7deede78abb0`](https://bscscan.com/tx/0x1a8c2859d6957be284da4bf2353446467fb4cc0733d5392d943b7deede78abb0) |
-| `TicketBidMarket` (`marketBid`) | `0xbC58134B8596e8A12050fcDF2435F42Ea0E2Aa32` | [`0x1277e5eca9d58adb69bab65b88848961afdf9ec408159f56a646f4f3444f67e7`](https://bscscan.com/tx/0x1277e5eca9d58adb69bab65b88848961afdf9ec408159f56a646f4f3444f67e7) |
+`launchPair` is the predicted PancakeSwap V2 address. It has no contract code until the pool is created at open.
 
-Those addresses are already in `js/chain.js`. ABIs are in `abi/`. The site encodes the same function selectors directly, the same way mint does, and reads `MARKET_FEE_BPS` from each book.
+Previous suite, refunds only. `enableRefunds` succeeds only if that sale is still unopened and `startTime + 7 days` has passed (around 2026-11-11 18:36 Asia/Shanghai), and only while sales stay under 3,000 so the old pool does not open.
+
+| Contract | Address |
+| --- | --- |
+| Old `ArkSale` (`legacySale`) | `0x5f92105341Cbc09462A0a10973664a322505BF32` |
+| Old `TicketNFT` (`legacyNft`) | `0x815202403e51C6525452dB09FC7c40dD2762D87e` |
+
+Those addresses are in `js/chain.js`. ABIs are in `abi/`. The site encodes the same function selectors directly, the same way mint does, and reads `MARKET_FEE_BPS` from each book.
 
 `forge test` runs `test/market` (fee, cancel, sunk and pending-cabin rejects, bid post / fill / cancel / expiry). The older `test/Ark100.t.sol` imports contracts that are not published in this repo, so it sits outside that test path.
