@@ -1,6 +1,6 @@
 [profile.default]
 src = "src"
-test = "test/market"
+test = "test"
 script = "script"
 out = "out"
 libs = ["lib"]
@@ -12,5 +12,4 @@ remappings = [
   "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/"
 ]
 
-# The older Ark100.t.sol imports TicketNFT / ArkToken / mocks that are not published in this repo.
-# `forge test` runs test/market only. Those sources stay on the deployed contracts.
+# `forge test` runs the market book and the Ark100 suite (sale, token, nft, pot, flood, shop).
