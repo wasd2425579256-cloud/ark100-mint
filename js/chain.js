@@ -3,23 +3,23 @@
   var CHAIN_ID = 56;
   var LOG_FROM = 131600000;
   var ADDR = {
-    nft: "0x48eb4F2FB2C4D6765C8156428b7639F6dD92B70e",
-    ark: "0xF6E13Cd0D344f6De19392d526387667b33c74580",
-    sale: "0xB69f1F7A14dbCbB82A5eFcCB4B7579410eEc746E",
-    flood: "0x5f58A3d0cd684774bc6075bf588f345a391e637c",
-    shop: "0xD82fa4Dfa0086712CEB3986C453747a257E8655f",
-    pot: "0x3456AD558d17eF7D11646abfF6e602Ce647f40E3",
+    nft: "0xBf997725e53f504d6CA6EE3566Fca90C7526a951",
+    ark: "0x53fAfd8027781e69E92C456C5944c5b994e3DA34",
+    sale: "0xf2087F9D8bb992Ff29d303cDdB4c9Af2879A0074",
+    flood: "0x18AA2EF5ab3ac4293b7E4ab565E92D9beA92ec59",
+    shop: "0xDd1704d26eA1361c4341E63143888CF476C8E540",
+    pot: "0x001dD47d262a1D6af1d9195821956Fef6B3A516F",
     // TicketMarketBNB / TicketMarketARK / TicketBidMarket on the fixed BSC suite.
     // feeRecipient is the constructor arg 0xc4411B914853Db300A40a2d8F3BC5ec7538aCA74.
-    marketBnb: "0x9162AB0b4eC0Bb3cf5C3b53e3b19f866E2c54eA1",
-    marketArk: "0xBF6cE810aFc7974Da041299a16cb016b3ad45449",
-    marketBid: "0x480Fb7a8FA5feaBe3a20F7424669D9a63342f8Dd",
+    marketBnb: "0xc628e42319377D7624010ca012FEC1733E39C4ea",
+    marketArk: "0x651c688883086a21f5Df32141e5267d9A74c8c96",
+    marketBid: "0xe1e72aCa98f511CAC3FCcc1876EE1d40f7b55Ad2",
     // Previous suite. Refunds of the tickets already sold stay on these contracts.
     // enableRefunds only if !opened && startTime + 7 days. Do not mint against them.
     legacySale: "0x5f92105341Cbc09462A0a10973664a322505BF32",
     legacyNft: "0x815202403e51C6525452dB09FC7c40dD2762D87e",
     // Predicted PancakeSwap V2 ARK/WBNB pair. The pair contract is created when the pool opens.
-    launchPair: "0x89cf36021Ac16f031F3E04D122d024663130499e",
+    launchPair: "0xefa01D5Be6DcFB108C0c0Be54df6d89D2aAf0fbe",
     verifier: "0xf14F5cF3fCB976082Df08dA1609D1698C39Ff2e2",
     registry: "0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F",
     router: "0x10ED43C718714eb63d5aA57B78B54704E256024E",
