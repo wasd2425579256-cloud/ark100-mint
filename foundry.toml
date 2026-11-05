@@ -7,6 +7,9 @@ libs = ["lib"]
 solc = "0.8.28"
 optimizer = true
 optimizer_runs = 200
+# 10_000-ticket settlement tests mint the full supply in one test. The default 2^30
+# limit is only enough for the transaction cap we assert, not for that setup.
+gas_limit = 30000000000
 remappings = [
   "forge-std/=lib/forge-std/src/",
   "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/"

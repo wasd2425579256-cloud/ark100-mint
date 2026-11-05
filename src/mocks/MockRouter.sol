@@ -84,6 +84,18 @@ contract MockLP {
         return a < b ? a : b;
     }
 
+    function skim(address to) external {
+        uint256 e0 = IERC20Mini(token0).balanceOf(address(this)) - uint256(_r0);
+        uint256 e1 = IERC20Mini(token1).balanceOf(address(this)) - uint256(_r1);
+        if (e0 > 0) require(IERC20Mini(token0).transfer(to, e0), "skim0");
+        if (e1 > 0) require(IERC20Mini(token1).transfer(to, e1), "skim1");
+    }
+
+    function sync() external {
+        _r0 = _to112(IERC20Mini(token0).balanceOf(address(this)));
+        _r1 = _to112(IERC20Mini(token1).balanceOf(address(this)));
+    }
+
     function _to112(uint256 v) internal pure returns (uint112) {
         require(v <= type(uint112).max, "112");
         return uint112(v);

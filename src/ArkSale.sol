@@ -4,7 +4,7 @@ pragma solidity 0.8.28;
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IAgentIdVerifier} from "./interfaces/IAgentIdVerifier.sol";
 import {IAggregatorV3} from "./interfaces/IAggregatorV3.sol";
-import {IPancakeFactory, IPancakePair, IPancakeRouter} from "./interfaces/IPancake.sol";
+import {IPancakeFactory, IPancakePair, IPancakeRouter, IWETH} from "./interfaces/IPancake.sol";
 import {PancakeZap} from "./PancakeZap.sol";
 
 interface ITicketMinter {
@@ -21,6 +21,7 @@ interface IArkTokenSale {
     function notifyPoolOpened(address pair) external;
     function approve(address spender, uint256 amount) external returns (bool);
     function balanceOf(address account) external view returns (uint256);
+    function transfer(address to, uint256 amount) external returns (bool);
     function launchPair() external view returns (address);
     function PANCAKE_FACTORY() external view returns (address);
     function WBNB() external view returns (address);
@@ -292,24 +293,86 @@ contract ArkSale is ReentrancyGuard {
         pendingLiqBNB = address(this).balance;
     }
 
+    /// @dev Seed by transferring WBNB and ARK straight to the pair and calling `mint(DEAD)`.
+    ///      An empty pair takes both amounts and sets the price. A pair that already exists
+    ///      (created early, donated to, synced) must not revert the open:
+    ///      - unsynced donations are skimmed to `DEAD` before we price the add;
+    ///      - a synced donation with no LP yet is left in the pair (it cannot be pulled) and our
+    ///        full amounts are minted on top, so the open still succeeds;
+    ///      - if LP already exists, amounts are quoted to the live reserves so `mint` does not
+    ///        revert, leftover ARK is sent to `DEAD`, and leftover BNB stays for the post-open zap.
+    ///      ARK itself cannot be transferred into the predicted pair by anyone but the sale until
+    ///      `notifyPoolOpened`, so a third party cannot set a two-sided price before this call.
     function _seedPair(uint256 lpBnb, uint256 teamPay, uint256 potPay) internal {
         arkToken.mint(address(this), POOL_SEED_ARK);
-        arkToken.approve(address(router), POOL_SEED_ARK);
-
         address lpToken = _ensurePair();
-        (uint112 r0, uint112 r1,) = IPancakePair(lpToken).getReserves();
-        // Full-size mins: an empty pair takes both amounts and sets the price. A pre-seeded pair
-        // would pull the genesis liquidity onto the attacker's price, so it is refused instead.
-        require(r0 == 0 && r1 == 0, "pair seeded");
+        IPancakePair p = IPancakePair(lpToken);
+        p.skim(DEAD);
 
-        router.addLiquidityETH{value: lpBnb}(
-            address(arkToken), POOL_SEED_ARK, POOL_SEED_ARK, lpBnb, DEAD, block.timestamp
-        );
+        (uint256 bnbIn, uint256 arkIn) = _seedQuote(p, lpBnb, POOL_SEED_ARK);
+        _pushWbnb(lpToken, bnbIn);
+        require(arkToken.transfer(lpToken, arkIn), "ark");
+        uint256 liquidity = p.mint(DEAD);
+        require(liquidity > 0, "lp");
+        p.skim(DEAD);
+
+        uint256 leftoverArk = arkToken.balanceOf(address(this));
+        if (leftoverArk > 0) require(arkToken.transfer(DEAD, leftoverArk), "ark dust");
 
         pair = lpToken;
         arkToken.setOfficialPair(lpToken);
         arkToken.notifyPoolOpened(lpToken);
-        emit PoolOpened(lpToken, lpBnb, POOL_SEED_ARK, teamPay, potPay);
+        emit PoolOpened(lpToken, bnbIn, arkIn, teamPay, potPay);
+    }
+
+    function _seedQuote(IPancakePair p, uint256 bnbBal, uint256 arkBal)
+        internal
+        returns (uint256 bnbIn, uint256 arkIn)
+    {
+        bnbIn = bnbBal;
+        arkIn = arkBal;
+        uint256 supply = p.totalSupply();
+        (uint256 reserveBnb, uint256 reserveArk) = _reservesOf(p);
+
+        // Broken pair: LP exists but one reserve is 0, so `mint` would divide by zero.
+        // Top up the empty side by 1 wei and sync, then quote against the repaired reserves.
+        if (supply > 0 && (reserveBnb == 0 || reserveArk == 0)) {
+            if (reserveArk == 0 && arkIn > 1) {
+                require(arkToken.transfer(address(p), 1), "ark");
+                arkIn -= 1;
+            }
+            if (reserveBnb == 0 && bnbIn > 1) {
+                _pushWbnb(address(p), 1);
+                bnbIn -= 1;
+            }
+            p.sync();
+            (reserveBnb, reserveArk) = _reservesOf(p);
+            supply = p.totalSupply();
+        }
+
+        // No LP yet (the grief: createPair + WBNB + sync). Deposit both full amounts.
+        if (supply == 0 || reserveBnb == 0 || reserveArk == 0) return (bnbIn, arkIn);
+
+        uint256 bnbOptimal = (arkIn * reserveBnb) / reserveArk;
+        if (bnbOptimal <= bnbIn) {
+            bnbIn = bnbOptimal == 0 ? 1 : bnbOptimal;
+        } else {
+            uint256 arkOptimal = (bnbIn * reserveArk) / reserveBnb;
+            arkIn = arkOptimal == 0 ? 1 : arkOptimal;
+        }
+    }
+
+    function _reservesOf(IPancakePair p) internal view returns (uint256 reserveBnb, uint256 reserveArk) {
+        (uint112 r0, uint112 r1,) = p.getReserves();
+        if (p.token0() == router.WETH()) return (uint256(r0), uint256(r1));
+        return (uint256(r1), uint256(r0));
+    }
+
+    function _pushWbnb(address to, uint256 amount) internal {
+        if (amount == 0) return;
+        IWETH w = IWETH(router.WETH());
+        w.deposit{value: amount}();
+        require(w.transfer(to, amount), "wbnb");
     }
 
     function _ensurePair() internal returns (address lpToken) {

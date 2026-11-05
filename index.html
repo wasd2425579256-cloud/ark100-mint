@@ -568,7 +568,7 @@
       <div class="triggers">
         <article class="trigger">
           <h3><span class="t-zh">申请抽舱 / 揭晓舱位</span><span class="t-en">Cabin · requestCabin / settleCabin</span></h3>
-          <p><span class="t-zh">持有人先申请抽舱。种子区块出现后，任何人可以揭晓舱位。结果仍是 70/25/5，对应 100/200/600 ARK/天。</span><span class="t-en">The holder calls <code>requestCabin</code> first. After the seed block, anyone may <code>settleCabin</code>. The draw is still 70/25/5, paying 100/200/600 ARK/day.</span></p>
+          <p><span class="t-zh">持有人先申请抽舱。种子区块出现后，任何人可以揭晓舱位。结果仍是 70/25/5，对应 100/200/600 ARK/天。超过 256 个区块还没揭晓的，任何人揭晓都会落到经济舱，不能重抽。第 100 晚开始之后不能再申请抽舱。没揭晓舱位的票一样进洪水。</span><span class="t-en">The holder calls <code>requestCabin</code> first. After the seed block, anyone may <code>settleCabin</code>. The draw is still 70/25/5, paying 100/200/600 ARK/day. A request older than 256 blocks settles as Economy, and cannot be rerolled. New requests close when night 100 begins. A ticket with no settled cabin is still in the flood.</span></p>
           <label class="field-label" for="cabinIdInput"><span class="t-zh">船票编号</span><span class="t-en">Ticket id</span></label>
           <input id="cabinIdInput" inputmode="numeric" autocomplete="off" placeholder="例如 1" data-ph-zh="例如 1" data-ph-en="e.g. 1" />
           <button class="cta" id="requestCabinBtn" type="button"><span class="t-zh">申请抽舱</span><span class="t-en">requestCabin</span></button>
@@ -582,8 +582,17 @@
           <button class="cta" id="commitBtn" type="button"><span class="t-zh">提交当晚洪水</span><span class="t-en">commit</span></button>
         </article>
         <article class="trigger">
+          <h3><span class="t-zh">结算当晚洪水</span><span class="t-en">Flood · settleBatch</span></h3>
+          <p><span class="t-zh">洪水按批结算。每笔最多处理 400 张船票，重复调用，直到这一晚的 <code>dayState.settled</code> 变成真。没沙袋的票都在里面，包括还没揭晓舱位的票。单笔请保持在这个批量里，不要指望一笔结完整晚。</span><span class="t-en">Settlement is batched. Each transaction walks at most 400 tickets. Repeat <code>settleBatch(night, 400)</code> until <code>dayState(night).settled</code> is true. Every ticket without a sandbag is included, including tickets that have not drawn a cabin. One transaction does not finish the night.</span></p>
+          <label class="field-label" for="settleDayInput"><span class="t-zh">晚数</span><span class="t-en">Night</span></label>
+          <input id="settleDayInput" inputmode="numeric" autocomplete="off" placeholder="1–100" data-ph-zh="1–100" data-ph-en="1–100" />
+          <label class="field-label" for="settleBatchInput"><span class="t-zh">本批张数</span><span class="t-en">Batch size</span></label>
+          <input id="settleBatchInput" inputmode="numeric" autocomplete="off" value="400" placeholder="400" data-ph-zh="400" data-ph-en="400" />
+          <button class="cta" id="settleBatchBtn" type="button"><span class="t-zh">结算一批</span><span class="t-en">settleBatch</span></button>
+        </article>
+        <article class="trigger">
           <h3><span class="t-zh">购买沙袋</span><span class="t-en">Sandbag · buy</span></h3>
-          <p><span class="t-zh">开池之后，用船票产出的 ARK 在沙袋店购买。人还多时大约 50 ARK 一袋。开池前不会发送。</span><span class="t-en">After the pool opens, buy with the ARK a ticket earns. About 50 ARK a bag while many survive. Nothing is sent before the pool opens.</span></p>
+          <p><span class="t-zh">开池之后，用船票产出的 ARK 在沙袋店购买。人还多时大约 50 ARK 一袋。开池前不能堆沙袋，也不能把沙袋赠给别人的票。当晚洪水已经 commit 之后，也不能再堆这一晚。</span><span class="t-en">After the pool opens, buy with the ARK a ticket earns. About 50 ARK a bag while many survive. Bags cannot be applied or gifted before the pool opens, and not for a night whose flood is already committed.</span></p>
           <button class="cta" id="buyBagBtn" type="button" disabled><span class="t-zh">开池后才能买沙袋</span><span class="t-en">Sandbags open with the pool</span></button>
         </article>
         <article class="trigger" id="openPoolCard" hidden>
@@ -603,7 +612,8 @@
         </article>
         <article class="trigger">
           <h3><span class="t-zh">第 100 晚领取</span><span class="t-en">Day-100 claim</span></h3>
-          <p><span class="t-zh">满 100 晚、奖池靠岸之后，还在船上的船票可以领取自己的一份。奖池还没靠岸时不会发送。</span><span class="t-en">After night 100 and land, a ticket still aboard calls <code>ArkPot.claimShare(tokenId)</code>. Nothing is sent before the pot has landed.</span></p>
+          <p><span class="t-zh">第 100 晚整批结完之后，任何人调用 <code>landfall()</code>（没有参数）让奖池靠岸。靠岸之后，舱位已经揭晓并且还在船上的票领取自己的一份。没揭晓舱位的票不进奖池。奖池还没靠岸时，领取不会发送。</span><span class="t-en">After night 100 has fully settled, anyone calls <code>landfall()</code> with no arguments. That locks the pot from the survivor counter. A ticket with a settled cabin that is still aboard then calls <code>claimShare</code>. A ticket that never drew a cabin is not in the pot. The claim is not sent before the pot has landed.</span></p>
+          <button class="cta secondary" id="landfallBtn" type="button"><span class="t-zh">奖池靠岸</span><span class="t-en">landfall</span></button>
           <label class="field-label" for="claimIdInput"><span class="t-zh">船票编号</span><span class="t-en">Ticket id</span></label>
           <input id="claimIdInput" inputmode="numeric" autocomplete="off" placeholder="船票编号" data-ph-zh="船票编号" data-ph-en="Ticket id" />
           <button class="cta" id="claimShareBtn" type="button"><span class="t-zh">领取份额</span><span class="t-en">claimShare</span></button>

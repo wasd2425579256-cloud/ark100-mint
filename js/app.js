@@ -186,7 +186,9 @@
       var n = board.dayIndex.toString();
       var settled = board.day && board.day.settled;
       setBi(count, "第 " + n + " / 100 晚", "Night " + n + " / 100");
-      setBi(hint, settled ? "这一晚已经过完" : "这一晚还没过完", settled ? "This night is settled" : "This night is not settled yet");
+      setBi(hint,
+        settled ? "这一晚已经过完" : "这一晚还没过完。按批 settleBatch，结完才算过完",
+        settled ? "This night is settled" : "This night is not settled yet. Repeat settleBatch until it is.");
     }
     if ($("arkNight")) {
       if (!board.floodStarted || !board.dayIndex) say($("arkNight"), "当前晚数：洪水未启动。", "Current night: the flood has not started.");
@@ -490,6 +492,10 @@
       var badge = cabinBadge(row);
       var statusZh = state === "afloat" ? "在航" : (state === "pending" ? "待抽舱" : "已沉");
       var statusEn = state === "afloat" ? "Afloat" : (state === "pending" ? "Pending" : "Sunk");
+      if (row.yieldClaimed && !row.legacy) {
+        statusZh += " · 已领收益";
+        statusEn += " · yield claimed";
+      }
       var statusCls = state === "afloat" ? "ok" : (state === "sunk" ? "sunk" : "wait");
       var bagZh = row.legacy ? "—" : (row.sandbag ? "已堆沙袋" : (board && board.floodStarted ? "无沙袋" : "—"));
       var bagEn = row.legacy ? "—" : (row.sandbag ? "Sandbagged" : (board && board.floodStarted ? "No sandbag" : "—"));
@@ -1505,6 +1511,17 @@
     if (!id) throw Object.assign(new Error("bad-id"), { code: "bad-id" });
     say($("triggerStatus"), "正在提交当晚洪水。", "Sending commit.");
     return C.sendCommit(id, board);
+  });
+  wireSend("settleBatchBtn", "triggerStatus", function () {
+    var id = idFrom("settleDayInput");
+    if (!id) throw Object.assign(new Error("bad-id"), { code: "bad-id" });
+    var batch = idFrom("settleBatchInput") || "400";
+    say($("triggerStatus"), "正在结算这一批洪水。结完一整晚之前可以再点。", "Sending one settleBatch. Press again until the night is settled.");
+    return C.sendSettleBatch(id, batch, board);
+  });
+  wireSend("landfallBtn", "triggerStatus", function () {
+    say($("triggerStatus"), "正在让奖池靠岸。", "Sending landfall.");
+    return C.sendLandfall(board);
   });
   wireSend("openPoolBtn", "triggerStatus", function () {
     say($("triggerStatus"), "正在发送开池。", "Sending openPool.");
