@@ -6,6 +6,8 @@ The page reads the fixed ArkSale, TicketNFT, ARK, FloodEngine, SandbagShop, and 
 
 Tickets bought on the previous sale can be refunded in full only if that sale stays under 3,000 before its pool opens. The refund window is around 2026-11-11 18:36 Asia/Shanghai. Anyone may then call `enableRefunds` on the old ArkSale (`0x5f92105341Cbc09462A0a10973664a322505BF32`), and each payer claims with `refund(tokenId)` from My Ark. Those reads and sends use `ADDR.legacySale` and `ADDR.legacyNft` (`0x815202403e51C6525452dB09FC7c40dD2762D87e`). If the old contract reaches 3,000 sold, it opens the pool automatically and `enableRefunds` cannot succeed after that. Do not mint by calling the old sale contract directly.
 
+The new ArkSale does not use that global switch. After its own `startTime + 7 days`, and only while the pool is still closed, the current holder calls `refund(tokenId)` on the new sale. That burns the ticket, returns that ticket’s `paidBnb`, and lowers `sold` by one, so the pool still opens automatically at 3,000 live paid tickets. Minting continues through the window. A refund does not give the original minter another mint slot. While `startTime` is 0 the site hides the new-sale refund control. The deployed suite at `0xB69f…` was never started; `script/DeployFixedSuite.s.sol` redeploys the whole set and must not be broadcast from this repo.
+
 The tide, mint quote, markets, flood, sandbag shop, pot, and ARK token read the new suite. Addresses are in `js/chain.js`.
 
 Secondary trading uses the fixed suite on BSC: `TicketMarketBNB`, `TicketMarketARK`, and `TicketBidMarket`, each bound to the new TicketNFT. Addresses are in `js/chain.js`. A zero address would leave that book blank with 市场合约待部署; these three are set.

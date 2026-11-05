@@ -242,14 +242,42 @@
     return { blockHex: blockHex, now: BigInt(block.timestamp) };
   }
 
-  async function readBoard() {
+  // New sale only. "hidden" while startTime is 0 or the pool is open, "countdown" until
+  // startTime + 7 days, then "open" for a per-ticket refund. The legacy sale still uses refunding().
+  function newSaleRefundPhase(startTime, opened, now) {
+    var refundWindow = 7n * 24n * 60n * 60n;
+    var start = BigInt(startTime || 0);
+    var clock = BigInt(now || 0);
+    if (start === 0n) return "hidden";
+    if (opened) return "hidden";
+    if (clock < start + refundWindow) return "countdown";
+    return "open";
+  }
+
+  function refundCountdownText(secondsLeft) {
+    var s = Number(secondsLeft);
+    if (!isFinite(s) || s < 0) s = 0;
+    s = Math.floor(s);
+    var d = Math.floor(s / 86400);
+    var h = Math.floor((s % 86400) / 3600);
+    var m = Math.floor((s % 3600) / 60);
+    var sec = s % 60;
+    if (d > 0) {
+      return { zh: "退款倒计时 " + d + " 天 " + h + " 小时", en: "Refund in " + d + "d " + h + "h" };
+    }
+    if (h > 0) {
+      return { zh: "退款倒计时 " + h + " 小时 " + m + " 分", en: "Refund in " + h + "h " + m + "m" };
+    }
+    return { zh: "退款倒计时 " + m + " 分 " + sec + " 秒", en: "Refund in " + m + "m " + sec + "s" };
+  }
+
+    async function readBoard() {
     var row = await Promise.all([
       readBlockHead(),
       callUint(ADDR.sale, SEL.sold),
       callUint(ADDR.sale, SEL.startTime),
       callUint(ADDR.sale, SEL.opened),
       callUint(ADDR.sale, SEL.openedAt),
-      callUint(ADDR.sale, SEL.refunding),
       callUint(ADDR.sale, SEL.currentTier),
       callUint(ADDR.sale, SEL.priceUsd),
       callUint(ADDR.sale, SEL.lastMintTime),
@@ -270,20 +298,19 @@
     var startTime = row[2];
     var opened = row[3] !== 0n;
     var openedAt = row[4];
-    var refunding = row[5] !== 0n;
-    var tier = row[6];
-    var priceUsd = row[7];
-    var lastMintTime = row[8];
-    var floodStarted = row[9] !== 0n;
-    var totalMinted = row[10];
-    var aliveCount = row[11];
-    var shopPrice = row[12];
-    var basePrice = row[13];
-    var landed = row[14] !== 0n;
-    var survivors = row[15];
-    var share = row[16];
-    var pair = row[17];
-    var officialPair = row[18];
+    var tier = row[5];
+    var priceUsd = row[6];
+    var lastMintTime = row[7];
+    var floodStarted = row[8] !== 0n;
+    var totalMinted = row[9];
+    var aliveCount = row[10];
+    var shopPrice = row[11];
+    var basePrice = row[12];
+    var landed = row[13] !== 0n;
+    var survivors = row[14];
+    var share = row[15];
+    var pair = row[16];
+    var officialPair = row[17];
     var dayIndex = null;
     var day = null;
     if (floodStarted) {
@@ -301,11 +328,10 @@
       }
     }
     var saleStarted = startTime !== 0n && now >= startTime;
-    var mintOpen = saleStarted && !refunding && sold < 10000n;
-    var canOpen = sold >= 3000n && !opened && !refunding;
+    var mintOpen = saleStarted && sold < 10000n;
+    var canOpen = sold >= 3000n && !opened;
     var canStart = opened && !floodStarted;
-    var refundWindow = 7n * 24n * 60n * 60n;
-    var canEnableRefunds = !opened && !refunding && startTime !== 0n && now >= startTime + refundWindow;
+    var refundPhase = newSaleRefundPhase(startTime, opened, now);
     return {
       block: BigInt(head.blockHex),
       now: now,
@@ -313,7 +339,7 @@
       startTime: startTime,
       opened: opened,
       openedAt: openedAt,
-      refunding: refunding,
+      refundPhase: refundPhase,
       tier: tier,
       priceUsd: priceUsd,
       lastMintTime: lastMintTime,
@@ -332,8 +358,7 @@
       saleStarted: saleStarted,
       mintOpen: mintOpen,
       canOpen: canOpen,
-      canStart: canStart,
-      canEnableRefunds: canEnableRefunds
+      canStart: canStart
     };
   }
 
@@ -848,6 +873,14 @@
     return sendTx(ADDR.legacySale, SEL.refund + hexUint(id), 0);
   }
 
+  // New sale. The holder refunds one ticket; this does not call enableRefunds.
+  function sendSaleRefund(id, snap) {
+    var phase = newSaleRefundPhase(snap && snap.startTime, snap && snap.opened, snap && snap.now);
+    if (snap && snap.opened) throw fail("pool-open-no-refund");
+    if (phase !== "open") throw fail("refund-not-ready");
+    return sendTx(ADDR.sale, SEL.refund + hexUint(id), 0);
+  }
+
   async function sendRequestCabin(id) {
     return sendTx(ADDR.nft, SEL.requestCabin + hexUint(id), 0);
   }
@@ -906,6 +939,8 @@
     isZeroAddr: isZeroAddr,
     parseUnits: parseUnits,
     readBoard: readBoard,
+    newSaleRefundPhase: newSaleRefundPhase,
+    refundCountdownText: refundCountdownText,
     readLegacyRefund: readLegacyRefund,
     readListingBook: readListingBook,
     readBidBook: readBidBook,
@@ -926,6 +961,7 @@
     sendStartFlood: sendStartFlood,
     sendEnableRefunds: sendEnableRefunds,
     sendRefund: sendRefund,
+    sendSaleRefund: sendSaleRefund,
     sendRequestCabin: sendRequestCabin,
     sendSettleCabin: sendSettleCabin,
     sendClaim: sendClaim,

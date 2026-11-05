@@ -102,7 +102,6 @@ contract ArkSaleInvariantTest is Test {
     ///      (including dust and adopted donations). Zaps do not mint ARK.
     function invariant_postOpenAccounting() public view {
         assertTrue(sale.opened());
-        assertFalse(sale.refunding());
         assertEq(sale.teamDue(), 0);
         assertEq(sale.potDue(), 0);
         assertEq(sale.reserveBNB(), 0);

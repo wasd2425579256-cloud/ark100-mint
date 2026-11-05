@@ -73,7 +73,6 @@
   }
 
   function saleLabel() {
-    if (board && board.refunding) return { zh: "退款已开启", en: "Refunds are open" };
     if (mintPaused()) return { zh: "铸造已暂停", en: "Minting paused" };
     if (!board) return { zh: "正在读取", en: "Reading" };
     if (!board.saleStarted) return { zh: "正式未开售", en: "Sale not started" };
@@ -216,16 +215,13 @@
     if (dayInput && board.dayIndex && !dayInput.value) dayInput.value = board.dayIndex.toString();
     var parts = [];
     parts.push(zh()
-      ? ("已售 " + C.formatInt(board.sold) + " / 10,000。开池：" + (board.opened ? "已打开" : "未打开") + "。退款：" + (board.refunding ? "已开启" : "未开启") + "。洪水：" + (board.floodStarted ? "已启动" : "未启动") + "。")
-      : (C.formatInt(board.sold) + " / 10,000 sold. Pool: " + (board.opened ? "open" : "closed") + ". Refunds: " + (board.refunding ? "on" : "off") + ". Flood: " + (board.floodStarted ? "started" : "not started") + "."));
+      ? ("已售 " + C.formatInt(board.sold) + " / 10,000。开池：" + (board.opened ? "已打开" : "未打开") + "。洪水：" + (board.floodStarted ? "已启动" : "未启动") + "。")
+      : (C.formatInt(board.sold) + " / 10,000 sold. Pool: " + (board.opened ? "open" : "closed") + ". Flood: " + (board.floodStarted ? "started" : "not started") + "."));
     if (mintPaused()) parts.push(zh() ? "网站已暂停铸造，不会发送铸造交易。" : "Minting on this site is paused. No mint is sent.");
     else if (!board.saleStarted) parts.push(zh() ? "铸造正式未开售。" : "Minting is not open yet.");
     else if (board.mintOpen) parts.push(zh() ? "铸造已开放。" : "Minting is open.");
-    if (board.refunding) {
-      parts.push(zh()
-        ? "到「我的方舟」，用当时付款的钱包按票领取。"
-        : "In My Ark, claim each ticket from the wallet that paid.");
-    }
+    var saleRefundLine = newSaleRefundStatusLine();
+    if (saleRefundLine) parts.push(saleRefundLine);
     if (legacyRefund && legacyRefund.refunding) {
       parts.push(zh()
         ? "旧船票退款已开启。到「我的方舟」，用当时付款的钱包按票领取。"
@@ -277,6 +273,44 @@
     return { kind: "mute", zh: "只有付款人能领", en: "Only the payer can claim" };
   }
 
+  // New sale, separate from refundOffer (legacy payer claim). Hidden while startTime is 0 or the pool is open.
+  function newSaleRefundOffer(row) {
+    if (!row || row.legacy || !board || !C.newSaleRefundPhase) return null;
+    var phase = C.newSaleRefundPhase(board.startTime, board.opened, board.now);
+    if (phase === "hidden") return null;
+    if (phase === "countdown") {
+      var left = board.startTime + (7n * 24n * 60n * 60n) - board.now;
+      var text = C.refundCountdownText(left);
+      return { kind: "countdown", zh: text.zh, en: text.en };
+    }
+    if (row.paidBnb == null) {
+      return { kind: "mute", zh: "退款金额暂时读不到", en: "Refund amount could not be read" };
+    }
+    var paid = BigInt(row.paidBnb);
+    if (paid === 0n) return null;
+    var holder = row.owner || "";
+    var canAct = (account && sameAddr(account, holder)) || (!account && C.isAddr(lookedUp) && sameAddr(lookedUp, holder));
+    if (canAct) return { kind: "button", paid: paid };
+    if (!account) return { kind: "mute", zh: "连接持有钱包后可退", en: "Connect the holding wallet to refund" };
+    return { kind: "mute", zh: "只有当前持有人能退", en: "Only the current holder can refund" };
+  }
+
+  function newSaleRefundStatusLine() {
+    if (!board || !C.newSaleRefundPhase) return "";
+    var phase = C.newSaleRefundPhase(board.startTime, board.opened, board.now);
+    if (phase === "hidden") return "";
+    if (phase === "countdown") {
+      var left = board.startTime + (7n * 24n * 60n * 60n) - board.now;
+      var text = C.refundCountdownText(left);
+      return zh()
+        ? ("新船票还不能退。" + text.zh + "。到时在「我的方舟」由当前持有人按票退，铸造和开池不停。")
+        : ("New tickets cannot be refunded yet. " + text.en + ". The current holder then refunds each ticket in My Ark. Minting and the pool keep going.");
+    }
+    return zh()
+      ? "新船票可以按票退款。当前持有人在「我的方舟」退回这张票付过的 BNB，票会被烧掉。铸造继续，卖满 3000 张仍会开池。"
+      : "New tickets can be refunded one by one. The current holder returns the BNB paid for that ticket in My Ark, and the ticket is burned. Minting continues, and the pool still opens at 3,000.";
+  }
+
   function renderTickets() {
     var hint = $("refundHint");
     if (hint) hint.hidden = !(legacyRefund && legacyRefund.refunding);
@@ -316,6 +350,7 @@
         "<td></td>";
       var cell = tr.lastChild;
       var offer = refundOffer(row);
+      var saleOffer = offer ? null : newSaleRefundOffer(row);
       if (offer && offer.kind === "button") {
         var wrap = document.createElement("div");
         wrap.className = "row-acts";
@@ -324,9 +359,20 @@
         cell.appendChild(wrap);
       } else if (offer) {
         cell.appendChild(textSpan(offer.zh, offer.en));
-      } else if (state === "pending") cell.appendChild(actionButton("request-cabin", row.id, "抽舱", "Draw cabin"));
-      else if (state === "afloat") cell.appendChild(actionButton("apply-bag", row.id, "沙袋护住", "Apply sandbag"));
-      else cell.appendChild(textSpan("无产出", "No yield"));
+      } else {
+        var acts = document.createElement("div");
+        acts.className = "row-acts";
+        if (saleOffer && (saleOffer.kind === "countdown" || saleOffer.kind === "mute")) {
+          acts.appendChild(textSpan(saleOffer.zh, saleOffer.en));
+        } else if (saleOffer && saleOffer.kind === "button") {
+          acts.appendChild(actionButton("sale-refund", row.id, "退款", "Refund", "refund"));
+          acts.appendChild(textSpan(bnbText(saleOffer.paid), bnbText(saleOffer.paid)));
+        }
+        if (state === "pending") acts.appendChild(actionButton("request-cabin", row.id, "抽舱", "Draw cabin"));
+        else if (state === "afloat") acts.appendChild(actionButton("apply-bag", row.id, "沙袋护住", "Apply sandbag"));
+        else if (!saleOffer) acts.appendChild(textSpan("无产出", "No yield"));
+        cell.appendChild(acts);
+      }
       body.appendChild(tr);
     });
     $("statAfloat").textContent = String(afloat);
@@ -927,7 +973,8 @@
       "refunding": ["退款已开启，铸造已停止，没有发送交易。", "Refunds are on, so mint is closed. No transaction was sent."],
       "mint-closed": ["当前不能铸造，没有发送交易。", "Mint is closed. No transaction was sent."],
       "no-wallet": ["没有发现浏览器钱包。", "No browser wallet was found."],
-      "open-not-ready": ["还不能开池：需要已售至少 3000、池子未开、且不在退款。没有发送交易。", "openPool is not ready: sold must be at least 3,000, the pool closed, and refunds off. No transaction was sent."],
+      "open-not-ready": ["还不能开池：需要已售至少 3000，并且池子还没打开。没有发送交易。", "openPool is not ready: sold must be at least 3,000 and the pool must still be closed. No transaction was sent."],
+      "pool-open-no-refund": ["池子已经打开，这张新船票不能再退。没有发送交易。", "The pool is open, so this new ticket can no longer be refunded. No transaction was sent."],
       "start-not-ready": ["还不能启动洪水：需要池子已开且洪水未启动。没有发送交易。", "start() is not ready: the pool must be open and the flood not started. No transaction was sent."],
       "refund-not-ready": ["退款窗口还没到。没有发送交易。", "The refund window is not open. No transaction was sent."],
       "refund-closed": ["退款还没开启，没有发送交易。", "Refunds are not on yet. No transaction was sent."],
@@ -1317,6 +1364,9 @@
       }
       say($("arkStatus"), "正在发送领退款。", "Sending the refund claim.");
       run = function () { return C.sendRefund(id); };
+    } else if (act === "sale-refund") {
+      say($("arkStatus"), "正在发送退款。", "Sending the refund.");
+      run = function () { return C.sendSaleRefund(id, board); };
     } else if (act === "buy-listing" || act === "cancel-listing" || act === "clean-listing" || act === "fill-bid" || act === "cancel-bid" || act === "refund-bid") {
       var book = btn.getAttribute("data-book") || payBook;
       var bidId = btn.getAttribute("data-bid") || id;
@@ -1346,7 +1396,7 @@
     Promise.resolve().then(run).then(function (hash) {
       return track(hash, $("arkStatus"));
     }).then(function () {
-      if (act === "claim-refund" && $("walletInput") && String($("walletInput").value || "").trim()) {
+      if ((act === "claim-refund" || act === "sale-refund") && $("walletInput") && String($("walletInput").value || "").trim()) {
         return lookup($("walletInput").value).catch(function () {
           say($("lookupNote"), "舱单暂时读不到。", "Tickets could not be read.");
         });

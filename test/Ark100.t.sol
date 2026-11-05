@@ -131,14 +131,15 @@ contract Ark100Test is Test {
         assertEq(alice.balance, balBefore - due);
 
         vm.warp(block.timestamp + 7 days + 1);
-        sale.enableRefunds();
-        assertTrue(sale.refunding());
 
         uint256 mid = alice.balance;
         vm.prank(alice);
         sale.refund(1);
         assertEq(alice.balance, mid + due);
         assertEq(sale.paidBnb(1), 0);
+        assertEq(sale.sold(), 0);
+        assertEq(sale.outstandingRefunds(), 0);
+        assertEq(tickets.mintedBy(alice), 1);
     }
 
     function test_noOwnerWithdraw_onSaleAndPot() public {
@@ -380,14 +381,12 @@ contract Ark100Test is Test {
         sale.openPool();
     }
 
-    function test_openPool_revertsWhenRefunding() public {
+    function test_openPool_notBlockedByRefundWindow() public {
         _mintSome();
         vm.warp(block.timestamp + sale.REFUND_WINDOW());
-        sale.enableRefunds();
         _forceSold(sale.OPEN_AT());
-        vm.expectRevert(bytes("refunding"));
         sale.openPool();
-        assertFalse(sale.opened());
+        assertTrue(sale.opened());
     }
 
     function test_autoOpen_setsOpenedAt_andFloodStarts() public {
@@ -403,8 +402,9 @@ contract Ark100Test is Test {
     function test_siteSelectors_unchanged() public view {
         assertEq(ArkSale.mint.selector, bytes4(hex"a0712d68"));
         assertEq(ArkSale.openPool.selector, bytes4(hex"eb5797a4"));
-        assertEq(ArkSale.enableRefunds.selector, bytes4(hex"8c52dc41"));
         assertEq(ArkSale.refund.selector, bytes4(hex"278ecde1"));
+        // Legacy sale only. This contract no longer has a global refund switch.
+        assertEq(_sig("enableRefunds()"), bytes4(hex"8c52dc41"));
         assertEq(ArkSale.quoteMint.selector, bytes4(hex"665216c6"));
         assertEq(ArkSale.priceUsd.selector, bytes4(hex"8b3948bd"));
         assertEq(ArkSale.currentTier.selector, bytes4(hex"d679677a"));
@@ -453,7 +453,6 @@ contract Ark100Test is Test {
         sale.startTime();
         sale.opened();
         sale.openedAt();
-        sale.refunding();
         sale.lastMintTime();
         sale.payer(1);
         sale.paidBnb(1);
@@ -497,12 +496,13 @@ contract Ark100Test is Test {
         assertEq(first + second, due);
 
         vm.warp(block.timestamp + 7 days + 1);
-        sale.enableRefunds();
         uint256 mid = alice.balance;
         vm.prank(alice);
         sale.refund(1);
         assertEq(alice.balance, mid + first);
         assertEq(sale.outstandingRefunds(), second);
+        assertEq(sale.teamDue() + sale.potDue() + sale.reserveBNB(), second);
+        assertEq(sale.sold(), 1);
         vm.prank(alice);
         sale.refund(2);
         assertEq(sale.outstandingRefunds(), 0);
@@ -647,7 +647,6 @@ contract Ark100Test is Test {
         sale.mint{value: due}(1);
         _donate(0.4 ether);
         vm.warp(block.timestamp + 7 days + 1);
-        sale.enableRefunds();
         uint256 mid = alice.balance;
         vm.prank(alice);
         sale.refund(1);

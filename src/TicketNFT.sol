@@ -50,6 +50,7 @@ contract TicketNFT is ERC721, ReentrancyGuard {
     event CabinRequested(uint256 indexed tokenId, uint64 commitBlock);
     event CabinSettled(uint256 indexed tokenId, uint8 cabin);
     event Sunk(uint256 indexed tokenId, address indexed owner);
+    event Retired(uint256 indexed tokenId, address indexed owner);
     event Claimed(uint256 indexed tokenId, address indexed to, uint256 amount);
 
     modifier onlySale() {
@@ -100,6 +101,22 @@ contract TicketNFT is ERC721, ReentrancyGuard {
         aliveCount += 1;
         _safeMint(to, tokenId);
         emit TicketMinted(tokenId, to, minter);
+    }
+
+    /// @notice Permanently retire a ticket when its sale refund is paid.
+    /// @dev Marks the cabin sunk, clears an in-flight cabin commit, and burns the ERC721 so the id
+    ///      cannot be transferred, listed, drawn, claimed, sandbagged, or sunk again. Unlike `sink`,
+    ///      this does not return the original minter's mint quota.
+    function retire(uint256 tokenId) external onlySale {
+        Ticket storage t = tickets[tokenId];
+        require(t.mintedAt != 0 && t.cabin != CABIN_SUNK, "bad");
+        address holder = ownerOf(tokenId);
+        t.cabin = CABIN_SUNK;
+        t.cabinCommitBlock = 0;
+        t.lastClaim = uint64(block.timestamp);
+        if (aliveCount > 0) aliveCount -= 1;
+        _burn(tokenId);
+        emit Retired(tokenId, holder);
     }
 
     /// @notice Free a mint slot when a ticket sinks (returns quota to original minter).

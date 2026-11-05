@@ -33,7 +33,9 @@ import {TicketBidMarket} from "../src/TicketBidMarket.sol";
 ///   router         0x10ED43C718714eb63d5aA57B78B54704E256024E   (PancakeSwap V2)
 ///
 /// The live markets (0xC24b…, 0x3fF6…, 0xbC58…) stay pointed at the old TicketNFT. They are not upgraded.
-/// Point js/chain.js at the new addresses after a real broadcast. Selectors the site already calls are unchanged.
+/// Point js/chain.js at the new addresses after a real broadcast. `refund(uint256)` keeps its selector.
+/// This sale has no `enableRefunds` and no `refunding` flag: after start + 7 days the holder refunds one
+/// ticket at a time, and `TicketNFT.retire` (onlySale) burns it. The previous suite is not deployed here.
 ///
 /// Order matters: every `deployer` check is `msg.sender`, so this script must be the sender for every deploy
 /// and every one-shot setter. `pot.setTicketNft` is called by `sale.wire`, not by the deployer directly.
@@ -103,6 +105,10 @@ contract DeployFixedSuite is Script {
         require(flood.sale() == address(sale), "flood sale");
         require(address(sale.ticketNft()) == address(tickets), "sale nft");
         require(address(sale.arkToken()) == address(ark), "sale ark");
+        require(sale.REFUND_WINDOW() == 7 days, "refund window");
+        require(sale.sold() == 0 && !sale.opened(), "fresh sale");
+        if (startTime == 0) require(sale.startTime() == 0, "not started");
+        else require(sale.startTime() == startTime, "started");
         require(shop.floodEngine() == address(flood), "shop flood");
         require(marketBnb.feeRecipient() == PROJECT_WALLET, "fee");
         require(address(marketArk.arkToken()) == address(ark), "mkt ark");

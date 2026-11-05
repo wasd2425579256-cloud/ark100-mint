@@ -10,6 +10,8 @@ import {PancakeZap} from "./PancakeZap.sol";
 interface ITicketMinter {
     function mintTo(address to, address minter) external returns (uint256);
     function mintedBy(address) external view returns (uint256);
+    function ownerOf(uint256 tokenId) external view returns (address);
+    function retire(uint256 tokenId) external;
 }
 
 interface IArkTokenSale {
@@ -27,9 +29,13 @@ interface IArkPotWire {
     function setTicketNft(address nft) external;
 }
 
-/// @title ArkSale — Gen0 ticket sale: tiered USD, full refund if unopened, auto pool @ #3000.
-/// @dev Pre-open, the 20/15/65 split is escrowed so every payer can be refunded in full after
-///      `REFUND_WINDOW` if the pool never opens. There is no owner and no withdraw/rescue of ticket funds.
+/// @title ArkSale — Gen0 ticket sale: tiered USD, per-ticket refund until open, auto pool @ #3000.
+/// @dev Pre-open, the 20/15/65 split is escrowed per ticket. After `startTime + REFUND_WINDOW`, the
+///      current holder may refund that ticket for its `paidBnb` for as long as the pool stays closed.
+///      A refund burns the ticket, decrements `sold`, and pulls that ticket's exact team / pot / reserve
+///      shares out of escrow. Minting does not stop, and there is no global refund switch. The pool
+///      still opens automatically when `sold` live tickets reaches `OPEN_AT`. There is no owner and no
+///      withdraw/rescue of ticket funds. A refund does not restore the minter's `MAX_PER_ADDRESS` quota.
 ///
 ///      Post-open, the same 20/15/65 split is paid immediately: 20% to `projectWallet`, 15% to the pot,
 ///      and 65% into `pendingLiqBNB`. That pending balance is zapped into the official PancakeSwap
@@ -53,8 +59,8 @@ interface IArkPotWire {
 ///
 ///      Raw BNB sent to this contract is not a mint. Before open it is folded into the genesis LP.
 ///      After open, `syncPending` / the next mint / `addLiquidity` adopts it into the zap balance.
-///      It is not refundable. During `refunding`, unswept donations are not ticket escrow; there is
-///      still no rescue, so do not send BNB directly.
+///      It is not refundable. Unswept donations are not ticket escrow; there is still no rescue,
+///      so do not send BNB directly.
 contract ArkSale is ReentrancyGuard {
     uint256 public constant MAX_SUPPLY = 10_000;
     uint256 public constant MAX_PER_ADDRESS = 10;
@@ -96,7 +102,6 @@ contract ArkSale is ReentrancyGuard {
     uint256 public startTime;
     uint256 public lastMintTime;
     bool public opened;
-    bool public refunding;
     address public pair;
 
     uint256 public teamDue;
@@ -114,6 +119,10 @@ contract ArkSale is ReentrancyGuard {
 
     mapping(uint256 => uint256) public paidBnb;
     mapping(uint256 => address) public payer;
+    /// @notice Team share of `paidBnb` captured at mint, so a refund reverses that ticket's escrow exactly.
+    mapping(uint256 => uint256) public teamShare;
+    /// @notice Pot share of `paidBnb` captured at mint. Reserve share is `paidBnb - teamShare - potShare`.
+    mapping(uint256 => uint256) public potShare;
 
     /// @notice block.timestamp at which the pool was opened (0 = not opened). Read by FloodEngine.start().
     uint256 public openedAt;
@@ -122,7 +131,6 @@ contract ArkSale is ReentrancyGuard {
     event SaleStarted(uint256 startTime);
     event Minted(address indexed buyer, uint256 indexed tokenId, uint256 usdPrice, uint256 bnbPaid, string handle);
     event PoolOpened(address pair, uint256 bnbLp, uint256 arkLp, uint256 teamPaid, uint256 potPaid);
-    event RefundEnabled();
     event Refunded(uint256 indexed tokenId, address indexed to, uint256 amount);
     event LiqQuotePoked(uint112 reserveBnb, uint112 reserveArk, uint256 blockNumber);
     event LiquidityAdded(
@@ -201,7 +209,6 @@ contract ArkSale is ReentrancyGuard {
     }
 
     function mint(uint256 count) external payable nonReentrant {
-        require(!refunding, "refunding");
         require(startTime != 0 && block.timestamp >= startTime, "not started");
         require(sold + count <= MAX_SUPPLY, "sold out");
         require(ticketNft.mintedBy(msg.sender) + count <= MAX_PER_ADDRESS, "max per addr");
@@ -216,21 +223,20 @@ contract ArkSale is ReentrancyGuard {
         uint256 base = bnbDue / count;
         uint256 rem = bnbDue % count;
 
+        uint256 paidAcc;
+        uint256 teamAcc;
+        uint256 potAcc;
         for (uint256 i; i < count; ++i) {
-            uint256 tokenId = ticketNft.mintTo(msg.sender, msg.sender);
             uint256 slice = base + (i == 0 ? rem : 0);
-            paidBnb[tokenId] = slice;
-            payer[tokenId] = msg.sender;
-            unchecked {
-                sold += 1;
-            }
-            emit Minted(msg.sender, tokenId, usdPx, slice, handle);
+            uint256 tokenId = ticketNft.mintTo(msg.sender, msg.sender);
+            (paidAcc, teamAcc, potAcc) = _assignShare(tokenId, slice, paidAcc, teamAcc, potAcc);
+            _emitMint(msg.sender, tokenId, usdPx, slice, handle);
         }
-
         // Split the quoted payment only. Overpay is returned before any of it can be treated as a donation.
         uint256 teamPart = (bnbDue * TEAM_BPS) / 10_000;
         uint256 potPart = (bnbDue * POT_BPS) / 10_000;
         uint256 reservePart = bnbDue - teamPart - potPart;
+        require(paidAcc == bnbDue && teamAcc == teamPart && potAcc == potPart, "split");
 
         uint256 over = msg.value - bnbDue;
         if (over > 0) {
@@ -254,9 +260,34 @@ contract ArkSale is ReentrancyGuard {
         lastMintTime = block.timestamp;
     }
 
+    /// @dev Cumulative floors: ticket shares sum to the batch 20/15/65 split, and each reserve share stays non-negative.
+    function _assignShare(uint256 tokenId, uint256 slice, uint256 paidAcc, uint256 teamAcc, uint256 potAcc)
+        internal
+        returns (uint256 paidAccNext, uint256 teamAccNext, uint256 potAccNext)
+    {
+        uint256 teamTarget = ((paidAcc + slice) * TEAM_BPS) / 10_000;
+        uint256 potTarget = ((paidAcc + slice) * POT_BPS) / 10_000;
+        uint256 teamSlice = teamTarget - teamAcc;
+        uint256 potSlice = potTarget - potAcc;
+        require(teamSlice + potSlice <= slice, "split");
+        paidBnb[tokenId] = slice;
+        teamShare[tokenId] = teamSlice;
+        potShare[tokenId] = potSlice;
+        payer[tokenId] = msg.sender;
+        unchecked {
+            sold += 1;
+        }
+        paidAccNext = paidAcc + slice;
+        teamAccNext = teamTarget;
+        potAccNext = potTarget;
+    }
+
+    function _emitMint(address buyer, uint256 tokenId, uint256 usdPx, uint256 slice, string memory handle) internal {
+        emit Minted(buyer, tokenId, usdPx, slice, handle);
+    }
+
     function _openPool() internal {
         require(!opened, "opened");
-        require(!refunding, "refunding");
 
         uint256 teamPay = teamDue;
         uint256 potPay = potDue;
@@ -319,27 +350,44 @@ contract ArkSale is ReentrancyGuard {
     /// @notice Permissionless insurance: anyone may open the pool if the threshold is met
     ///         but the auto-open in mint() did not fire. No privileges; same `_openPool` path.
     function openPool() external nonReentrant {
-        require(!refunding, "refunding");
         require(!opened, "opened");
         require(sold >= OPEN_AT, "below OPEN_AT");
         _openPool();
     }
 
-    function enableRefunds() external {
+    /// @notice Burn one ticket and return its `paidBnb` to the current holder.
+    /// @dev After `startTime + REFUND_WINDOW`, until the pool opens. Selling keeps going, so a refund
+    ///      does not freeze the sale or block `openPool`. `sold` falls by one: the open counts live
+    ///      paid tickets. The minter's `MAX_PER_ADDRESS` quota is not restored.
+    ///
+    ///      Tickets can transfer and be listed before open. The markets do not escrow the NFT (the
+    ///      seller keeps it and approves), and a bid escrows the bidder's BNB only. The holder may
+    ///      refund a listed ticket; `buy` / `acceptBid` then revert on the burned id, `cleanListing`
+    ///      can drop the stale row, and bid escrow stays in the bid market until cancel or expiry.
+    ///      `retire` marks the ticket sunk and burns it, so cabin, flood, shop, and the pot ignore it.
+    function refund(uint256 tokenId) external nonReentrant {
         require(!opened, "opened");
         require(startTime != 0 && block.timestamp >= startTime + REFUND_WINDOW, "too early");
-        refunding = true;
-        // escrowed teamDue/potDue/reserve all remain on the contract for refunds
-        emit RefundEnabled();
-    }
-
-    function refund(uint256 tokenId) external nonReentrant {
-        require(refunding, "not refunding");
-        require(payer[tokenId] == msg.sender, "not payer");
+        require(ticketNft.ownerOf(tokenId) == msg.sender, "not holder");
         uint256 amount = paidBnb[tokenId];
         require(amount > 0, "zero");
+        uint256 teamCut = teamShare[tokenId];
+        uint256 potCut = potShare[tokenId];
+        require(teamCut + potCut <= amount, "split");
+        uint256 reserveCut = amount - teamCut - potCut;
+
         paidBnb[tokenId] = 0;
+        teamShare[tokenId] = 0;
+        potShare[tokenId] = 0;
         outstandingRefunds -= amount;
+        teamDue -= teamCut;
+        potDue -= potCut;
+        reserveBNB -= reserveCut;
+        sold -= 1;
+
+        // Burn before paying so a recipient cannot move the ticket in the BNB callback.
+        ticketNft.retire(tokenId);
+
         (bool ok,) = msg.sender.call{value: amount}("");
         require(ok, "pay");
         emit Refunded(tokenId, msg.sender, amount);
@@ -347,7 +395,7 @@ contract ArkSale is ReentrancyGuard {
 
     /// @notice Adopt direct BNB transfers into the post-open zap balance.
     function syncPending() external nonReentrant {
-        require(opened && !refunding, "closed");
+        require(opened, "closed");
         pendingLiqBNB = address(this).balance;
     }
 
@@ -358,7 +406,7 @@ contract ArkSale is ReentrancyGuard {
     ///      Before sell-out the amount must be at least `LIQ_MIN`. After sell-out any positive balance
     ///      can be flushed. Each call zaps at most `LIQ_THRESHOLD`.
     function addLiquidity() external nonReentrant returns (bool zapped) {
-        require(opened && !refunding, "closed");
+        require(opened, "closed");
         pendingLiqBNB = address(this).balance;
         uint256 bal = pendingLiqBNB;
         require(bal >= LIQ_MIN || (sold == MAX_SUPPLY && bal > 0), "below min");
