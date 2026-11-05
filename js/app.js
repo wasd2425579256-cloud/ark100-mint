@@ -85,27 +85,57 @@
   }
 
   function mintBrief() {
+    var price = board ? usdText(board.priceUsd) : "2";
+    var due = quote ? bnbText(quote.bnbDue) : (zh() ? "正在读取应付金额" : "reading quoteMint");
+    var state;
+    if (mintPaused()) {
+      state = zh()
+        ? "网站已暂停铸造。不会发送铸造。"
+        : "Minting on this site is paused. No mint is sent.";
+    } else if (!board || !board.saleStarted) {
+      state = zh()
+        ? "正式未开售。ArkSale.startTime 到达之前，不会发送铸造。"
+        : "Sale not started. No mint is sent until ArkSale.startTime has arrived.";
+    } else if (board.mintOpen) {
+      state = zh() ? "发售已开始，可以发送铸造。" : "The sale has started. A mint can be sent.";
+    } else {
+      state = zh() ? "发售状态不允许铸造。" : "Mint is not open in the current sale state.";
+    }
     if (zh()) {
       return [
-        "ARK100 暂停说明",
-        "修复后的合约已经部署。铸造仍暂停，要等新发售写入 startTime。本站不会发送铸造。",
+        "ARK100 铸造说明",
+        "链：BNB Smart Chain（chainId 56）",
+        "状态：" + state,
         "",
-        "已经买到的旧船票，只有在旧发售开池前没有卖满 3000 张时，才能在退款窗口打开后全额退款。",
-        "退款窗口大约是 2026-11-11 18:36（北京时间）。",
-        "旧合约卖满 3000 张会自动开池，开池后就不能退款。请不要绕过官网直接调用旧合约铸造。",
-        "窗口打开后，先在本站「公开动作」为旧发售开启退款，再到「我的方舟」，用当时付款的钱包按船票领取。",
-        "新发售的开售时间，我们会另行公布。"
+        "门槛：必须持有 Agent ID，名字不能是空的。",
+        "注册表：" + C.ADDR.registry,
+        "发售合约：" + C.ADDR.sale,
+        "",
+        "数量：" + qty,
+        "链上标价：$" + price + " / 张（连续 5 分钟没人铸造就降一档）。",
+        "这一笔应付的 BNB：" + due,
+        "",
+        "只有 startTime 已到，才发送 ArkSale.mint，转入的 BNB 等于报价。本页不调用 startSale。",
+        "旧船票只有在旧发售开池前没有卖满 3000 张时，才能在约 2026-11-11 18:36（北京时间）后全额退款。",
+        "请不要向旧发售合约铸造。旧合约卖满 3000 张会自动开池，开池后就不能退款。"
       ].join("\n");
     }
     return [
-      "ARK100 pause notice",
-      "The fixed suite is deployed. Minting stays paused until the new sale’s startTime is set. This site will not send a mint.",
+      "ARK100 mint brief",
+      "Chain: BNB Smart Chain (chainId 56)",
+      "Status: " + state,
       "",
-      "Tickets already bought on the old sale can be refunded in full only if that sale stays under 3,000 before its pool opens.",
-      "The refund window is around 2026-11-11 18:36 Asia/Shanghai.",
-      "If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not bypass this site and mint by calling the old contract directly.",
-      "After the window opens, turn refunds on for the old sale under Public actions, then claim each ticket in My Ark from the wallet that paid.",
-      "When the new sale’s start time is set, it will be announced separately."
+      "Gate: an Agent ID with a non-empty handle.",
+      "Registry: " + C.ADDR.registry,
+      "ArkSale: " + C.ADDR.sale,
+      "",
+      "Qty: " + qty,
+      "On-chain list price: $" + price + " / ticket (five quiet minutes drop one tier).",
+      "BNB due: " + due,
+      "",
+      "ArkSale.mint is sent with value = bnbDue only after startTime has arrived. This page does not call startSale.",
+      "Old tickets refund in full only if that sale stays under 3,000 before its pool opens, around 2026-11-11 18:36 Asia/Shanghai.",
+      "Do not mint on the old sale. If it reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that."
     ].join("\n");
   }
 
@@ -160,12 +190,31 @@
     var label = saleLabel();
     setBi($("saleSeal"), label.zh, label.en);
     setBi($("statusSale"), label.zh, label.en);
+    var notice = $("pauseNotice");
+    if (notice) notice.hidden = !mintPaused() && !!(board && board.saleStarted);
     var mintBtn = $("mintBtn");
     if (!mintBtn) return;
-    mintBtn.disabled = true;
-    mintBtn.setAttribute("aria-disabled", "true");
-    mintBtn.classList.add("is-paused");
-    setBi(mintBtn, "铸造已暂停，等待开售", "Minting paused until the sale starts");
+    if (mintPaused()) {
+      mintBtn.disabled = true;
+      mintBtn.setAttribute("aria-disabled", "true");
+      mintBtn.classList.add("is-paused");
+      setBi(mintBtn, "铸造已暂停，等待开售", "Minting paused until the sale starts");
+      return;
+    }
+    mintBtn.classList.remove("is-paused");
+    if (board && board.mintOpen) {
+      mintBtn.disabled = false;
+      mintBtn.removeAttribute("aria-disabled");
+      setBi(mintBtn, "铸造 " + qty + " 张", "Mint " + qty);
+    } else if (board && board.saleStarted) {
+      mintBtn.disabled = true;
+      mintBtn.setAttribute("aria-disabled", "true");
+      setBi(mintBtn, "现在不能铸造", "Mint is closed");
+    } else {
+      mintBtn.disabled = true;
+      mintBtn.setAttribute("aria-disabled", "true");
+      setBi(mintBtn, "正式未开售", "Sale not started");
+    }
   }
 
   function plainArk(value, fallback) {
@@ -1155,6 +1204,7 @@
   function explain(code, detail) {
     var map = {
       "mint-paused": ["铸造已暂停，要等新发售设定 startTime。没有发送交易。旧合约卖满 3000 张会自动开池，开池后就不能退款，请不要绕过官网直接铸造。", "Minting is paused until the new sale’s startTime is set. No transaction was sent. If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not bypass this site and mint on the old contract."],
+      "legacy-mint": ["不能向旧发售合约铸造。没有发送交易。旧合约卖满 3000 张会自动开池，开池后就不能退款。", "This site does not mint on the old sale. No transaction was sent. If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that."],
       "sale-not-started": ["正式未开售，没有发送交易。", "Sale not started. No transaction was sent."],
       "refunding": ["退款已开启，铸造已停止，没有发送交易。", "Refunds are on, so mint is closed. No transaction was sent."],
       "mint-closed": ["当前不能铸造，没有发送交易。", "Mint is closed. No transaction was sent."],
@@ -1424,7 +1474,7 @@
     var copyBtn = event.target.closest("[data-copy='mint']");
     if (copyBtn) {
       copyText(mintBrief()).then(function (ok) {
-        say($("mintStatus"), ok ? "已复制暂停说明。" : "无法写入剪贴板，说明仍留在页面上。", ok ? "Pause notice copied." : "Clipboard blocked. The notice is still on the page.");
+        say($("mintStatus"), ok ? "已复制铸造说明。" : "无法写入剪贴板，说明仍留在页面上。", ok ? "Mint brief copied." : "Clipboard blocked. The brief is still on the page.");
       });
     }
     var copyMarket = event.target.closest("[data-copy='market']");
@@ -1448,10 +1498,23 @@
     });
   });
 
-  $("mintBtn").addEventListener("click", function (event) {
-    event.preventDefault();
-    renderSale();
-    say($("mintStatus"), explain("mint-paused"), explain("mint-paused"));
+  $("mintBtn").addEventListener("click", function () {
+    if (mintPaused()) {
+      renderSale();
+      say($("mintStatus"), explain("mint-paused"), explain("mint-paused"));
+      return;
+    }
+    if (!board || !board.saleStarted || !board.mintOpen) {
+      var code = board && board.saleStarted ? "mint-closed" : "sale-not-started";
+      say($("mintStatus"), explain(code), explain(code));
+      return;
+    }
+    say($("mintStatus"), "正在发送铸造交易。", "Sending the mint transaction.");
+    C.sendMint(qty, board).then(function (out) {
+      return track(out.hash, $("mintStatus"));
+    }).catch(function (e) {
+      say($("mintStatus"), walletError(e), walletError(e));
+    });
   });
 
   $("lookup").addEventListener("submit", function (event) {
@@ -1635,10 +1698,17 @@
   renderTickets();
   refresh().catch(function () {
     say($("statusRead"), "链上读取失败", "Chain read failed");
-    say($("mintStatus"), "链上状态暂时读不到。铸造保持暂停，不会发送交易。", "Chain state could not be read. Mint stays paused and no transaction will be sent.");
-    setBi($("mintBtn"), "铸造已暂停，等待开售", "Minting paused until the sale starts");
+    if (mintPaused()) {
+      say($("mintStatus"), "链上状态暂时读不到。铸造保持暂停，不会发送交易。", "Chain state could not be read. Mint stays paused and no transaction will be sent.");
+      setBi($("mintBtn"), "铸造已暂停，等待开售", "Minting paused until the sale starts");
+      $("mintBtn").classList.add("is-paused");
+    } else {
+      say($("mintStatus"), "链上状态暂时读不到。开售状态确认前不会发送铸造。", "Chain state could not be read. No mint is sent until the sale state is known.");
+      setBi($("mintBtn"), "正式未开售", "Sale not started");
+      $("mintBtn").classList.remove("is-paused");
+    }
     $("mintBtn").disabled = true;
-    $("mintBtn").classList.add("is-paused");
+    $("mintBtn").setAttribute("aria-disabled", "true");
     C.readLegacyRefund().then(function (snap) {
       legacyRefund = snap;
       legacyAnchorMs = Date.now();

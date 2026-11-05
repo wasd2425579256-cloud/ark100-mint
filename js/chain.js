@@ -1,6 +1,8 @@
 /* ARK100 BSC mainnet reads and wallet sends. chainId 56. */
 (function (global) {
   var CHAIN_ID = 56;
+  // Frontend mint switch. Chain ArkSale.startTime is the real open. This page does not call startSale.
+  var MINT_PAUSED = false;
   var LOG_FROM = 131743398;
   var ADDR = {
     nft: "0xDF2aF96477aBe8E5Eaa9Cf79650D58917e6c3490",
@@ -821,8 +823,17 @@
     return body.indexOf(SEL.mint.toLowerCase()) === 0;
   }
 
+  function saleMintBlock(to, data) {
+    if (!isSaleMint(to, data)) return "";
+    var dest = String(to).toLowerCase();
+    if (dest === ADDR.legacySale.toLowerCase()) return "legacy-mint";
+    if (MINT_PAUSED) return "mint-paused";
+    return "";
+  }
+
   async function sendTx(to, data, value) {
-    if (isSaleMint(to, data)) throw fail("mint-paused");
+    var mintBlock = saleMintBlock(to, data);
+    if (mintBlock) throw fail(mintBlock);
     var eth = provider();
     if (!eth) throw fail("no-wallet");
     await ensureChain();
@@ -851,8 +862,13 @@
     return null;
   }
 
-  async function sendMint() {
-    throw fail("mint-paused");
+  async function sendMint(count, board) {
+    if (MINT_PAUSED) throw fail("mint-paused");
+    if (!board || !board.saleStarted) throw fail("sale-not-started");
+    if (!board.mintOpen) throw fail("mint-closed");
+    var q = await quoteMint(count);
+    var hash = await sendTx(ADDR.sale, SEL.mint + hexUint(count), q.bnbDue);
+    return { hash: hash, quote: q };
   }
 
   async function sendOpenPool(board) {
@@ -940,7 +956,7 @@
 
   global.ArkChain = {
     CHAIN_ID: CHAIN_ID,
-    MINT_PAUSED: true,
+    MINT_PAUSED: MINT_PAUSED,
     ADDR: ADDR,
     CABIN_RATE: CABIN_RATE,
     formatUnits: formatUnits,
