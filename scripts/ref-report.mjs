@@ -3,19 +3,24 @@
  * Scan ArkSale mint(uint256) transactions for a trailing ARKREF: tag.
  *
  *   node scripts/ref-report.mjs [--from-block N] [--to-block N]
- *       [--share 0.35] [--team-ratio 0.2] [--out file.csv]
+ *       [--share 0.35] [--team-ratio 0.2] [--player-reward 0.05] [--out file.csv]
  *
  * RPC defaults to https://bsc-dataseed.binance.org. Override with env RPC
  * or --rpc. That host rejects eth_getLogs, so log queries fall back to
  * https://bsc.publicnode.com and then https://bsc-rpc.publicnode.com
  * (the same log endpoints js/chain.js uses). No dependencies. Node 18+.
  *
- * Referrer payable is a cut of team revenue, not of gross BNB:
+ * Named KOL codes (1–20 of [a-z0-9_]) keep the team-revenue cut:
  *   team_bnb = floor(bnb_paid * team_ratio)
- *   referrer_bnb = floor(team_bnb * share)
+ *   payout_bnb = floor(team_bnb * share)
  * team_ratio is ArkSale.TEAM_BPS() / 10000 unless --team-ratio is passed.
- * If that view cannot be read and --team-ratio is omitted, the summary
- * prints team_ratio REQUIRED and leaves the payable columns blank.
+ * If that view cannot be read and --team-ratio is omitted, named payouts
+ * stay blank. The script does not guess a team ratio.
+ *
+ * Address referrers (0x + 40 hex) are paid a share of the ticket payment:
+ *   payout_bnb = floor(bnb_paid * player_reward)
+ * player_reward defaults to js/ref.js PLAYER_REWARD (0.05). A mint whose
+ * sender is that same address is a self-referral and is not payable.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -28,6 +33,18 @@ export const START_TIMESTAMP = 1793880000n;
 export const DEFAULT_RPC = "https://bsc-dataseed.binance.org";
 export const DEFAULT_SHARE = "0.35";
 export const CHUNK_BLOCKS = 5000n;
+const NAME_RE = /^[a-z0-9_]{1,20}$/;
+const ADDR_RE = /^0x[a-f0-9]{40}$/;
+
+function playerRewardFromSource(src) {
+  const m = String(src).match(/var PLAYER_REWARD = "(\d+(?:\.\d+)?)";/);
+  if (!m) throw new Error("PLAYER_REWARD missing in js/ref.js");
+  return m[1];
+}
+
+export const DEFAULT_PLAYER_REWARD = playerRewardFromSource(
+  fs.readFileSync(new URL("../js/ref.js", import.meta.url), "utf8")
+);
 /** ArkSale Minted(address,uint256,uint256,uint256,string). Same topic as js/chain.js "minted". */
 export const MINTED_TOPIC = "0xd8b419dcb55349414000518e58bc0ec29a3419a418cc9ab706cd9db1260cb2f4";
 /** ERC-721 Transfer(address,address,uint256). Fallback: TicketNFT mints come from 0x0. */
@@ -79,6 +96,90 @@ export function formatBps(bps) {
   return whole.toString() + "." + frac;
 }
 
+export function normalizeRef(ref) {
+  const s = String(ref || "").trim();
+  if (/^0x[0-9a-fA-F]{40}$/.test(s)) return "0x" + s.slice(2).toLowerCase();
+  if (/^[0-9a-fA-F]{40}$/.test(s)) return "0x" + s.toLowerCase();
+  if (NAME_RE.test(s)) return s;
+  return "";
+}
+
+export function classifyRef(ref) {
+  const s = normalizeRef(ref);
+  if (ADDR_RE.test(s)) return "address";
+  if (NAME_RE.test(s)) return "name";
+  return "none";
+}
+
+export function isSelfReferral(from, ref) {
+  const canonical = normalizeRef(ref);
+  if (!ADDR_RE.test(canonical)) return false;
+  return String(from || "").trim().toLowerCase() === canonical;
+}
+
+export function payoutOf(kind, wei, teamRatio, share, playerReward) {
+  const paid = BigInt(wei);
+  if (kind === "address") {
+    if (!playerReward) return null;
+    return applyRatio(paid, playerReward);
+  }
+  if (kind === "name") {
+    if (!teamRatio || !share) return null;
+    return applyRatio(applyRatio(paid, teamRatio), share);
+  }
+  return 0n;
+}
+
+function compareGroups(a, b) {
+  function rank(row) {
+    if (row.ref === "(none)") return 2;
+    if (row.ref === "(self)") return 1;
+    return 0;
+  }
+  const d = rank(a) - rank(b);
+  if (d) return d;
+  return a.ref < b.ref ? -1 : a.ref > b.ref ? 1 : 0;
+}
+
+export function foldMints(records, teamRatio, share, playerReward) {
+  const groups = new Map();
+  function add(key, kind, tickets, wei) {
+    let row = groups.get(key);
+    if (!row) {
+      row = { ref: key, kind: kind, txs: 0n, tickets: 0n, wei: 0n };
+      groups.set(key, row);
+    }
+    row.txs += 1n;
+    row.tickets += tickets;
+    row.wei += wei;
+  }
+  const list = records || [];
+  for (let i = 0; i < list.length; i++) {
+    const rec = list[i];
+    const tickets = BigInt(rec.tickets || 0);
+    const wei = BigInt(rec.wei || 0);
+    const ref = normalizeRef(rec.ref);
+    const kind = classifyRef(ref);
+    if (kind === "address" && isSelfReferral(rec.from, ref)) {
+      add("(self)", "self", tickets, wei);
+      continue;
+    }
+    if (kind === "name" || kind === "address") add(ref, kind, tickets, wei);
+    else add("(none)", "none", tickets, wei);
+  }
+  const rows = Array.from(groups.values());
+  rows.forEach(function (row) {
+    row.teamWei = teamRatio ? applyRatio(row.wei, teamRatio) : null;
+    row.payoutWei = payoutOf(row.kind, row.wei, teamRatio, share, playerReward);
+    row.payable = row.kind === "address" ? row.ref : "";
+  });
+  rows.sort(compareGroups);
+  return {
+    rows: rows,
+    payable: rows.filter(function (row) { return row.kind === "address"; })
+  };
+}
+
 export function iterChunks(from, to, size) {
   const step = size == null ? CHUNK_BLOCKS : BigInt(size);
   if (step <= 0n) throw new Error("chunk size must be positive");
@@ -106,10 +207,13 @@ export function decodeMintCalldata(input) {
     const text = Buffer.from(trail, "hex").toString("utf8");
     if (Buffer.from(text, "utf8").toString("hex") === trail && text.startsWith(TAG)) {
       const body = text.slice(TAG.length);
-      if (/^[a-z0-9_]{1,20}$/.test(body) && text === TAG + body) ref = body;
+      const normalized = normalizeRef(body);
+      if (normalized && (NAME_RE.test(body) || /^0x[0-9a-fA-F]{40}$/.test(body) || /^[0-9a-fA-F]{40}$/.test(body))) {
+        ref = normalized;
+      }
     }
   }
-  return { count: count, ref: ref };
+  return { count: count, ref: ref, kind: classifyRef(ref) };
 }
 
 function hexBlock(n) {
@@ -358,20 +462,13 @@ async function resolveTeamRatio(flag) {
   };
 }
 
-function addGroup(groups, ref, tickets, wei) {
-  const key = ref || "(none)";
-  let row = groups.get(key);
-  if (!row) {
-    row = { ref: key, txs: 0n, tickets: 0n, wei: 0n };
-    groups.set(key, row);
-  }
-  row.txs += 1n;
-  row.tickets += tickets;
-  row.wei += wei;
+function blankMoney(v) {
+  return v == null ? "" : formatWei(v);
 }
 
-function summaryText(meta, groups, team, share) {
+function summaryText(meta, folded, team, share, player) {
   const lines = [];
+  const rows = folded.rows;
   lines.push("sale: " + SALE);
   lines.push("event: " + meta.source);
   lines.push("blocks: " + meta.from.toString() + " .. " + meta.to.toString());
@@ -379,41 +476,60 @@ function summaryText(meta, groups, team, share) {
   lines.push("skipped (not a direct mint(uint256) to ArkSale): " + meta.skipped);
   if (meta.missing) lines.push("missing transactions: " + meta.missing);
   if (meta.sold != null) lines.push("ArkSale.sold() now: " + meta.sold.toString() + " (refunds lower this; the scan counts historical mints)");
-  lines.push("share: " + share.text);
+  lines.push("share: " + share.text + " (named KOL cut of team revenue)");
   lines.push(team.note);
-  lines.push("referrer_bnb = floor(team_bnb * share), team_bnb = floor(bnb_paid * team_ratio)");
-  lines.push("team revenue is the TEAM_BPS leg. Before the pool opens it sits in teamDue and is paid to projectWallet at openPool. After open, each mint pays that leg immediately. POT_BPS (15%) is not part of the referral base.");
+  lines.push(player.note);
+  lines.push("named KOL: payout_bnb = floor(team_bnb * share), team_bnb = floor(bnb_paid * team_ratio)");
+  lines.push("address: payout_bnb = floor(bnb_paid * player_reward). This is a share of the ticket payment, not of team revenue. Transfer that BNB to the payable address by hand, weekly.");
+  lines.push("self-referral: the mint sender is the address in the tag. Those rows are (self) and payout 0.");
+  lines.push("team revenue is the TEAM_BPS leg. Before the pool opens it sits in teamDue and is paid to projectWallet at openPool. After open, each mint pays that leg immediately. POT_BPS (15%) is not part of the named-KOL base. Address rewards are not taken from that formula.");
   lines.push("bnb_paid is the transaction value. The contract refunds msg.value above the quote before the split, so an overpay is larger than the BNB that is actually divided. Site mints send the quoted amount.");
   lines.push("");
-  const header = ["ref", "txs", "tickets", "bnb_paid", "team_bnb", "referrer_bnb"];
-  lines.push(header.join(","));
-  const named = [];
-  let none = null;
-  groups.forEach(function (row) {
-    if (row.ref === "(none)") none = row;
-    else named.push(row);
-  });
-  named.sort(function (a, b) { return a.ref < b.ref ? -1 : a.ref > b.ref ? 1 : 0; });
-  if (none) named.push(none);
+  lines.push(["ref", "kind", "txs", "tickets", "bnb_paid", "team_bnb", "payout_bnb", "payable"].join(","));
   let txs = 0n;
   let tickets = 0n;
   let wei = 0n;
   let teamWei = 0n;
-  let refWei = 0n;
-  function money(v) {
-    return team.ratio ? formatWei(v) : "";
-  }
-  named.forEach(function (row) {
-    const teamPart = team.ratio ? applyRatio(row.wei, team.ratio) : 0n;
-    const refPart = team.ratio ? applyRatio(teamPart, share) : 0n;
+  let payoutWei = 0n;
+  let payoutKnown = true;
+  const teamKnown = !!team.ratio;
+  rows.forEach(function (row) {
     txs += row.txs;
     tickets += row.tickets;
     wei += row.wei;
-    teamWei += teamPart;
-    refWei += refPart;
-    lines.push([row.ref, row.txs.toString(), row.tickets.toString(), formatWei(row.wei), money(teamPart), money(refPart)].join(","));
+    if (row.teamWei == null) teamWei = null;
+    else if (teamWei != null) teamWei += row.teamWei;
+    if (row.payoutWei == null) payoutKnown = false;
+    else payoutWei += row.payoutWei;
+    lines.push([
+      row.ref,
+      row.kind,
+      row.txs.toString(),
+      row.tickets.toString(),
+      formatWei(row.wei),
+      blankMoney(row.teamWei),
+      blankMoney(row.payoutWei),
+      row.payable
+    ].join(","));
   });
-  lines.push(["TOTAL", txs.toString(), tickets.toString(), formatWei(wei), money(teamWei), money(refWei)].join(","));
+  lines.push([
+    "TOTAL",
+    "",
+    txs.toString(),
+    tickets.toString(),
+    formatWei(wei),
+    teamKnown ? formatWei(teamWei || 0n) : "",
+    payoutKnown ? formatWei(payoutWei) : "",
+    ""
+  ].join(","));
+  if (!payoutKnown) lines.push("TOTAL payout_bnb omits named KOLs until team_ratio is known. Address payouts above are still filled.");
+  lines.push("");
+  lines.push("payable addresses");
+  lines.push(["address", "tickets", "bnb_paid", "payout_bnb"].join(","));
+  folded.payable.forEach(function (row) {
+    lines.push([row.ref, row.tickets.toString(), formatWei(row.wei), blankMoney(row.payoutWei)].join(","));
+  });
+  if (!folded.payable.length) lines.push("(none)");
   return lines.join("\n") + "\n";
 }
 
@@ -421,6 +537,7 @@ function parseArgs(argv) {
   const out = {
     share: DEFAULT_SHARE,
     teamRatio: null,
+    playerReward: null,
     fromBlock: null,
     toBlock: null,
     out: null,
@@ -436,6 +553,7 @@ function parseArgs(argv) {
     }
     if (a === "--share") out.share = next();
     else if (a === "--team-ratio") out.teamRatio = next();
+    else if (a === "--player-reward") out.playerReward = next();
     else if (a === "--from-block") out.fromBlock = next();
     else if (a === "--to-block") out.toBlock = next();
     else if (a === "--out") out.out = next();
@@ -458,14 +576,18 @@ function helpText() {
     "",
     "Scan ArkSale " + SALE + " for successful direct mint(uint256) calls",
     "and group them by the trailing ARKREF: tag. Untagged rows are (none).",
+    "Named codes stay 1–20 of [a-z0-9_]. Address refs are 0x plus 40 hex.",
+    "A mint sent from that same address is (self) and is not payable.",
     "",
     "Options:",
-    "  --from-block N   First block. Default: first block with timestamp >= " + START_TIMESTAMP.toString(),
-    "                   (ArkSale startTime, 2026-11-05 20:00 Asia/Shanghai), via binary search.",
-    "  --to-block N     Last block. Default: latest.",
-    "  --share F        Referrer share of team revenue. Default " + DEFAULT_SHARE + ". Fraction from 0 to 1.",
-    "  --team-ratio F   Fraction of BNB paid that is team revenue. Default: TEAM_BPS()/10000",
-    "                   when that eth_call succeeds. Otherwise REQUIRED (no guessed payout).",
+    "  --from-block N     First block. Default: first block with timestamp >= " + START_TIMESTAMP.toString(),
+    "                     (ArkSale startTime, 2026-11-05 20:00 Asia/Shanghai), via binary search.",
+    "  --to-block N       Last block. Default: latest.",
+    "  --share F          Named KOL share of team revenue. Default " + DEFAULT_SHARE + ". Fraction from 0 to 1.",
+    "  --team-ratio F     Fraction of BNB paid that is team revenue. Default: TEAM_BPS()/10000",
+    "                     when that eth_call succeeds. Otherwise REQUIRED (no guessed named payout).",
+    "  --player-reward F  Address referrer share of ticket payment. Default: js/ref.js PLAYER_REWARD",
+    "                     (" + DEFAULT_PLAYER_REWARD + "). Fraction from 0 to 1.",
     "  --rpc URL        JSON-RPC URL. Overrides env RPC. Default " + DEFAULT_RPC + ".",
     "                   eth_getLogs falls back to bsc.publicnode.com when the RPC",
     "                   rejects logs (bsc-dataseed returns -32005).",
@@ -473,8 +595,9 @@ function helpText() {
     "",
     "Team ratio: eth_call " + SALE + " data " + TEAM_BPS_DATA + "  (TEAM_BPS()).",
     "Divide the uint256 by 10000. The source constant is 2000, so the fraction is 0.2.",
-    "POT_BPS is 1500 and is not the referral base. Pre-open, the team leg accrues in teamDue",
+    "POT_BPS is 1500 and is not the named-KOL base. Pre-open, the team leg accrues in teamDue",
     "and is paid at openPool. Post-open, mint pays projectWallet immediately.",
+    "Address payouts use player_reward of bnb_paid and are listed under payable addresses.",
     ""
   ].join("\n");
 }
@@ -487,6 +610,11 @@ async function main() {
   }
   rpcUrl = args.rpc || DEFAULT_RPC;
   const share = parseRatio(args.share, "--share");
+  const playerRatio = parseRatio(args.playerReward == null ? DEFAULT_PLAYER_REWARD : args.playerReward, "--player-reward");
+  const player = {
+    ratio: playerRatio,
+    note: "player_reward " + playerRatio.text + (args.playerReward == null ? " from js/ref.js PLAYER_REWARD" : " from --player-reward")
+  };
   let from;
   let to;
   if (args.fromBlock == null) {
@@ -507,7 +635,6 @@ async function main() {
     return rpc("eth_getTransactionByHash", [hash]);
   });
 
-  const groups = new Map();
   const rows = [];
   let skipped = 0;
   let missing = 0;
@@ -528,15 +655,14 @@ async function main() {
       continue;
     }
     const value = BigInt(tx.value || "0x0");
-    const ref = decoded.ref || "(none)";
-    addGroup(groups, decoded.ref, decoded.count, value);
     rows.push({
       hash: tx.hash,
       block: BigInt(tx.blockNumber || "0x0"),
       from: tx.from || "",
       tickets: decoded.count,
       value: value,
-      ref: ref
+      wei: value,
+      ref: decoded.ref
     });
   }
   rows.sort(function (a, b) {
@@ -544,8 +670,9 @@ async function main() {
     return a.block < b.block ? -1 : 1;
   });
 
-  let csv = csvRow(["hash", "block", "from", "tickets", "value_wei", "bnb_paid", "ref"]);
+  let csv = csvRow(["hash", "block", "from", "tickets", "value_wei", "bnb_paid", "ref", "kind"]);
   rows.forEach(function (row) {
+    const kind = isSelfReferral(row.from, row.ref) ? "self" : classifyRef(row.ref);
     csv += csvRow([
       row.hash,
       row.block.toString(),
@@ -553,11 +680,13 @@ async function main() {
       row.tickets.toString(),
       row.value.toString(),
       formatWei(row.value),
-      row.ref
+      row.ref || "(none)",
+      kind
     ]);
   });
 
   const team = await resolveTeamRatio(args.teamRatio);
+  const folded = foldMints(rows, team.ratio, share, player.ratio);
   const sold = await readOptionalUint(SOLD_DATA);
   const text = summaryText({
     source: collected.source,
@@ -567,7 +696,7 @@ async function main() {
     skipped: skipped,
     missing: missing,
     sold: sold
-  }, groups, team, share);
+  }, folded, team, share, player);
 
   if (args.out) {
     const file = path.resolve(args.out);

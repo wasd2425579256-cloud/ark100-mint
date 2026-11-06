@@ -1490,6 +1490,13 @@
     renderMarket();
     syncChrome();
     if (account) showAgent(account);
+    paintInvite();
+  }
+
+  function paintInvite() {
+    if (!window.ArkRef || typeof window.ArkRef.fillInvite !== "function") return;
+    window.ArkRef.fillInvite(document, account, zh() ? "zh" : "en");
+    if (typeof window.ArkRef.paint === "function") window.ArkRef.paint();
   }
 
   document.addEventListener("click", function (event) {
@@ -1553,12 +1560,24 @@
       say($("walletChip"), addr ? C.shortAddr(addr) : "", addr ? C.shortAddr(addr) : "");
       $("walletInput").value = addr || "";
       showAgent(addr);
+      paintInvite();
       say($("mintStatus"), "钱包已连接。", "Wallet connected.");
       return lookup(addr);
     }).catch(function (e) {
       say($("mintStatus"), walletError(e), walletError(e));
     });
   });
+
+  var inviteCopy = $("inviteCopy");
+  if (inviteCopy) {
+    inviteCopy.addEventListener("click", function () {
+      var link = window.ArkRef && account ? window.ArkRef.inviteLink(account) : "";
+      if (!link) return;
+      copyText(link).then(function (ok) {
+        say($("inviteStatus"), ok ? "邀请链接已复制。" : "无法写入剪贴板，链接仍显示在上面。", ok ? "Invite link copied." : "Clipboard blocked. The link is still shown above.");
+      });
+    });
+  }
 
   $("mintBtn").addEventListener("click", function () {
     if (mintPaused()) {
@@ -1750,6 +1769,7 @@
   C.onWallet(function (addr) {
     account = addr || "";
     if ($("walletChip")) $("walletChip").textContent = account ? C.shortAddr(account) : "";
+    paintInvite();
     renderTickets();
     renderMarket();
   });
