@@ -78,10 +78,31 @@
 
   function saleLabel() {
     if (mintPaused()) return { zh: "铸造已暂停", en: "Minting paused" };
-    if (!board) return { zh: "正在读取", en: "Reading" };
+    if (!board) return { zh: "已开售", en: "Minting open" };
     if (!board.saleStarted) return { zh: "正式未开售", en: "Sale not started" };
     if (board.sold >= 10000n) return { zh: "已售罄", en: "Sold out" };
     return { zh: "发售中", en: "Sale is live" };
+  }
+
+  function mintSendLine(useZh) {
+    if (mintPaused()) {
+      return useZh
+        ? "铸造已暂停，不会发送 ArkSale.mint。本页不调用 startSale。"
+        : "Minting is paused, so ArkSale.mint is not sent. This page does not call startSale.";
+    }
+    if (board && !board.saleStarted) {
+      return useZh
+        ? "只有 startTime 已到，才发送 ArkSale.mint，转入的 BNB 等于报价。本页不调用 startSale。"
+        : "ArkSale.mint is sent with value = bnbDue only after startTime has arrived. This page does not call startSale.";
+    }
+    if (board && !board.mintOpen) {
+      return useZh
+        ? "当前发售状态不发送 ArkSale.mint。本页不调用 startSale。"
+        : "ArkSale.mint is not sent in the current sale state. This page does not call startSale.";
+    }
+    return useZh
+      ? "已开售。ArkSale.mint 转入的 BNB 等于报价。门槛是名字非空的 Agent ID 和钱包，每址最多 10 张。本页不调用 startSale。"
+      : "Minting is open. ArkSale.mint is sent with value = bnbDue. The gate is an Agent ID with a non-empty name and a wallet, max 10 per address. This page does not call startSale.";
   }
 
   function mintBrief() {
@@ -92,15 +113,29 @@
       state = zh()
         ? "网站已暂停铸造。不会发送铸造。"
         : "Minting on this site is paused. No mint is sent.";
-    } else if (!board || !board.saleStarted) {
+    } else if (board && !board.saleStarted) {
       state = zh()
         ? "正式未开售。ArkSale.startTime 到达之前，不会发送铸造。"
         : "Sale not started. No mint is sent until ArkSale.startTime has arrived.";
+    } else if (!board) {
+      state = zh()
+        ? "已开售。铸造需要名字非空的 Agent ID 和钱包，每址最多 10 张。链上舱单确认前，这一笔先不发送。"
+        : "Minting is open, gated by an Agent ID with a non-empty name and a wallet, max 10 per address. This mint is not sent until the board is confirmed.";
     } else if (board.mintOpen) {
       state = zh() ? "发售已开始，可以发送铸造。" : "The sale has started. A mint can be sent.";
     } else {
       state = zh() ? "发售状态不允许铸造。" : "Mint is not open in the current sale state.";
     }
+    var tailZh = [
+      mintSendLine(true),
+      "旧船票只有在旧发售开池前没有卖满 3000 张时，才能在约 2026-11-11 18:36（北京时间）后全额退款。退款只在旧发售上开启。",
+      "请不要向旧发售合约铸造。旧合约卖满 3000 张会自动开池，开池后就不能退款。"
+    ];
+    var tailEn = [
+      mintSendLine(false),
+      "Old tickets refund in full only if that sale stays under 3,000 before its pool opens, around 2026-11-11 18:36 Asia/Shanghai. enableRefunds runs on the old sale only.",
+      "Do not mint on the old sale. If it reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that."
+    ];
     if (zh()) {
       return [
         "ARK100 铸造说明",
@@ -115,9 +150,7 @@
         "链上标价：$" + price + " / 张（连续 5 分钟没人铸造就降一档）。",
         "这一笔应付的 BNB：" + due,
         "",
-        "只有 startTime 已到，才发送 ArkSale.mint，转入的 BNB 等于报价。本页不调用 startSale。",
-        "旧船票只有在旧发售开池前没有卖满 3000 张时，才能在约 2026-11-11 18:36（北京时间）后全额退款。",
-        "请不要向旧发售合约铸造。旧合约卖满 3000 张会自动开池，开池后就不能退款。"
+        tailZh.join("\n")
       ].join("\n");
     }
     return [
@@ -133,9 +166,7 @@
       "On-chain list price: $" + price + " / ticket (five quiet minutes drop one tier).",
       "BNB due: " + due,
       "",
-      "ArkSale.mint is sent with value = bnbDue only after startTime has arrived. This page does not call startSale.",
-      "Old tickets refund in full only if that sale stays under 3,000 before its pool opens, around 2026-11-11 18:36 Asia/Shanghai.",
-      "Do not mint on the old sale. If it reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that."
+      tailEn.join("\n")
     ].join("\n");
   }
 
@@ -186,19 +217,46 @@
     }
   }
 
+  function paintPause(mode) {
+    var title = $("pauseTitle");
+    var lead = $("pauseLead");
+    var foot = $("pauseFoot");
+    if (mode === "paused") {
+      setBi(title, "铸造已暂停", "Minting paused");
+      setBi(lead, "网站已暂停铸造，不会发送交易。本页不调用 startSale。", "Minting on this site is paused and does not send a transaction. This page does not call startSale.");
+      setBi(foot, "窗口打开后，到旧票退款为旧发售开启退款，再到我的方舟用当时付款的钱包按船票领取。新发售的铸造按钮保持暂停。", "After the window opens, turn refunds on for the old sale under Old-ticket refunds, then claim each ticket in My Ark from the wallet that paid. The new-sale mint button stays paused.");
+      return;
+    }
+    setBi(title, "等待链上开售", "Waiting on the on-chain start");
+    setBi(lead, "ArkSale.startTime 还没到。在那之前不会发送铸造。本页不调用 startSale。", "ArkSale.startTime has not arrived. No mint is sent until then. This page does not call startSale.");
+    setBi(foot, "窗口打开后，到旧票退款为旧发售开启退款，再到我的方舟用当时付款的钱包按船票领取。新发售要等链上 startTime 到达才开始。", "After the window opens, turn refunds on for the old sale under Old-ticket refunds, then claim each ticket in My Ark from the wallet that paid. The new sale starts when its on-chain startTime has arrived.");
+  }
+
   function renderSale() {
     var label = saleLabel();
     setBi($("saleSeal"), label.zh, label.en);
     setBi($("statusSale"), label.zh, label.en);
     var notice = $("pauseNotice");
-    if (notice) notice.hidden = !mintPaused() && !!(board && board.saleStarted);
+    if (notice) {
+      if (mintPaused()) {
+        notice.hidden = false;
+        paintPause("paused");
+      } else if (board && !board.saleStarted) {
+        notice.hidden = false;
+        paintPause("waiting");
+      } else if (board && board.saleStarted) {
+        notice.hidden = true;
+      } else {
+        notice.hidden = false;
+      }
+    }
     var mintBtn = $("mintBtn");
     if (!mintBtn) return;
     if (mintPaused()) {
       mintBtn.disabled = true;
       mintBtn.setAttribute("aria-disabled", "true");
       mintBtn.classList.add("is-paused");
-      setBi(mintBtn, "铸造已暂停，等待开售", "Minting paused until the sale starts");
+      setBi(mintBtn, "铸造已暂停", "Minting paused");
       return;
     }
     mintBtn.classList.remove("is-paused");
@@ -210,10 +268,14 @@
       mintBtn.disabled = true;
       mintBtn.setAttribute("aria-disabled", "true");
       setBi(mintBtn, "现在不能铸造", "Mint is closed");
-    } else {
+    } else if (board) {
       mintBtn.disabled = true;
       mintBtn.setAttribute("aria-disabled", "true");
       setBi(mintBtn, "正式未开售", "Sale not started");
+    } else {
+      mintBtn.disabled = true;
+      mintBtn.setAttribute("aria-disabled", "true");
+      setBi(mintBtn, "已开售", "Minting open");
     }
   }
 
@@ -1203,7 +1265,7 @@
 
   function explain(code, detail) {
     var map = {
-      "mint-paused": ["铸造已暂停，要等新发售设定 startTime。没有发送交易。旧合约卖满 3000 张会自动开池，开池后就不能退款，请不要绕过官网直接铸造。", "Minting is paused until the new sale’s startTime is set. No transaction was sent. If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not bypass this site and mint on the old contract."],
+      "mint-paused": ["铸造已暂停。没有发送交易。旧合约卖满 3000 张会自动开池，开池后就不能退款，请不要绕过官网直接铸造。", "Minting is paused. No transaction was sent. If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not bypass this site and mint on the old contract."],
       "legacy-mint": ["不能向旧发售合约铸造。没有发送交易。旧合约卖满 3000 张会自动开池，开池后就不能退款。", "This site does not mint on the old sale. No transaction was sent. If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that."],
       "sale-not-started": ["正式未开售，没有发送交易。", "Sale not started. No transaction was sent."],
       "refunding": ["退款已开启，铸造已停止，没有发送交易。", "Refunds are on, so mint is closed. No transaction was sent."],
@@ -1700,11 +1762,11 @@
     say($("statusRead"), "链上读取失败", "Chain read failed");
     if (mintPaused()) {
       say($("mintStatus"), "链上状态暂时读不到。铸造保持暂停，不会发送交易。", "Chain state could not be read. Mint stays paused and no transaction will be sent.");
-      setBi($("mintBtn"), "铸造已暂停，等待开售", "Minting paused until the sale starts");
+      setBi($("mintBtn"), "铸造已暂停", "Minting paused");
       $("mintBtn").classList.add("is-paused");
     } else {
-      say($("mintStatus"), "链上状态暂时读不到。开售状态确认前不会发送铸造。", "Chain state could not be read. No mint is sent until the sale state is known.");
-      setBi($("mintBtn"), "正式未开售", "Sale not started");
+      say($("mintStatus"), "链上状态暂时读不到。这一笔先不发送。", "Chain state could not be read. This mint is not sent.");
+      setBi($("mintBtn"), "已开售", "Minting open");
       $("mintBtn").classList.remove("is-paused");
     }
     $("mintBtn").disabled = true;
