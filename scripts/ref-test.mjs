@@ -6,23 +6,31 @@ import vm from "node:vm";
 import { fileURLToPath } from "node:url";
 import {
   CHUNK_BLOCKS,
+  DEFAULT_PLAYER_REWARD,
   MINTED_TOPIC,
   MINT_SELECTOR,
   NFT,
   SALE,
   TRANSFER_TOPIC,
   applyRatio,
+  classifyRef,
   decodeMintCalldata,
+  foldMints,
   formatBps,
   formatWei,
+  isSelfReferral,
   iterChunks,
-  parseRatio
+  parseRatio,
+  payoutOf
 } from "./ref-report.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const refSrc = fs.readFileSync(path.join(root, "js/ref.js"), "utf8");
 const chainSrc = fs.readFileSync(path.join(root, "js/chain.js"), "utf8");
 const indexSrc = fs.readFileSync(path.join(root, "index.html"), "utf8");
+const appSrc = fs.readFileSync(path.join(root, "js/app.js"), "utf8");
+const ADDR = "0x" + "ab".repeat(20);
+const OTHER = "0x" + "cd".repeat(20);
 const TTL = 30 * 24 * 60 * 60 * 1000;
 
 function memoryStorage(seed) {
@@ -210,4 +218,181 @@ test("referrer payable is a floored share of team revenue", function () {
   assert.equal(formatWei(0n), "0");
   assert.throws(function () { parseRatio("1.2", "--share"); }, /0 to 1/);
   assert.throws(function () { parseRatio("-0.1", "--team-ratio"); }, /0 to 1/);
+});
+
+test("sanitize accepts a full address and still caps names at 20", function () {
+  const page = loadPage(memoryStorage(), "");
+  const s = page.ArkRef.sanitize;
+  const mixed = "0x" + "Ab".repeat(20);
+  assert.equal(s(mixed), ADDR);
+  assert.equal(s("  " + mixed.toUpperCase() + "  "), ADDR);
+  assert.equal(s("AB".repeat(20)), ADDR);
+  assert.equal(s("0xabc"), "0xabc");
+  assert.equal(s("0x" + "ab".repeat(19)), "");
+  assert.equal(s("0x" + "zz".repeat(20)), "");
+  assert.equal(s("a".repeat(21)), "");
+  assert.equal(page.ArkRef.isAddress(ADDR), true);
+  assert.equal(page.ArkRef.isAddress("pilot_7"), false);
+});
+
+test("an address ref keeps first touch for 30 days", function () {
+  const page = loadPage(memoryStorage(), "");
+  const storage = memoryStorage();
+  const now = 1_700_000_000_000;
+  const first = page.ArkRef.capture(storage, "?ref=" + ("0x" + "Ab".repeat(20)), now);
+  assert.equal(first.ref, ADDR);
+  assert.equal(first.wrote, true);
+  const kept = page.ArkRef.capture(storage, "?ref=beta", now + TTL - 1);
+  assert.equal(kept.ref, ADDR);
+  assert.equal(kept.wrote, false);
+  const replaced = page.ArkRef.capture(storage, "?ref=Next_2", now + TTL);
+  assert.equal(replaced.ref, "next_2");
+  assert.equal(replaced.wrote, true);
+});
+
+test("address calldata is only a trailing tag and decodes back to the full address", function () {
+  const storage = memoryStorage();
+  const page = loadPage(storage, "?ref=" + ADDR);
+  const data = page.ArkChain.saleMintCalldata(3);
+  const head = expectedCalldata(3, "");
+  assert.equal(data.slice(0, head.length), head);
+  assert.equal(data, expectedCalldata(3, ADDR));
+  assert.equal(page.ArkChain.isSaleMint(page.ArkChain.ADDR.sale, data), true);
+  const decoded = decodeMintCalldata(data);
+  assert.equal(decoded.count, 3n);
+  assert.equal(decoded.ref, ADDR);
+  assert.equal(decoded.kind, "address");
+  const upperBody = "ARKREF:" + "0x" + "AB".repeat(20);
+  const upper = head + Buffer.from(upperBody, "utf8").toString("hex");
+  assert.equal(decodeMintCalldata(upper).ref, ADDR);
+  const bare = head + Buffer.from("ARKREF:" + "ab".repeat(20), "utf8").toString("hex");
+  assert.equal(decodeMintCalldata(bare).ref, ADDR);
+  const short = head + Buffer.from("ARKREF:0x" + "ab".repeat(19), "utf8").toString("hex");
+  assert.equal(decodeMintCalldata(short).ref, "");
+});
+
+test("a self-referral is not tagged and a different buyer still is", function () {
+  const storage = memoryStorage();
+  const page = loadPage(storage, "?ref=" + ("0x" + "AB".repeat(20)));
+  assert.equal(page.ArkRef.current(), ADDR);
+  assert.equal(page.el.hidden, false);
+  assert.equal(page.el.textContent, "ref: " + ADDR);
+  page.ArkChain.account = function () { return "0x" + "AB".repeat(20); };
+  page.ArkRef.paint();
+  assert.equal(page.el.hidden, true);
+  assert.equal(page.ArkChain.saleMintCalldata(1), expectedCalldata(1, ""));
+  page.ArkChain.account = function () { return "0x" + "CD".repeat(20); };
+  page.ArkRef.paint();
+  assert.equal(page.el.textContent, "ref: " + ADDR);
+  const data = page.ArkChain.saleMintCalldata(2);
+  assert.equal(data, expectedCalldata(2, ADDR));
+  assert.equal(decodeMintCalldata(data).ref, ADDR);
+  assert.equal(isSelfReferral("0x" + "AB".repeat(20), ADDR), true);
+  assert.equal(isSelfReferral(OTHER, ADDR), false);
+  assert.equal(isSelfReferral(ADDR, "pilot_7"), false);
+});
+
+test("a connected wallet does not strip a named ref", function () {
+  const page = loadPage(memoryStorage(), "?ref=Pilot_7");
+  page.ArkChain.account = function () { return ADDR; };
+  assert.equal(page.ArkChain.saleMintCalldata(1), expectedCalldata(1, "pilot_7"));
+  assert.equal(page.el.textContent, "ref: pilot_7");
+});
+
+test("player reward is one constant and the invite copy uses it", function () {
+  const page = loadPage(memoryStorage(), "");
+  assert.equal(page.ArkRef.PLAYER_REWARD, "0.05");
+  assert.equal(DEFAULT_PLAYER_REWARD, page.ArkRef.PLAYER_REWARD);
+  assert.equal(page.ArkRef.rewardPercentLabel(), "5%");
+  assert.equal(page.ArkRef.rewardPercentLabel("0.125"), "12.5%");
+  assert.equal(
+    page.ArkRef.rewardLine("zh"),
+    "好友通过你的链接铸造，你可获得其票款的 5% 奖励（每周结算，BNB 发到你的钱包）"
+  );
+  const link = page.ArkRef.inviteLink("0x" + "AB".repeat(20));
+  assert.equal(link, "https://ark100.vip/?ref=" + ADDR);
+  assert.equal(page.ArkRef.inviteLink("pilot_7"), "");
+  const text = page.ArkRef.shareText(link, "zh");
+  assert.match(text, new RegExp(ADDR));
+  ["价格", "赌", "暴富", "稳赚", "翻倍", "梭哈", "财富", "空投", "保本"].forEach(function (word) {
+    assert.equal(text.includes(word), false, word);
+  });
+  const intent = page.ArkRef.shareIntent(link, "zh");
+  assert.equal(intent.indexOf("https://x.com/intent/tweet?text="), 0);
+  assert.match(decodeURIComponent(intent), /我在 ARK100 上船了/);
+  const nodes = {};
+  function make(id) {
+    const node = { hidden: true, textContent: "", href: "", kids: {} };
+    node.querySelector = function (sel) {
+      const key = sel === ".t-zh" ? "zh" : "en";
+      if (!node.kids[key]) node.kids[key] = { textContent: "" };
+      return node.kids[key];
+    };
+    nodes[id] = node;
+    return node;
+  }
+  ["inviteCard", "inviteReward", "inviteLink", "inviteShare", "inviteStatus"].forEach(make);
+  const doc = { getElementById: function (id) { return nodes[id] || null; } };
+  assert.equal(page.ArkRef.fillInvite(doc, "", "zh"), "");
+  assert.equal(nodes.inviteCard.hidden, true);
+  assert.equal(page.ArkRef.fillInvite(doc, ADDR, "zh"), link);
+  assert.equal(nodes.inviteCard.hidden, false);
+  assert.equal(nodes.inviteLink.textContent, link);
+  assert.equal(nodes.inviteReward.kids.zh.textContent, page.ArkRef.rewardLine("zh"));
+  assert.match(nodes.inviteShare.href, /^https:\/\/x\.com\/intent\/tweet\?text=/);
+  assert.match(indexSrc, /id="inviteCard"/);
+  assert.match(indexSrc, /邀请好友上船/);
+  assert.match(indexSrc, /id="inviteCopy"/);
+  assert.match(indexSrc, /id="inviteShare"/);
+  assert.match(appSrc, /ArkRef\.fillInvite/);
+  assert.match(appSrc, /ArkRef\.inviteLink/);
+  assert.match(appSrc, /inviteCopy/);
+});
+
+test("address payout is 5% of payment and named KOLs stay on the team share", function () {
+  const share = parseRatio("0.35", "--share");
+  const team = parseRatio("0.2", "--team-ratio");
+  const player = parseRatio(DEFAULT_PLAYER_REWARD, "--player-reward");
+  const paid = 10n ** 18n;
+  const folded = foldMints([
+    { from: OTHER, ref: "pilot_7", tickets: 2n, wei: paid },
+    { from: OTHER, ref: "0x" + "AB".repeat(20), tickets: 4n, wei: paid * 2n },
+    { from: "0x" + "AB".repeat(20), ref: ADDR, tickets: 1n, wei: paid },
+    { from: OTHER, ref: "", tickets: 1n, wei: 5n * 10n ** 17n }
+  ], team, share, player);
+  const byRef = {};
+  folded.rows.forEach(function (row) { byRef[row.ref] = row; });
+  assert.equal(byRef.pilot_7.kind, "name");
+  assert.equal(byRef.pilot_7.tickets, 2n);
+  assert.equal(byRef.pilot_7.payoutWei, 70000000000000000n);
+  assert.equal(byRef.pilot_7.payable, "");
+  assert.equal(payoutOf("name", paid, team, share, player), 70000000000000000n);
+  assert.equal(byRef[ADDR].kind, "address");
+  assert.equal(byRef[ADDR].tickets, 4n);
+  assert.equal(byRef[ADDR].wei, 2n * paid);
+  assert.equal(byRef[ADDR].payoutWei, applyRatio(2n * paid, player));
+  assert.equal(formatWei(byRef[ADDR].payoutWei), "0.1");
+  assert.equal(byRef[ADDR].payable, ADDR);
+  assert.equal(byRef["(self)"].kind, "self");
+  assert.equal(byRef["(self)"].tickets, 1n);
+  assert.equal(byRef["(self)"].wei, paid);
+  assert.equal(byRef["(self)"].payoutWei, 0n);
+  assert.equal(byRef["(self)"].payable, "");
+  assert.equal(byRef["(none)"].tickets, 1n);
+  assert.equal(byRef["(none)"].payoutWei, 0n);
+  assert.equal(folded.payable.length, 1);
+  assert.equal(folded.payable[0].ref, ADDR);
+  assert.equal(classifyRef(ADDR), "address");
+  assert.equal(classifyRef("pilot_7"), "name");
+
+  const open = foldMints([
+    { from: OTHER, ref: "pilot_7", tickets: 1n, wei: paid },
+    { from: OTHER, ref: ADDR, tickets: 1n, wei: paid }
+  ], null, share, player);
+  const openBy = {};
+  open.rows.forEach(function (row) { openBy[row.ref] = row; });
+  assert.equal(openBy.pilot_7.payoutWei, null);
+  assert.equal(openBy.pilot_7.teamWei, null);
+  assert.equal(openBy[ADDR].payoutWei, 50000000000000000n);
+  assert.equal(formatWei(openBy[ADDR].payoutWei), "0.05");
 });

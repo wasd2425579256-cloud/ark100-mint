@@ -64,32 +64,46 @@ Those addresses are in `js/chain.js`. ABIs are in `abi/`. The site encodes the s
 
 ## Referral tag
 
-`js/ref.js` is included before `js/chain.js`. On each page load it reads `?ref=`. The value is lowercased and every character outside `[a-z0-9_]` is dropped. The result is kept only when its length is 1 to 20. Anything else is ignored. A valid ref is stored in `localStorage` key `ark100_ref` as `{"ref":"...","ts":<ms>}`. The first valid ref wins for 30 days: an unexpired record is not replaced, and an expired record is replaced by the next valid `?ref=`. Internal links do not need to keep the query. When a ref is active, the boarding slip shows a small muted `ref: name` line.
+`js/ref.js` is included before `js/chain.js`. On each page load it reads `?ref=`.
 
-`sendMint` is the only sender that uses it, and only for the new ArkSale (`0x64a67c2D48898D414DbD63F56deAbD0988C2Af65`, `mint(uint256)`, selector `0xa0712d68`). After the ABI-encoded `uint256` count it appends the UTF-8 bytes of `ARKREF:` plus the ref. Solidity does not read trailing calldata, so the mint still executes. No suffix is added when there is no unexpired ref. `legacySale` and every other transaction are unchanged. `sendTx` runs `eth_call` and `eth_sendTransaction` with that same `data`. `isSaleMint` matches the selector prefix, so the suffix still counts as a sale mint.
+Two shapes are accepted. A named KOL code is lowercased, every character outside `[a-z0-9_]` is dropped, and the result is kept only when its length is 1 to 20. A wallet invite is a full address: `0x` plus 40 hex digits, any case, or 40 hex digits with no prefix. It is stored as lowercase `0x` plus 40 hex. The 20-character cap stays on names. That alphabet cannot hold a 20-byte address without dropping bits, and the report has to recover the full referrer address. Anything else is ignored.
+
+A valid ref is stored in `localStorage` key `ark100_ref` as `{"ref":"...","ts":<ms>}`. The first valid ref wins for 30 days: an unexpired record is not replaced, and an expired record is replaced by the next valid `?ref=`. Internal links do not need to keep the query. When a ref is active, the boarding slip shows a small muted `ref:` line. If the connected wallet is that same address, the line stays hidden and the mint is not tagged.
+
+`sendMint` is the only sender that uses it, and only for the new ArkSale (`0x64a67c2D48898D414DbD63F56deAbD0988C2Af65`, `mint(uint256)`, selector `0xa0712d68`). After the ABI-encoded `uint256` count it appends the UTF-8 bytes of `ARKREF:` plus the ref. Solidity does not read trailing calldata, so the mint still executes. No suffix is added when there is no unexpired ref, or when the connected wallet equals an address ref (self-referral). `legacySale` and every other transaction are unchanged. `sendTx` runs `eth_call` and `eth_sendTransaction` with that same `data`. `isSaleMint` matches the selector prefix, so the suffix still counts as a sale mint.
+
+After a wallet connects, the boarding slip shows 邀请好友上船. The link is `https://ark100.vip/?ref=` plus that wallet address. Copy puts the link on the clipboard. Post on X opens an intent with a short boarding line and the same link. The reward sentence reads the single constant `PLAYER_REWARD` in `js/ref.js` (`"0.05"`, shown as 5%): friends who mint through the link earn the referrer that fraction of the ticket payment, settled weekly, paid in BNB to the referrer wallet. The contract does not move this BNB. The owner sends it from the report.
 
 ### Referral report
 
 ```
-node scripts/ref-report.mjs [--from-block N] [--to-block N] [--share 0.35] [--team-ratio 0.2] [--out file.csv]
+node scripts/ref-report.mjs [--from-block N] [--to-block N] [--share 0.35] [--team-ratio 0.2] [--player-reward 0.05] [--out file.csv]
 RPC=https://bsc-dataseed.binance.org node scripts/ref-report.mjs
 ```
 
 Node 18+, no packages. The RPC default is `https://bsc-dataseed.binance.org` (`RPC` or `--rpc` overrides it). That host serves `eth_call` and `eth_getTransactionByHash`, and it rejects `eth_getLogs` with `-32005 limit exceeded`. When that happens, log queries fall back to `https://bsc.publicnode.com` and then `https://bsc-rpc.publicnode.com`, the same log endpoints `js/chain.js` uses. A configured RPC that already serves logs is used as-is. The script scans ArkSale for successful direct `mint(uint256)` calls from the start block through latest. The default start block is the first block whose timestamp is at least `1793880000` (the new sale `startTime`, 2026-11-05 20:00 Asia/Shanghai), found by binary search. `--from-block` skips that search.
 
-Transaction hashes come from `ArkSale` `Minted(address,uint256,uint256,uint256,string)` logs (topic `0xd8b419dcb55349414000518e58bc0ec29a3419a418cc9ab706cd9db1260cb2f4`, the same topic `js/chain.js` labels `minted`). `eth_getLogs` is requested in 5,000-block chunks. If that query cannot be served, the script falls back to TicketNFT `0xDF2aF96477aBe8E5Eaa9Cf79650D58917e6c3490` `Transfer` logs from `0x0`. Each unique hash is loaded with `eth_getTransactionByHash`. A row is kept when `to` is ArkSale and the input starts with `0xa0712d68`. The ticket count is the first ABI word, BNB paid is `tx.value`, and a trailing `ARKREF:` tag is decoded when the extra bytes are exactly that prefix plus a 1–20 character `[a-z0-9_]` code. Untagged mints are grouped as `(none)`.
+Transaction hashes come from `ArkSale` `Minted(address,uint256,uint256,uint256,string)` logs (topic `0xd8b419dcb55349414000518e58bc0ec29a3419a418cc9ab706cd9db1260cb2f4`, the same topic `js/chain.js` labels `minted`). `eth_getLogs` is requested in 5,000-block chunks. If that query cannot be served, the script falls back to TicketNFT `0xDF2aF96477aBe8E5Eaa9Cf79650D58917e6c3490` `Transfer` logs from `0x0`. Each unique hash is loaded with `eth_getTransactionByHash`. A row is kept when `to` is ArkSale and the input starts with `0xa0712d68`. The ticket count is the first ABI word, BNB paid is `tx.value`, and a trailing `ARKREF:` tag is decoded when the extra bytes are exactly that prefix plus either a 1–20 character `[a-z0-9_]` code or a full address. Untagged mints are grouped as `(none)`. A mint whose sender is the address in the tag is `kind=self` and is not paid.
 
-The CSV columns are `hash,block,from,tickets,value_wei,bnb_paid,ref`. The stderr summary groups those rows per ref: tx count, tickets, BNB paid, team BNB, and referrer BNB.
+The CSV columns are `hash,block,from,tickets,value_wei,bnb_paid,ref,kind`. The stderr summary groups those rows per ref: kind, tx count, tickets, BNB paid, team BNB, payout, and the payable address when the ref is a wallet.
 
-`--share` defaults to `0.35`. The referrer amount is a cut of team revenue, not of gross BNB:
+`--share` defaults to `0.35` and applies only to named KOLs. That amount is a cut of team revenue, not of gross BNB:
 
 ```
 team_bnb = floor(bnb_paid * team_ratio)
-referrer_bnb = floor(team_bnb * share)
+payout_bnb = floor(team_bnb * share)
 ```
 
-`team_ratio` is the fraction of BNB paid that belongs to the team. ArkSale exposes it as the public constant `TEAM_BPS`. Read it with an `eth_call` to `0x64a67c2D48898D414DbD63F56deAbD0988C2Af65` and data `0xd5861d91` (`TEAM_BPS()`), then divide by 10,000. The deployed constant is `2000`, so the fraction is `0.2`. The script uses that call unless `--team-ratio` is passed. If the call fails and the flag is omitted, it does not guess: the summary prints `team_ratio REQUIRED` and leaves the payable columns blank.
+An address referrer is paid a share of the ticket payment. `PLAYER_REWARD` in `js/ref.js` is the only default (`"0.05"`). `--player-reward` overrides that run:
 
-Before the pool opens, the team leg accrues in `teamDue` and is paid to `projectWallet` inside `openPool`. After open, each mint pays that leg immediately. `POT_BPS` is `1500` (15% pot) and is not part of the referral base. `bnb_paid` is the transaction value. The contract refunds any overpay above the mint quote before the split, so a manual overpay is larger than the BNB that is divided. Mints sent from this site use the quoted amount.
+```
+payout_bnb = floor(bnb_paid * player_reward)
+```
 
-`node --test scripts/ref-test.mjs` checks sanitizing, the 30-day first-touch rule, calldata with and without the suffix, and that the report decoder reads the same bytes.
+The summary ends with `payable addresses`: address, tickets, BNB paid, and payout. Those are the wallets to transfer, by hand, on the weekly settlement. Self-referrals are omitted from that list.
+
+`team_ratio` is the fraction of BNB paid that belongs to the team. ArkSale exposes it as the public constant `TEAM_BPS`. Read it with an `eth_call` to `0x64a67c2D48898D414DbD63F56deAbD0988C2Af65` and data `0xd5861d91` (`TEAM_BPS()`), then divide by 10,000. The deployed constant is `2000`, so the fraction is `0.2`. The script uses that call unless `--team-ratio` is passed. If the call fails and the flag is omitted, it does not guess: named payouts stay blank. Address payouts still fill, because they do not use `team_ratio`.
+
+Before the pool opens, the team leg accrues in `teamDue` and is paid to `projectWallet` inside `openPool`. After open, each mint pays that leg immediately. `POT_BPS` is `1500` (15% pot) and is not part of the named-KOL base. `bnb_paid` is the transaction value. The contract refunds any overpay above the mint quote before the split, so a manual overpay is larger than the BNB that is divided. Mints sent from this site use the quoted amount.
+
+`node --test scripts/ref-test.mjs` checks sanitizing, the 30-day first-touch rule, named and address calldata with and without the suffix, self-referral exclusion, both payout formulas, and that the report decoder reads the same bytes.

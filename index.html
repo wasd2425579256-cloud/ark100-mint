@@ -225,6 +225,47 @@
               <span class="t-zh">连接钱包</span>
               <span class="t-en">Connect wallet</span>
             </button>
+            <section class="invite" id="inviteCard" hidden>
+              <div class="invite-lanterns" aria-hidden="true">
+                <svg class="invite-lantern" viewBox="0 0 32 48" shape-rendering="crispEdges">
+                  <rect x="14" y="0" width="4" height="6" fill="#8a5528"/>
+                  <rect x="6" y="6" width="20" height="4" fill="#c48a4a"/>
+                  <rect x="4" y="10" width="24" height="22" fill="#e23b3b"/>
+                  <rect x="8" y="14" width="16" height="14" fill="#ffd56a"/>
+                  <rect x="12" y="18" width="8" height="6" fill="#fff6d4"/>
+                  <rect x="6" y="32" width="20" height="4" fill="#c48a4a"/>
+                  <rect x="14" y="36" width="4" height="6" fill="#8a5528"/>
+                  <rect x="12" y="42" width="8" height="4" fill="#e23b3b"/>
+                </svg>
+                <svg class="invite-lantern" viewBox="0 0 32 48" shape-rendering="crispEdges">
+                  <rect x="14" y="0" width="4" height="6" fill="#8a5528"/>
+                  <rect x="6" y="6" width="20" height="4" fill="#c48a4a"/>
+                  <rect x="4" y="10" width="24" height="22" fill="#e23b3b"/>
+                  <rect x="8" y="14" width="16" height="14" fill="#ffd56a"/>
+                  <rect x="12" y="18" width="8" height="6" fill="#fff6d4"/>
+                  <rect x="6" y="32" width="20" height="4" fill="#c48a4a"/>
+                  <rect x="14" y="36" width="4" height="6" fill="#8a5528"/>
+                  <rect x="12" y="42" width="8" height="4" fill="#e23b3b"/>
+                </svg>
+              </div>
+              <div class="invite-body">
+                <p class="section-kicker"><span class="t-zh">邀请</span><span class="t-en">Invite</span></p>
+                <h3><span class="t-zh">邀请好友上船</span><span class="t-en">Invite friends aboard</span></h3>
+                <p class="invite-reward" id="inviteReward"><span class="t-zh"></span><span class="t-en"></span></p>
+                <p class="invite-link" id="inviteLink"></p>
+                <div class="invite-actions">
+                  <button class="cta" id="inviteCopy" type="button">
+                    <span class="t-zh">复制邀请链接</span>
+                    <span class="t-en">Copy invite link</span>
+                  </button>
+                  <a class="cta secondary" id="inviteShare" href="https://x.com/intent/tweet" target="_blank" rel="noopener noreferrer">
+                    <span class="t-zh">发到 X</span>
+                    <span class="t-en">Post on X</span>
+                  </a>
+                </div>
+                <p class="copy-status" id="inviteStatus" role="status"></p>
+              </div>
+            </section>
             <button class="ghost copy-wide" id="copyMint" type="button" data-copy="mint">
               <span class="t-zh">复制铸造说明</span>
               <span class="t-en">Copy mint brief</span>
