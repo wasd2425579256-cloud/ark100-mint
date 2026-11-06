@@ -842,6 +842,7 @@
     account = from;
     var tx = { from: from, to: to, data: data };
     if (value && BigInt(value) > 0n) tx.value = "0x" + BigInt(value).toString(16);
+    // The preflight eth_call and eth_sendTransaction share this calldata.
     try {
       await callRpc("eth_call", [tx, "latest"]);
     } catch (e) {
@@ -862,12 +863,24 @@
     return null;
   }
 
+  // New ArkSale mint(uint256) only. Trailing bytes are not ABI args; Solidity ignores them.
+  function saleMintCalldata(count) {
+    var data = SEL.mint + hexUint(count);
+    var suffix = "";
+    if (global.ArkRef && typeof global.ArkRef.tagSuffix === "function") {
+      suffix = String(global.ArkRef.tagSuffix() || "");
+    }
+    if (suffix && /^[0-9a-f]+$/.test(suffix) && suffix.length % 2 === 0) data += suffix;
+    return data;
+  }
+
   async function sendMint(count, board) {
     if (MINT_PAUSED) throw fail("mint-paused");
     if (!board || !board.saleStarted) throw fail("sale-not-started");
     if (!board.mintOpen) throw fail("mint-closed");
     var q = await quoteMint(count);
-    var hash = await sendTx(ADDR.sale, SEL.mint + hexUint(count), q.bnbDue);
+    var data = saleMintCalldata(count);
+    var hash = await sendTx(ADDR.sale, data, q.bnbDue);
     return { hash: hash, quote: q };
   }
 
@@ -982,6 +995,8 @@
     connect: connect,
     account: function () { return account; },
     sendMint: sendMint,
+    saleMintCalldata: saleMintCalldata,
+    isSaleMint: isSaleMint,
     sendOpenPool: sendOpenPool,
     sendStartFlood: sendStartFlood,
     sendEnableRefunds: sendEnableRefunds,
