@@ -310,9 +310,13 @@ test("player reward is one constant and the invite copy uses it", function () {
     "好友通过你的链接铸造，你可获得其票款的 5% 奖励（每周结算，BNB 发到你的钱包）"
   );
   const link = page.ArkRef.inviteLink("0x" + "AB".repeat(20));
-  assert.equal(link, "https://ark100.vip/?ref=" + ADDR);
+  assert.equal(page.ArkRef.SITE, "https://www.ark100.vip");
+  assert.equal(link, "https://www.ark100.vip/?ref=" + ADDR);
+  assert.equal(link.indexOf("https://ark100.vip/"), -1);
   assert.equal(page.ArkRef.inviteLink("pilot_7"), "");
   const text = page.ArkRef.shareText(link, "zh");
+  assert.match(text, /https:\/\/www\.ark100\.vip\/\?ref=/);
+  assert.equal(text.indexOf("https://ark100.vip/"), -1);
   assert.match(text, new RegExp(ADDR));
   ["价格", "赌", "暴富", "稳赚", "翻倍", "梭哈", "财富", "空投", "保本"].forEach(function (word) {
     assert.equal(text.includes(word), false, word);

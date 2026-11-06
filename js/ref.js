@@ -5,7 +5,8 @@
   var KEY = "ark100_ref";
   var TTL_MS = 30 * 24 * 60 * 60 * 1000;
   var TAG = "ARKREF:";
-  var SITE = "https://ark100.vip";
+  /* Apex https://ark100.vip/ 301s to www and drops ?ref= on the root path. */
+  var SITE = "https://www.ark100.vip";
   /* Fraction of the friend's ticket payment paid to an address referrer. */
   var PLAYER_REWARD = "0.05";
   var NAME_RE = /^[a-z0-9_]{1,20}$/;
