@@ -13,10 +13,10 @@
     })();
   </script>
   <title>ARK100｜方舟100天</title>
-  <meta name="description" content="修复后的合约已部署。铸造由 ArkSale.startTime 开关，本站在开售前不发送交易。旧船票仅在旧发售未满 3000 张且未开池时，约 2026-11-11 18:36（北京时间）后退款。The fixed suite is deployed. Mint follows ArkSale.startTime. This site does not send a mint before that." />
+  <meta name="description" content="新发售已开售。铸造要有名字非空的 Agent ID，并由钱包签名，每址最多 10 张。#3000 开池。开售满 7 天且未开池时，持有人可按票退回铸造 BNB。旧船票只在旧发售未满 3000 张且未开池时，约 2026-11-11 18:36（北京时间）后由旧发售开启退款。The new sale is open. Minting needs an Agent ID with a non-empty name and a wallet, max 10 per address. The pool opens at #3000. Seven days after start, while unopened, the holder can refund a ticket. Old tickets refund only on the old sale, around 2026-11-11 18:36 Asia/Shanghai, if it stays under 3,000 and unopened." />
   <meta name="theme-color" content="#b7e3ff" />
   <meta property="og:title" content="ARK100｜方舟100天" />
-  <meta property="og:description" content="修复后的合约已部署。铸造由 ArkSale.startTime 开关，本站在开售前不发送交易。旧船票仅在未满 3000 张且未开池时，约 2026-11-11 18:36（北京时间）后退款。Old tickets refund only if that sale stays under 3,000." />
+  <meta property="og:description" content="新发售已开售。铸造要 Agent ID 和钱包，每址最多 10 张。#3000 开池。未开池满 7 天可按票退铸造 BNB。旧船票约在 2026-11-11 18:36（北京时间）后，仅由旧发售在未满 3000 张且未开池时退款。The new sale is open. Minting needs an Agent ID and a wallet, max 10. Pool at #3000. Old tickets refund only on the old sale if it stays under 3,000." />
   <meta property="og:image" content="assets/banner.png" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" href="assets/favicon.png" />
@@ -70,17 +70,17 @@
   </script>
   <div class="statusline">
     <span>BNB Smart Chain · chainId 56</span>
-    <span id="statusSale"><span class="t-zh">正在读取发售状态</span><span class="t-en">Reading sale state</span></span>
+    <span id="statusSale"><span class="t-zh">已开售</span><span class="t-en">Minting open</span></span>
     <span id="statusRead"><span class="t-zh">链上读取</span><span class="t-en">On-chain</span></span>
   </div>
 
   <aside class="pause-banner" id="pauseNotice" aria-labelledby="pauseTitle">
     <div class="pause-banner-inner">
       <p class="pause-kicker"><span class="t-zh">公告</span><span class="t-en">Notice</span></p>
-      <h2 id="pauseTitle"><span class="t-zh">等待链上开售</span><span class="t-en">Waiting on the on-chain start</span></h2>
-      <p><span class="t-zh">修复后的合约套件已经部署在 BSC 主网。本站会在 ArkSale.startTime 到达后发送铸造。在那之前，按钮保持「正式未开售」，不会发送交易。本页不调用 startSale。</span><span class="t-en">The fixed contract suite is deployed on BSC mainnet. This site sends a mint once ArkSale.startTime has arrived. Until then the button stays on “Sale not started” and does not send a transaction. This page does not call startSale.</span></p>
+      <h2 id="pauseTitle"><span class="t-zh">已开售</span><span class="t-en">Minting is open</span></h2>
+      <p id="pauseLead"><span class="t-zh">新发售已开售。铸造需要持有名字非空的 Agent ID，并由钱包签名。每址最多 10 张。卖到 #3000 开池。开售满 7 天且池子还没打开时，持有人可以按票退回铸造时付的 BNB。本页不调用 startSale。</span><span class="t-en">The new sale is open. Minting needs an Agent ID with a non-empty name and a wallet signature. Max 10 tickets per address. The pool opens at #3000. Seven days after the start, while the pool is closed, the holder can refund a ticket for the BNB paid at mint. This page does not call startSale.</span></p>
       <p class="pause-warn"><span class="t-zh">已经买到的旧船票，只有在旧发售开池前没有卖满 3000 张时，才能在退款窗口打开后全额退款。退款窗口大约是 2026-11-11 18:36（北京时间）。旧合约卖满 3000 张会自动开池，开池后就不能退款。请不要绕过本站去调用旧发售合约铸造。</span><span class="t-en">Tickets already bought on the old sale can be refunded in full only if that sale stays under 3,000 before its pool opens. The refund window is around 2026-11-11 18:36 Asia/Shanghai. If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not bypass this site and mint by calling the old sale.</span></p>
-      <p><span class="t-zh">窗口打开后，在<a href="#oldRefund">旧票退款</a>为旧发售开启退款，再到<a href="#ark">我的方舟</a>用当时付款的钱包按船票领取。新发售要等链上 startTime 到达才开始。</span><span class="t-en">After the window opens, turn refunds on for the old sale under <a href="#oldRefund">Old-ticket refunds</a>, then claim each ticket in <a href="#ark">My Ark</a> from the wallet that paid. The new sale starts when its on-chain startTime has arrived.</span></p>
+      <p id="pauseFoot"><span class="t-zh">窗口打开后，在<a href="#oldRefund">旧票退款</a>为旧发售开启退款，再到<a href="#ark">我的方舟</a>用当时付款的钱包按船票领取。新发售已经开售，铸造仍要 Agent ID 和钱包。</span><span class="t-en">After the window opens, turn refunds on for the old sale under <a href="#oldRefund">Old-ticket refunds</a>, then claim each ticket in <a href="#ark">My Ark</a> from the wallet that paid. The new sale is already open. A mint still needs an Agent ID and a wallet.</span></p>
     </div>
   </aside>
 
@@ -137,7 +137,7 @@
           <span class="t-zh">潮位 · 开池线</span><span class="t-en">Tide · open line</span>
         </h2>
         <p class="muted"><span class="t-zh">水位是已售张数。金绳在 #3000。水没过金绳才开池，流动性代币进 0xdead。</span><span class="t-en">The waterline is tickets sold. The gold rope is #3000. The pool opens when the water crosses it, and the LP goes to 0xdead.</span></p>
-        <div class="tide-well" id="meter" role="meter" aria-valuemin="0" aria-valuemax="10000" aria-valuenow="0" aria-valuetext="0 of 10000 sold. Pool opens at 3000.">
+        <div class="tide-well" id="meter" role="meter" aria-valuemin="0" aria-valuemax="10000" aria-valuenow="0" aria-valuetext="Reading tickets sold. Pool opens at 3000.">
           <div class="cloud c1"></div>
           <div class="cloud c2"></div>
           <div class="tier-line" style="bottom:25%"></div>
@@ -147,7 +147,7 @@
           <div class="sand"></div>
           <div class="water is-empty" id="water"><div class="wave" aria-hidden="true"><svg viewBox="0 0 600 20" preserveAspectRatio="none"><path fill="#b8fff0" d="M0 12 Q 25 0 50 12 T 100 12 T 150 12 T 200 12 T 250 12 T 300 12 T 350 12 T 400 12 T 450 12 T 500 12 T 550 12 T 600 12 V20 H0 Z"/></svg><svg viewBox="0 0 600 20" preserveAspectRatio="none"><path fill="#b8fff0" d="M0 12 Q 25 0 50 12 T 100 12 T 150 12 T 200 12 T 250 12 T 300 12 T 350 12 T 400 12 T 450 12 T 500 12 T 550 12 T 600 12 V20 H0 Z"/></svg></div></div>
           <img class="floater" id="floater" src="assets/logo.png" alt="" />
-          <div class="gauge-readout" id="gaugeReadout"><span class="t-zh">水位 0 · 龙骨</span><span class="t-en">Level 0 · keel</span></div>
+          <div class="gauge-readout" id="gaugeReadout"><span class="t-zh">正在读取水位</span><span class="t-en">Reading the waterline</span></div>
         </div>
         <div class="scale-row">
           <span><span class="t-zh">0 龙骨</span><span class="t-en">0 keel</span></span>
@@ -157,23 +157,23 @@
           <span>7,500 · $5</span>
           <span>10,000</span>
         </div>
-        <p class="legend muted" id="remainLine"><span class="t-zh">距开池还差 3,000 张。$3 档含 #3000，开池落在这一档里面。</span><span class="t-en">3,000 tickets still to the open line. #3000 sits inside the $3 tier.</span></p>
+        <p class="legend muted" id="remainLine"><span class="t-zh">已售张数以链上为准。开池线在 #3000，$3 档含这一张。</span><span class="t-en">Sold count comes from the chain. The open line is #3000, inside the $3 tier.</span></p>
         <div class="stats">
-          <div class="stat"><div class="label"><span class="t-zh">已售</span><span class="t-en">Sold</span></div><div class="value"><span id="sold">0</span> <small>/ 10,000</small></div></div>
+          <div class="stat"><div class="label"><span class="t-zh">已售</span><span class="t-en">Sold</span></div><div class="value"><span id="sold">…</span> <small>/ 10,000</small></div></div>
           <div class="stat"><div class="label"><span class="t-zh">当前标价</span><span class="t-en">List tier</span></div><div class="value">$<span id="price">2</span> <small id="tierNote"><span class="t-zh">/ 张 · 不含回落</span><span class="t-en">/ ticket · before decay</span></small></div></div>
           <div class="stat"><div class="label"><span class="t-zh">开池</span><span class="t-en">Pool</span></div><div class="value">#3000 <small><span class="t-zh">流动性进销毁</span><span class="t-en">LP → 0xdead</span></small></div></div>
           <div class="stat"><div class="label"><span class="t-zh">退款</span><span class="t-en">Refund</span></div><div class="value"><span class="t-zh">7 天</span><span class="t-en">7 days</span> <small><span class="t-zh">未开池按票退 BNB</span><span class="t-en">full BNB back if unopened</span></small></div></div>
         </div>
         <div class="refund-strip">
           <strong><span class="t-zh">7 天</span><span class="t-en">7 days</span></strong>
-          <p><span class="t-zh">旧发售上已经卖出的船票：只要那一份旧合约在开池前没有卖满 3000 张，退款窗口打开后（约 2026-11-11 18:36 北京时间）可以全额退。开池前这些 BNB 留在旧发售合约里。旧合约卖满 3000 张会自动开池，开池后就不能退款。新发售要等 startTime 设定后才开始，本站在那之前不铸造。</span><span class="t-en">Tickets already sold on the old sale can be refunded in full once the window opens (around 2026-11-11 18:36 Asia/Shanghai), and only if that old contract stays under 3,000 before its pool opens. Until then, that BNB stays in the old sale. If it reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. The new sale does not start until its startTime is set, and this site does not mint before then.</span></p>
+          <p><span class="t-zh">旧发售上已经卖出的船票：只要那一份旧合约在开池前没有卖满 3000 张，退款窗口打开后（约 2026-11-11 18:36 北京时间）可以全额退。开池前这些 BNB 留在旧发售合约里。旧合约卖满 3000 张会自动开池，开池后就不能退款。新发售已经开售。开售满 7 天且池子还没打开时，持有人可以按票退回铸造时付的 BNB。</span><span class="t-en">Tickets already sold on the old sale can be refunded in full once the window opens (around 2026-11-11 18:36 Asia/Shanghai), and only if that old contract stays under 3,000 before its pool opens. Until then, that BNB stays in the old sale. If it reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. The new sale is open. Seven days after it starts, while its pool is closed, the holder can refund a ticket for the BNB paid at mint.</span></p>
         </div>
       </section>
 
       <section class="card" id="mint">
         <p class="section-kicker"><span class="t-zh">铸造</span><span class="t-en">Mint</span></p>
         <h2><span class="t-zh">Agent 铸造</span><span class="t-en">Agent mint</span></h2>
-        <p class="muted"><span class="t-zh">连接 BSC 钱包后可以读取 Agent ID 和报价。ArkSale.startTime 还没到时，按钮保持「正式未开售」，不会发送交易。旧船票只有在旧发售开池前没有卖满 3000 张时，才能在约 2026-11-11 18:36（北京时间）后于「我的方舟」全额退款。</span><span class="t-en">Connect a BSC wallet to read the Agent ID and the quote. Until ArkSale.startTime has arrived, the button stays on “Sale not started” and does not send a transaction. Old tickets can be refunded in full from My Ark only if the old sale stays under 3,000 before its pool opens. The window is around 2026-11-11 18:36 Asia/Shanghai.</span></p>
+        <p class="muted"><span class="t-zh">新发售已开售。连接 BSC 钱包后可以读取 Agent ID 和报价。铸造要有名字非空的 Agent ID，每址最多 10 张，由钱包签名后发送。旧船票只有在旧发售开池前没有卖满 3000 张时，才能在约 2026-11-11 18:36（北京时间）后于「我的方舟」全额退款。</span><span class="t-en">The new sale is open. Connect a BSC wallet to read the Agent ID and the quote. A mint needs an Agent ID with a non-empty name, stays within 10 tickets per address, and is sent only after the wallet signs. Old tickets can be refunded in full from My Ark only if the old sale stays under 3,000 before its pool opens. The window is around 2026-11-11 18:36 Asia/Shanghai.</span></p>
         <div class="mint-layout">
           <div>
             <div class="ladder" id="ladder">
@@ -189,7 +189,7 @@
               <li><i class="swatch pot"></i><span class="t-zh">15% 奖池</span><span class="t-en">15% pot</span></li>
               <li><i class="swatch lp"></i><span class="t-zh">65% BNB + 1,500,000 ARK 加池 · 流动性进销毁地址</span><span class="t-en">65% BNB + 1,500,000 ARK into LP · LP → dead</span></li>
             </ul>
-            <p class="muted"><span class="t-zh">上面是新发售合约里的分配。修复后的套件已经部署。铸造要等这条发售的 startTime 到达。</span><span class="t-en">The split above is the new sale contract. The fixed suite is deployed. Minting waits until that sale’s startTime has arrived.</span></p>
+            <p class="muted"><span class="t-zh">上面是新发售合约里的分配。修复后的套件已经部署。新发售已开售，铸造仍要 Agent ID 和钱包。</span><span class="t-en">The split above is the new sale contract. The fixed suite is deployed. The new sale is open. A mint still needs an Agent ID and a wallet.</span></p>
             <p class="muted" id="tokenLine"><span class="t-zh">代币名 <b>ARK100</b>，符号 <b>ARK</b>。硬顶 <b>20 亿</b>（2,000,000,000），只由船票产出和开池种子铸造，没有预挖。官方池是 PancakeSwap 的 <b>ARK/WBNB</b>（<a href="https://bscscan.com/address/0x5FA6c91C846FF96ABdd694F85F123Cf49aA90662" rel="noopener noreferrer">0x5FA6c91C846FF96ABdd694F85F123Cf49aA90662</a>）：65% 开池 BNB + 150 万 ARK，LP 进 0xdead。这个池子地址在开池时才会有合约。</span><span class="t-en">Token name <b>ARK100</b>, symbol <b>ARK</b>. Hard cap <b>2,000,000,000</b>, minted only by ticket yield and the pool seed—no premine. Official pool is PancakeSwap <b>ARK/WBNB</b> (<a href="https://bscscan.com/address/0x5FA6c91C846FF96ABdd694F85F123Cf49aA90662" rel="noopener noreferrer">0x5FA6c91C846FF96ABdd694F85F123Cf49aA90662</a>): 65% of open BNB plus 1.5 million ARK, LP to 0xdead. That pair address has no contract until the pool opens.</span></p>
           </div>
           <div class="slip">
@@ -217,8 +217,8 @@
             <p class="wallet-chip" id="walletChip"></p>
             <p class="copy-status" id="agentLine" role="status"><span class="t-zh">连接后会读取 Agent ID。</span><span class="t-en">Connect to read the Agent ID.</span></p>
             <button class="cta" id="mintBtn" type="button" disabled aria-disabled="true">
-              <span class="t-zh">正式未开售</span>
-              <span class="t-en">Sale not started</span>
+              <span class="t-zh">已开售</span>
+              <span class="t-en">Minting open</span>
             </button>
             <button class="cta secondary" id="connectBtn" type="button">
               <span class="t-zh">连接钱包</span>
@@ -231,7 +231,7 @@
             <p class="copy-status" id="mintStatus" role="status"></p>
             <pre class="cmd" id="cmd">ARK100 铸造说明
 链：BNB Smart Chain（chainId 56）
-正式未开售。ArkSale.startTime 到达之前，不会发送铸造。
+已开售。铸造需要名字非空的 Agent ID 和钱包签名，每址最多 10 张。
 本页不调用 startSale。请不要向旧发售合约铸造。</pre>
           </div>
         </div>
@@ -606,7 +606,7 @@
         </article>
         <article class="trigger" id="refundCard" hidden>
           <h3><span class="t-zh">新发售按票退款</span><span class="t-en">New sale · refund one ticket</span></h3>
-          <p><span class="t-zh">开售满 7 天后，池子还没打开时，持有人可以在「我的方舟」随时按票退款。不想退的人继续持有。铸造不停止。已售只数还在的付费船票，卖到 3000 张仍会自动开池。开池之后不能再退。退款会烧掉这张票，退回铸造时付的 BNB，不恢复每地址 10 张的额度。领过收益的船票不可退款。startTime 还是 0 时不显示。旧船票不走这里。</span><span class="t-en">Seven days after startTime, while the pool is still closed, the holder can refund any ticket at any time from My Ark. Holders who stay keep the ticket. Minting continues. Sold counts live paid tickets, and the pool still opens automatically at 3,000. After the pool opens, refunds stop. A refund burns that ticket, returns the BNB paid at mint, and does not restore the 10-per-address mint cap. Tickets that have claimed yield can't be refunded. Hidden while startTime is 0. Old tickets are not refunded here.</span></p>
+          <p><span class="t-zh">开售满 7 天后，池子还没打开时，持有人可以在「我的方舟」随时按票退款。不想退的人继续持有。铸造不停止。已售只数还在的付费船票，卖到 3000 张仍会自动开池。开池之后不能再退。退款会烧掉这张票，退回铸造时付的 BNB，不恢复每地址 10 张的额度。领过收益的船票不可退款。这一卡在开售之后、池子打开之前显示。旧船票不走这里。</span><span class="t-en">Seven days after startTime, while the pool is still closed, the holder can refund any ticket at any time from My Ark. Holders who stay keep the ticket. Minting continues. Sold counts live paid tickets, and the pool still opens automatically at 3,000. After the pool opens, refunds stop. A refund burns that ticket, returns the BNB paid at mint, and does not restore the 10-per-address mint cap. Tickets that have claimed yield can't be refunded. This card is shown after the sale has started and before the pool opens. Old tickets are not refunded here.</span></p>
           <p class="old-refund-count" id="newRefundClock" role="timer" hidden><span class="t-zh">倒计时读取后显示。</span><span class="t-en">The countdown appears after the chain read.</span></p>
         </article>
         <article class="trigger">
@@ -639,8 +639,8 @@
       <details class="rule" open>
         <summary><span class="r-badge">R1</span> <span class="t-zh">门槛与铸造</span><span class="t-en">Gate and mint</span></summary>
         <div class="body">
-          <p class="t-zh">本站在 ArkSale.startTime 到达后才会发送铸造。在那之前按钮保持「正式未开售」。修复后的合约已经部署。旧船票退款只在旧发售未满 3000 张、且池子没打开时成立，窗口大约是 2026-11-11 18:36（北京时间）。旧合约卖满 3000 张会自动开池，开池后就不能退款，请不要按这些规则去调用旧合约。合约上的门槛是：只有持有 .ai Agent ID、且名字不是空的钱包可以铸造。注册表 <span class="ca">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span> 上要能查到这只钱包持有 Agent ID，并且名字不是空的。每址最多 10 张。一共 10,000 张，每 2,500 张一档：$2、$3、$4、$5。连续 5 分钟无人铸造，价格降一档，最低 $2。没有免费票，没有 ARK 预挖。团队钱包开铸后按同样上限购买。挂单、购买和求购不需要 Agent ID。</p>
-          <p class="t-en">This site sends a mint only after ArkSale.startTime has arrived. Until then the button stays on “Sale not started”. The fixed suite is deployed. Old tickets refund only if that sale stays under 3,000 and its pool stays closed. The window is around 2026-11-11 18:36 Asia/Shanghai. If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not use these rules to call the old contract. On the contract, only a wallet with a .ai Agent ID and a non-empty handle can mint. The registry <span class="ca">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span> checks balanceOf and handleOf. Max 10 tickets per address. Supply is 10,000, in tiers of 2,500: $2, $3, $4, $5. Five quiet minutes drop one tier, floor $2. No free tickets and no ARK premine. After launch the team wallet buys under the same cap. Listing, buying, and bidding do not require an Agent ID.</p>
+          <p class="t-zh">新发售已开售。铸造需要持有 .ai Agent ID、且名字不是空的钱包，并由钱包签名后发送。修复后的合约已经部署。旧船票退款只在旧发售未满 3000 张、且池子没打开时成立，窗口大约是 2026-11-11 18:36（北京时间），并且只在旧发售上开启退款。旧合约卖满 3000 张会自动开池，开池后就不能退款，请不要按这些规则去调用旧合约。合约上的门槛是：注册表 <span class="ca">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span> 上要能查到这只钱包持有 Agent ID，并且名字不是空的。每址最多 10 张。一共 10,000 张，每 2,500 张一档：$2、$3、$4、$5。连续 5 分钟无人铸造，价格降一档，最低 $2。没有免费票，没有 ARK 预挖。团队钱包开铸后按同样上限购买。挂单、购买和求购不需要 Agent ID。</p>
+          <p class="t-en">The new sale is open. A mint needs a wallet with a .ai Agent ID and a non-empty handle, and it is sent only after that wallet signs. The fixed suite is deployed. Old tickets refund only if that sale stays under 3,000 and its pool stays closed. The window is around 2026-11-11 18:36 Asia/Shanghai, and enableRefunds runs on the old sale only. If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not use these rules to call the old contract. The registry <span class="ca">0x60B9262456dE011F7d15a54CdD8c48bAaa8B022F</span> checks balanceOf and handleOf. Max 10 tickets per address. Supply is 10,000, in tiers of 2,500: $2, $3, $4, $5. Five quiet minutes drop one tier, floor $2. No free tickets and no ARK premine. After launch the team wallet buys under the same cap. Listing, buying, and bidding do not require an Agent ID.</p>
         </div>
       </details>
       <details class="rule">
@@ -667,8 +667,8 @@
       <details class="rule">
         <summary><span class="r-badge">R5</span> <span class="t-zh">开池、税与退款</span><span class="t-en">Pool, tax, refund</span></summary>
         <div class="body">
-          <p class="t-zh">本站在 ArkSale.startTime 到达后才会发送铸造。修复后的合约已经部署，开池后的分配按下面执行：售到 #3000 才开池。开池前铸造款 100% 留在发售合约。代币名 ARK100，符号 ARK。硬顶 20 亿（2,000,000,000），只由船票产出和开池种子铸造，没有预挖。开池时 20% 给写死的团队钱包，15% 进奖池，65% 的 BNB 与 1,500,000 ARK 在 PancakeSwap 的 ARK/WBNB 池加池，流动性代币转入 0xdead。交易税写死 2%：销毁 0.5%，奖池 0.5%，团队 1%，不可调。合约没有管理员，不可升级。新发售开售满 7 天后，池子还没打开时，持有人可以按票退款，铸造不停止，卖到 3000 张仍会自动开池，开池后不能再退。已经买到的旧船票不走这份新合约：只有旧发售在开池前没有卖满 3000 张，才能在约 2026-11-11 18:36（北京时间）后，向旧发售合约按票领回 BNB。</p>
-          <p class="t-en">This site sends a mint only after ArkSale.startTime has arrived. The fixed suite is deployed, and the split below is what it does: the pool opens at ticket #3000. Until then mint proceeds stay in the sale contract. Token name ARK100, symbol ARK. Hard cap 2,000,000,000, minted only by ticket yield and the pool seed, no premine. At open: 20% to the fixed team wallet, 15% to the pot, 65% of the BNB plus 1,500,000 ARK into the PancakeSwap ARK/WBNB pool, LP to 0xdead. Trade tax is a fixed 2%: 0.5% burn, 0.5% pot, 1% team. No owner and not upgradeable. Seven days after the new sale starts, while its pool is still closed, the holder can refund a ticket. Minting continues, the pool still opens at 3,000, and refunds stop after open. Tickets already bought do not refund through this new contract. They refund from the old sale only if that sale stays under 3,000 before its pool opens, around 2026-11-11 18:36 Asia/Shanghai.</p>
+          <p class="t-zh">新发售已开售。修复后的合约已经部署，开池后的分配按下面执行：售到 #3000 才开池。开池前铸造款 100% 留在发售合约。代币名 ARK100，符号 ARK。硬顶 20 亿（2,000,000,000），只由船票产出和开池种子铸造，没有预挖。开池时 20% 给写死的团队钱包，15% 进奖池，65% 的 BNB 与 1,500,000 ARK 在 PancakeSwap 的 ARK/WBNB 池加池，流动性代币转入 0xdead。交易税写死 2%：销毁 0.5%，奖池 0.5%，团队 1%，不可调。合约没有管理员，不可升级。新发售开售满 7 天后，池子还没打开时，持有人可以按票退款，铸造不停止，卖到 3000 张仍会自动开池，开池后不能再退。已经买到的旧船票不走这份新合约：只有旧发售在开池前没有卖满 3000 张，才能在约 2026-11-11 18:36（北京时间）后，向旧发售合约按票领回 BNB。</p>
+          <p class="t-en">The new sale is open. The fixed suite is deployed, and the split below is what it does: the pool opens at ticket #3000. Until then mint proceeds stay in the sale contract. Token name ARK100, symbol ARK. Hard cap 2,000,000,000, minted only by ticket yield and the pool seed, no premine. At open: 20% to the fixed team wallet, 15% to the pot, 65% of the BNB plus 1,500,000 ARK into the PancakeSwap ARK/WBNB pool, LP to 0xdead. Trade tax is a fixed 2%: 0.5% burn, 0.5% pot, 1% team. No owner and not upgradeable. Seven days after the new sale starts, while its pool is still closed, the holder can refund a ticket. Minting continues, the pool still opens at 3,000, and refunds stop after open. Tickets already bought do not refund through this new contract. They refund from the old sale only if that sale stays under 3,000 before its pool opens, around 2026-11-11 18:36 Asia/Shanghai.</p>
         </div>
       </details>
     </section>
@@ -708,7 +708,7 @@
         <div class="body">
           <p class="t-zh">开售满 7 天、池子还没打开时，持有人可以按票退款。没有单独的「开启退款」这一步。</p>
           <ul class="t-zh">
-            <li>窗口还没到时，「我的方舟」显示倒计时。startTime 还是 0 时不显示。</li>
+            <li>窗口还没到时，「我的方舟」显示倒计时。开售之后才显示。</li>
             <li>窗口打开后，用当前持有这张票的钱包点「领退款」。退回的是铸造时付的 BNB。票转给别人之后，退款权跟着票走。</li>
             <li>不想退的人继续持有。铸造不停止。已售只数还在的付费船票，卖到 3000 张仍会自动开池。</li>
             <li>退款会烧掉这张票，不能再抽舱、挂单或领产出，也不恢复每地址 10 张的铸造额度。开池之后不能再退。</li>
@@ -716,7 +716,7 @@
           </ul>
           <p class="t-en">Seven days after the sale starts, while the pool is still closed, the holder can refund a ticket. There is no separate enable-refunds step.</p>
           <ul class="t-en">
-            <li>Before the window, My Ark shows a countdown. Nothing is shown while startTime is 0.</li>
+            <li>Before the window, My Ark shows a countdown. That line appears after the sale has started.</li>
             <li>Once the window is open, the wallet that currently holds the ticket presses Claim refund. The BNB returned is what was paid at mint. If the ticket was transferred, the refund right goes with it.</li>
             <li>Holders who stay keep the ticket. Minting continues. Sold counts live paid tickets, and the pool still opens automatically at 3,000.</li>
             <li>A refund burns that ticket. It cannot draw a cabin, be listed, or earn, and it does not restore the 10-per-address mint cap. After the pool opens, refunds stop.</li>
@@ -785,14 +785,14 @@
       </details>
       <details class="faq-item">
         <summary><span class="t-zh">现在能连钱包、扫货或者领奖吗？</span><span class="t-en">Can I connect a wallet, buy a listing, or claim now?</span></summary>
-        <div class="body"><p class="t-zh">可以连接钱包，并读取舱单、报价、洪水和二级市场。修复后的合约已部署。铸造按钮在 ArkSale.startTime 到达后才会发送交易，在那之前保持「正式未开售」。旧船票只有在旧发售开池前没有卖满 3000 张时，才能在退款窗口打开后（约 2026-11-11 18:36 北京时间）于「我的方舟」全额退款。旧合约卖满 3000 张会自动开池，开池后就不能退款，所以请不要绕过官网直接调用旧合约铸造。二级市场已经换成新套件里的三本簿：BNB 挂单、ARK 挂单和 BNB 求购，成交抽 2.5%。买卖和求购不需要 Agent ID。某一本簿的地址如果被清成 0，页面会写「市场合约待部署」，那一本表保持空白。</p><p class="t-en">Yes. You can connect a wallet and read tickets, quotes, the flood, and the secondary market. The fixed suite is deployed. The mint button sends a transaction only after ArkSale.startTime has arrived, and stays on “Sale not started” until then. Old tickets can be refunded in full from My Ark only if the old sale stays under 3,000 before its pool opens. The window is around 2026-11-11 18:36 Asia/Shanghai. If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not bypass this site and mint by calling the old contract directly. The secondary market is the new suite’s three books: a BNB book, an ARK book, and BNB quantity bids, with a 2.5% fee on each fill. Buying, listing, and bidding do not need an Agent ID. If one of those addresses is cleared back to zero, that book says the market contract is not deployed and its table stays empty.</p></div>
+        <div class="body"><p class="t-zh">可以。新发售已开售。连接钱包后，持有名字非空 Agent ID 的地址可以铸造，每址最多 10 张，并可以读取舱单、报价、洪水和二级市场。修复后的合约已部署。旧船票只有在旧发售开池前没有卖满 3000 张时，才能在退款窗口打开后（约 2026-11-11 18:36 北京时间）于「我的方舟」全额退款，退款只在旧发售上开启。旧合约卖满 3000 张会自动开池，开池后就不能退款，所以请不要绕过官网直接调用旧合约铸造。二级市场已经换成新套件里的三本簿：BNB 挂单、ARK 挂单和 BNB 求购，成交抽 2.5%。买卖和求购不需要 Agent ID。某一本簿的地址如果被清成 0，页面会写「市场合约待部署」，那一本表保持空白。</p><p class="t-en">Yes. The new sale is open. After you connect, a wallet with an Agent ID and a non-empty name can mint, up to 10 tickets, and can read tickets, quotes, the flood, and the secondary market. The fixed suite is deployed. Old tickets can be refunded in full from My Ark only if the old sale stays under 3,000 before its pool opens, and enableRefunds runs on that old sale only. The window is around 2026-11-11 18:36 Asia/Shanghai. If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not bypass this site and mint by calling the old contract directly. The secondary market is the new suite’s three books: a BNB book, an ARK book, and BNB quantity bids, with a 2.5% fee on each fill. Buying, listing, and bidding do not need an Agent ID. If one of those addresses is cleared back to zero, that book says the market contract is not deployed and its table stays empty.</p></div>
       </details>
     </section>
 
     <section class="risk" id="risk">
       <h2><span class="t-zh">风险</span><span class="t-en">Risk</span></h2>
-      <p class="t-zh">付费本金和 ARK 都可能归零。洪水会让没有沙袋的船票沉没，奖池没有保底价格。玩法可能受你所在地法规限制。这不是投资建议。修复后的合约已部署。铸造要等新发售的 startTime，在那之前本站不发送铸造。旧合约卖满 3000 张会自动开池，开池后就不能退款，所以请不要绕过官网直接调用旧合约铸造，也不要向旧发售转入 BNB。</p>
-      <p class="t-en">Capital and ARK can go to zero. Unprotected tickets can sink, and the pot has no promised price. Flood and pot rules may be restricted where you live. This is not financial advice. The fixed suite is deployed. Minting waits for the new sale’s startTime, and this site does not send a mint before that. If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not bypass this site and mint on the old contract, and do not send BNB to the old sale.</p>
+      <p class="t-zh">付费本金和 ARK 都可能归零。洪水会让没有沙袋的船票沉没，奖池没有保底价格。玩法可能受你所在地法规限制。这不是投资建议。修复后的合约已部署。新发售已开售，铸造仍要 Agent ID 和钱包签名。旧合约卖满 3000 张会自动开池，开池后就不能退款，所以请不要绕过官网直接调用旧合约铸造，也不要向旧发售转入 BNB。</p>
+      <p class="t-en">Capital and ARK can go to zero. Unprotected tickets can sink, and the pot has no promised price. Flood and pot rules may be restricted where you live. This is not financial advice. The fixed suite is deployed. The new sale is open. A mint still needs an Agent ID and a wallet signature. If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not bypass this site and mint on the old contract, and do not send BNB to the old sale.</p>
     </section>
   </main>
 
@@ -828,7 +828,7 @@
         <div>
           <h3><span class="t-zh">品牌</span><span class="t-en">Brand</span></h3>
           <p class="muted"><span class="t-zh">白天、浅海蓝、金色太阳、暖木方舟。船票是舱位，不是生物。</span><span class="t-en">Daytime, light-blue sea, golden sun, warm wood ark. A ticket is a cabin, not a creature.</span></p>
-          <p class="muted"><span class="t-zh">本页不保管私钥。铸造由钱包签名，开售前不会代发铸造交易。</span><span class="t-en">This page does not hold keys. A mint is a wallet signature, and none is sent before the sale starts. Publish path is <code>./</code>.</span></p>
+          <p class="muted"><span class="t-zh">本页不保管私钥。铸造由钱包签名。已开售，仍要 Agent ID。</span><span class="t-en">This page does not hold keys. A mint is a wallet signature. Minting is open and still needs an Agent ID. Publish path is <code>./</code>.</span></p>
         </div>
       </div>
       <ul class="ca-list">
@@ -849,7 +849,7 @@
         <li><span><span class="t-zh">路由</span><span class="t-en">Router</span></span><span><span class="ca">0x10ED43C718714eb63d5aA57B78B54704E256024E</span><span class="ca-links"><a href="https://bscscan.com/address/0x10ED43C718714eb63d5aA57B78B54704E256024E#code" rel="noopener noreferrer">BscScan</a></span></span></li>
         <li><span>BNB/USD</span><span><span class="ca">0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE</span><span class="ca-links"><a href="https://bscscan.com/address/0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE#code" rel="noopener noreferrer">BscScan</a></span></span></li>
       </ul>
-      <p class="fine"><span class="t-zh">风险提醒：本金与代币都可能归零；未防护船票会沉；奖池无价格承诺；当地法规可能限制洪水与分池玩法。舱位概率是 70/25/5，日产是 100/200/600。修复后的合约已部署。铸造要等新发售的 startTime，在那之前本站不发送铸造。旧合约卖满 3000 张会自动开池，开池后就不能退款。请不要绕过官网直接调用旧合约铸造。</span><span class="t-en">Risk: capital and tokens can go to zero. Unprotected tickets can sink. The pot has no promised price. Local rules may restrict the flood and the split. Cabin odds are the TicketNFT rates (70/25/5, 100/200/600). The fixed suite is deployed. Minting waits for the new sale’s startTime, and this site does not send a mint before that. If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not bypass this site and mint on the old contract.</span></p>
+      <p class="fine"><span class="t-zh">风险提醒：本金与代币都可能归零；未防护船票会沉；奖池无价格承诺；当地法规可能限制洪水与分池玩法。舱位概率是 70/25/5，日产是 100/200/600。修复后的合约已部署。新发售已开售，铸造要 Agent ID 和钱包。旧合约卖满 3000 张会自动开池，开池后就不能退款。请不要绕过官网直接调用旧合约铸造。</span><span class="t-en">Risk: capital and tokens can go to zero. Unprotected tickets can sink. The pot has no promised price. Local rules may restrict the flood and the split. Cabin odds are the TicketNFT rates (70/25/5, 100/200/600). The fixed suite is deployed. The new sale is open. A mint needs an Agent ID and a wallet. If the old contract reaches 3,000 sold, it opens the pool automatically, and refunds cannot be enabled after that. Do not bypass this site and mint on the old contract.</span></p>
     </div>
   </footer>
 
