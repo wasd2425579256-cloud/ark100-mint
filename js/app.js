@@ -1579,6 +1579,13 @@
     });
   }
 
+  var inviteConnect = $("inviteConnect");
+  if (inviteConnect) {
+    inviteConnect.addEventListener("click", function () {
+      $("connectBtn").click();
+    });
+  }
+
   $("mintBtn").addEventListener("click", function () {
     if (mintPaused()) {
       renderSale();

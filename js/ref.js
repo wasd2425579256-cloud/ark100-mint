@@ -122,6 +122,24 @@
     return "好友通过你的链接铸造，你可获得其票款的 " + pct + " 奖励（每周结算，BNB 发到你的钱包）";
   }
 
+  function guestLine(lang) {
+    if (lang === "en") return "Connect a wallet to generate your personal invite link.";
+    return "连接钱包后，这里会生成你的专属邀请链接。";
+  }
+
+  function setTextPair(el, zhText, enText) {
+    if (!el || typeof el.querySelector !== "function") return;
+    var zhEl = el.querySelector(".t-zh");
+    var enEl = el.querySelector(".t-en");
+    if (zhEl) zhEl.textContent = zhText;
+    if (enEl) enEl.textContent = enText;
+  }
+
+  function showEl(el, on) {
+    if (!el) return;
+    el.hidden = !on;
+  }
+
   function inviteLink(address) {
     var addr = sanitize(address);
     if (!isAddress(addr)) return "";
@@ -153,30 +171,42 @@
     el.textContent = "ref: " + ref;
   }
 
+  /* The card stays on screen with no wallet. The personal www link, copy,
+     and X post stay off until inviteLink has an address. */
   function fillInvite(doc, address, lang) {
     if (!doc || typeof doc.getElementById !== "function") return "";
     var card = doc.getElementById("inviteCard");
     if (!card) return "";
     var link = inviteLink(address);
     var reward = doc.getElementById("inviteReward");
+    var guest = doc.getElementById("inviteGuest");
     var linkEl = doc.getElementById("inviteLink");
+    var actions = doc.getElementById("inviteActions");
+    var guestActions = doc.getElementById("inviteGuestActions");
+    var copy = doc.getElementById("inviteCopy");
     var share = doc.getElementById("inviteShare");
     var status = doc.getElementById("inviteStatus");
-    if (!link) {
-      card.hidden = true;
-      if (status) status.textContent = "";
-      if (share) share.href = "https://x.com/intent/tweet";
-      return "";
-    }
     card.hidden = false;
-    if (reward && typeof reward.querySelector === "function") {
-      var zhEl = reward.querySelector(".t-zh");
-      var enEl = reward.querySelector(".t-en");
-      if (zhEl) zhEl.textContent = rewardLine("zh");
-      if (enEl) enEl.textContent = rewardLine("en");
+    setTextPair(reward, rewardLine("zh"), rewardLine("en"));
+    setTextPair(guest, guestLine("zh"), guestLine("en"));
+    if (!link) {
+      if (status) status.textContent = "";
+      if (linkEl) linkEl.textContent = "";
+      if (share) share.href = "https://x.com/intent/tweet";
+      if (copy) copy.disabled = true;
+      showEl(guest, true);
+      showEl(guestActions, true);
+      showEl(linkEl, false);
+      showEl(actions, false);
+      return "";
     }
     if (linkEl) linkEl.textContent = link;
     if (share) share.href = shareIntent(link, lang === "en" ? "en" : "zh");
+    if (copy) copy.disabled = false;
+    showEl(guest, false);
+    showEl(guestActions, false);
+    showEl(linkEl, true);
+    showEl(actions, true);
     return link;
   }
 
@@ -206,6 +236,7 @@
     current: current,
     rewardPercentLabel: rewardPercentLabel,
     rewardLine: rewardLine,
+    guestLine: guestLine,
     inviteLink: inviteLink,
     shareText: shareText,
     shareIntent: shareIntent,

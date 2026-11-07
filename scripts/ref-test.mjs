@@ -309,6 +309,12 @@ test("player reward is one constant and the invite copy uses it", function () {
     page.ArkRef.rewardLine("zh"),
     "好友通过你的链接铸造，你可获得其票款的 5% 奖励（每周结算，BNB 发到你的钱包）"
   );
+  assert.equal(page.ArkRef.guestLine("zh"), "连接钱包后，这里会生成你的专属邀请链接。");
+  assert.equal(page.ArkRef.guestLine("en"), "Connect a wallet to generate your personal invite link.");
+  assert.equal(indexSrc.includes(page.ArkRef.rewardLine("zh")), true);
+  assert.equal(indexSrc.includes(page.ArkRef.rewardLine("en")), true);
+  assert.equal(indexSrc.includes(page.ArkRef.guestLine("zh")), true);
+  assert.equal(indexSrc.includes(page.ArkRef.guestLine("en")), true);
   const link = page.ArkRef.inviteLink("0x" + "AB".repeat(20));
   assert.equal(page.ArkRef.SITE, "https://www.ark100.vip");
   assert.equal(link, "https://www.ark100.vip/?ref=" + ADDR);
@@ -335,22 +341,48 @@ test("player reward is one constant and the invite copy uses it", function () {
     nodes[id] = node;
     return node;
   }
-  ["inviteCard", "inviteReward", "inviteLink", "inviteShare", "inviteStatus"].forEach(make);
+  ["inviteCard", "inviteReward", "inviteGuest", "inviteLink", "inviteActions", "inviteGuestActions", "inviteCopy", "inviteShare", "inviteStatus"].forEach(make);
   const doc = { getElementById: function (id) { return nodes[id] || null; } };
   assert.equal(page.ArkRef.fillInvite(doc, "", "zh"), "");
-  assert.equal(nodes.inviteCard.hidden, true);
+  assert.equal(nodes.inviteCard.hidden, false);
+  assert.equal(nodes.inviteGuest.hidden, false);
+  assert.equal(nodes.inviteGuestActions.hidden, false);
+  assert.equal(nodes.inviteLink.hidden, true);
+  assert.equal(nodes.inviteLink.textContent, "");
+  assert.equal(nodes.inviteActions.hidden, true);
+  assert.equal(nodes.inviteCopy.disabled, true);
+  assert.equal(nodes.inviteShare.href, "https://x.com/intent/tweet");
+  assert.equal(nodes.inviteReward.kids.zh.textContent, page.ArkRef.rewardLine("zh"));
+  assert.equal(nodes.inviteGuest.kids.zh.textContent, page.ArkRef.guestLine("zh"));
   assert.equal(page.ArkRef.fillInvite(doc, ADDR, "zh"), link);
   assert.equal(nodes.inviteCard.hidden, false);
+  assert.equal(nodes.inviteGuest.hidden, true);
+  assert.equal(nodes.inviteGuestActions.hidden, true);
+  assert.equal(nodes.inviteLink.hidden, false);
+  assert.equal(nodes.inviteActions.hidden, false);
+  assert.equal(nodes.inviteCopy.disabled, false);
   assert.equal(nodes.inviteLink.textContent, link);
   assert.equal(nodes.inviteReward.kids.zh.textContent, page.ArkRef.rewardLine("zh"));
   assert.match(nodes.inviteShare.href, /^https:\/\/x\.com\/intent\/tweet\?text=/);
+  assert.match(decodeURIComponent(nodes.inviteShare.href), /https:\/\/www\.ark100\.vip\/\?ref=/);
+  assert.equal(decodeURIComponent(nodes.inviteShare.href).indexOf("https://ark100.vip/"), -1);
+  assert.equal(page.ArkRef.fillInvite(doc, "", "en"), "");
+  assert.equal(nodes.inviteShare.href, "https://x.com/intent/tweet");
+  assert.equal(nodes.inviteLink.textContent, "");
+  assert.equal(nodes.inviteCard.hidden, false);
   assert.match(indexSrc, /id="inviteCard"/);
+  assert.doesNotMatch(indexSrc, /id="inviteCard"[^>]*\bhidden\b/);
   assert.match(indexSrc, /邀请好友上船/);
+  assert.match(indexSrc, /id="inviteGuest"/);
+  assert.match(indexSrc, /id="inviteConnect"/);
   assert.match(indexSrc, /id="inviteCopy"/);
   assert.match(indexSrc, /id="inviteShare"/);
+  assert.match(indexSrc, /id="inviteLink" hidden/);
+  assert.match(indexSrc, /id="inviteActions" hidden/);
   assert.match(appSrc, /ArkRef\.fillInvite/);
   assert.match(appSrc, /ArkRef\.inviteLink/);
   assert.match(appSrc, /inviteCopy/);
+  assert.match(appSrc, /inviteConnect/);
 });
 
 test("address payout is 5% of payment and named KOLs stay on the team share", function () {
