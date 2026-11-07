@@ -225,7 +225,7 @@
               <span class="t-zh">连接钱包</span>
               <span class="t-en">Connect wallet</span>
             </button>
-            <section class="invite" id="inviteCard" hidden>
+            <section class="invite" id="inviteCard">
               <div class="invite-lanterns" aria-hidden="true">
                 <svg class="invite-lantern" viewBox="0 0 32 48" shape-rendering="crispEdges">
                   <rect x="14" y="0" width="4" height="6" fill="#8a5528"/>
@@ -251,10 +251,11 @@
               <div class="invite-body">
                 <p class="section-kicker"><span class="t-zh">邀请</span><span class="t-en">Invite</span></p>
                 <h3><span class="t-zh">邀请好友上船</span><span class="t-en">Invite friends aboard</span></h3>
-                <p class="invite-reward" id="inviteReward"><span class="t-zh"></span><span class="t-en"></span></p>
-                <p class="invite-link" id="inviteLink"></p>
-                <div class="invite-actions">
-                  <button class="cta" id="inviteCopy" type="button">
+                <p class="invite-reward" id="inviteReward"><span class="t-zh">好友通过你的链接铸造，你可获得其票款的 5% 奖励（每周结算，BNB 发到你的钱包）</span><span class="t-en">Friends who mint through your link earn you 5% of the ticket payment (settled weekly, BNB sent to your wallet).</span></p>
+                <p class="invite-guest" id="inviteGuest"><span class="t-zh">连接钱包后，这里会生成你的专属邀请链接。</span><span class="t-en">Connect a wallet to generate your personal invite link.</span></p>
+                <p class="invite-link" id="inviteLink" hidden></p>
+                <div class="invite-actions" id="inviteActions" hidden>
+                  <button class="cta" id="inviteCopy" type="button" disabled>
                     <span class="t-zh">复制邀请链接</span>
                     <span class="t-en">Copy invite link</span>
                   </button>
@@ -262,6 +263,12 @@
                     <span class="t-zh">发到 X</span>
                     <span class="t-en">Post on X</span>
                   </a>
+                </div>
+                <div class="invite-actions" id="inviteGuestActions">
+                  <button class="cta" id="inviteConnect" type="button">
+                    <span class="t-zh">连接钱包，生成链接</span>
+                    <span class="t-en">Connect wallet for your link</span>
+                  </button>
                 </div>
                 <p class="copy-status" id="inviteStatus" role="status"></p>
               </div>

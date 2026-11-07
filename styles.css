@@ -728,6 +728,12 @@ h1 { margin: 0; font-size: clamp(1.4rem, 4vw, 1.9rem); line-height: 1.15; }
   font-size: 0.86rem;
   line-height: 1.45;
 }
+.invite-guest {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
 .invite-link {
   margin: 8px 0 0;
   padding: 8px 10px;
